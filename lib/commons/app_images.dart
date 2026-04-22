@@ -4,6 +4,7 @@ class AppImages {
 
   AppImages._();
   static final icAvatar ='assets/images/ic_avatar.png';
+  static final icFire ='assets/images/ic_fire.png';
 
 
 }

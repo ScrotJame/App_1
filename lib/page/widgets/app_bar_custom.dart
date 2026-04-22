@@ -61,9 +61,19 @@ class AppBarCustom extends StatelessWidget implements PreferredSizeWidget {
       child: Row(
         children: [
           _buildLeading(context),
-          const SizedBox(width: 4),
-          if(title != null) Expanded(child: _buildTitle()),
-          if (actions != null) ..._buildActions(),
+
+          if(title != null) ...[
+            const SizedBox(width: 4),
+            Expanded(child: _buildTitle()),
+          ],
+
+          if (actions != null)
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: _buildActions(),
+              ),
+            ),
         ],
       ),
     );
@@ -98,10 +108,7 @@ class AppBarCustom extends StatelessWidget implements PreferredSizeWidget {
 
   List<Widget> _buildActions() {
     return actions!
-        .map((action) => Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: action,
-    ))
+        .map((action) => action)
         .toList();
   }
 }
@@ -126,7 +133,6 @@ class _AppBarIconButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.10),
           shape: BoxShape.circle,
         ),
         child: IconTheme(
