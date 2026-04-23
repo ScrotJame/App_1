@@ -5,10 +5,13 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.time.LocalDateTime
 import android.content.Intent
+import android.os.Build
+import androidx.annotation.RequiresApi
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.example.test_abc/alarm"
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
