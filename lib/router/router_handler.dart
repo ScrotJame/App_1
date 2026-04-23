@@ -1,9 +1,11 @@
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_abc/page/user/profile/profile_cubit.dart';
 
 import '../page/home_cubit.dart';
 import '../page/home_page.dart';
+import '../page/user/profile/profile_page.dart';
 
 
 // ── Not found ──────────────────────────────────────────────────
@@ -33,5 +35,11 @@ Handler homeHandler = Handler(
       create: (_) => HomeCubit(),
       child: const HomePage(),
     );
+  },
+);
+
+Handler profileHandler = Handler(
+  handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
+    return const ProfilePage();
   },
 );

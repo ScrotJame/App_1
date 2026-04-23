@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/router/router.dart';
 import 'cubit/app_cubit.dart';
 import 'page/widgets/avatar/xp_cubit.dart';
@@ -29,6 +30,7 @@ class _MyAppState extends State<MyApp> {
       providers: [
         BlocProvider<AppCubit>(create: (_) => AppCubit(),),
         BlocProvider(create: (_) => XpCubit()),
+        BlocProvider(create: (_)=> ProfileCubit()),
         // TODO: thêm global cubit khác ở đây
       ],
       child: _buildMaterialApp(),

@@ -6,12 +6,14 @@ class XpBarWidget extends StatelessWidget {
   final String avatarUrl;
   final double avatarRadius;
   final double barHeight;
+  final VoidCallback? onTap;
 
   const XpBarWidget({
     super.key,
     required this.avatarUrl,
     this.avatarRadius = 28,
     this.barHeight = 22,
+    this.onTap,
   });
 
   // ─── PUBLIC BUILD ────────────────────────────────────────
@@ -26,16 +28,19 @@ class XpBarWidget extends StatelessWidget {
   Widget _buildRoot(XpState state) {
     final double avatarDiameter = avatarRadius * 2;
 
-    return SizedBox(
-      width: 180,
-      height: avatarDiameter,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.centerLeft,
-        children: [
-          _buildBar(state, avatarDiameter),
-          _buildAvatar(avatarDiameter),
-        ],
+    return InkWell(
+      onTap: onTap,
+      child: SizedBox(
+        width: 180,
+        height: avatarDiameter,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.centerLeft,
+          children: [
+            _buildBar(state, avatarDiameter),
+            _buildAvatar(avatarDiameter),
+          ],
+        ),
       ),
     );
   }

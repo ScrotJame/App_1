@@ -222,11 +222,7 @@ class _HomePageState extends State<HomePage>
               height: 60,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                gradient: const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF6DD85E), Color(0xFF3BA82B)],
-                ),
+                gradient: AppColors.greenGradient,
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0xFF2A7A1C).withOpacity(0.7),
@@ -312,7 +308,8 @@ class _HomePageState extends State<HomePage>
         appBar: AppBarCustom(
           showBack: false,
           actions: [
-            XpBarWidget(avatarUrl: 'https://picsum.photos/200/300' ?? AppImages.icAvatar,),
+            XpBarWidget(avatarUrl: 'https://picsum.photos/200/300' ?? AppImages.icAvatar,
+              onTap: (){AppRouter.router.navigateTo(context, Routes.profile);},),
             AppBarAction(
               icon: AppImages.icFire,
               onTap: () {},

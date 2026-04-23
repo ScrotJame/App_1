@@ -20,6 +20,14 @@ class AppColors {
       Color(0xFFB07CC6),
     ],
   );
+
+  static const LinearGradient greenGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFF6DD85E), Color(0xFF3BA82B)],
+  );
+
+
 }
 
 class AppCommonColors {
