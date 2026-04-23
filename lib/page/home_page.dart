@@ -290,7 +290,7 @@ class _HomePageState extends State<HomePage>
         ),
         Positioned(
           right: 20,
-          bottom: 90,          // đủ cao hơn bottombar
+          bottom: 90,
           child: GestureDetector(
             onTap: () {},
             child: BubbleButton(

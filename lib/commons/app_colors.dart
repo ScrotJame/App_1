@@ -8,6 +8,7 @@ class AppColors {
   ///Common
   static const Color mainRealAgent = Color(0xFF005CF7);
   static const Color mainTopSky = Color(0xFF1A3A8F);
+  static const Color white = Color(0xFFFFFFFF);
 
   ///Gradient
   static const LinearGradient mainGradient = LinearGradient(

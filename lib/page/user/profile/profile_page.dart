@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_abc/commons/app_colors.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
+
+import '../../../router/app_router.dart';
+import '../../../router/router.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -11,6 +15,11 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   late ProfileCubit _cubit;
+
+  static const double headerHeight = 275;
+  static const double statsTop = 225;
+  static const double statsHeight = 125;
+  static const double overlap = statsTop + statsHeight - headerHeight;
 
   @override
   void initState() {
@@ -66,8 +75,8 @@ class _ProfilePageState extends State<ProfilePage> {
               child: CustomScrollView(
                 slivers: [
                   SliverToBoxAdapter(child: _buildHeader(data)),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: 26),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: overlap + 8),
                   ),
                   SliverToBoxAdapter(
                     child: Padding(
@@ -107,7 +116,7 @@ class _ProfilePageState extends State<ProfilePage> {
       children: [
         // Blue gradient bg
         Container(
-          height: 275,
+          height: headerHeight,
           width: double.infinity,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.only(
@@ -129,6 +138,33 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
 
+        Positioned(
+          top:50,
+          left: -15,
+          child: InkWell(
+            onTap: (){AppRouter.router.navigateTo(context, Routes.home);},
+            child: Container(
+            padding:const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.home),
+                const SizedBox(width: 8,),
+                Text(
+                  'Home',
+                  style: const TextStyle(
+                    color: Color(0xFF5D4037),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+                    ),
+          ),),
         // Avatar + name + level badge
         Positioned(
           top: 36,
@@ -198,7 +234,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
         Positioned(
-          top: 225,
+          top: statsTop,
           left: 0,
           right: 0,
           child: Padding(
