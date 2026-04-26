@@ -1,0 +1,19 @@
+{
+  "vocabularyList": "Danh sách từ vựng",
+  "addWord": "Thêm từ mới",
+  "wordCount": " từ",
+  "tabAll": "Tất cả",
+  "tabLearned": "Đã học",
+  "tabNew": "Mới",
+  "save": "Lưu",
+  "delete": "Xóa",
+  "cancel": "Hủy",
+  "errorEnterWord": "Vui lòng nhập từ vựng",
+  "errorEnterMeaning": "Vui lòng nhập nghĩa",
+  "emptyList": "Chưa có từ vựng nào",
+  "emptyListHint": "Nhấn + để thêm từ mới",
+  "confirmDeleteMsg": "Xóa \"{word}\"?",
+  "fieldVocabulary": "Từ vựng",
+  "fieldPronunciation": "Phát âm",
+  "fieldMeaning": "Nghĩa"
+}

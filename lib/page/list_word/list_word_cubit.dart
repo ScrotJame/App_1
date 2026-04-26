@@ -64,8 +64,8 @@ class ListWordCubit extends Cubit<ListWordState> {
   Future<void> toggleLearned(int id) async {
     try {
       final word = state.allWords.firstWhere((w) => w.id == id);
-      final newValue = !(word.isLearned ?? false);
-      await _repo.updateLearnedStatus(id, newValue);
+      final newValue = !(word.isFavorite ?? false);
+      // await _repo.updateLearnedStatus(id, newValue);
       await loadWords(); // reload để đồng bộ DB
     } catch (e) {
       emit(state.copyWith(
@@ -101,10 +101,10 @@ class ListWordCubit extends Cubit<ListWordState> {
     // Filter theo tab
     switch (tab) {
       case FilterTab.learned:
-        result = result.where((w) => w.isLearned == true).toList();
+        result = result.where((w) => w.isFavorite == true).toList();
         break;
       case FilterTab.newWord:
-        result = result.where((w) => w.isLearned != true).toList();
+        result = result.where((w) => w.isFavorite != true).toList();
         break;
       case FilterTab.all:
         break;

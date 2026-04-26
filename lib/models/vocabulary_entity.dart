@@ -19,6 +19,9 @@ class VocabularyEntries extends Table {
   IntColumn get level => integer().withDefault(const Constant(0))();
   IntColumn get correctCount => integer().withDefault(const Constant(0))();
   IntColumn get wrongCount => integer().withDefault(const Constant(0))();
+  TextColumn get wordType => text().nullable()();
+
+  BoolColumn get isFavorite => boolean().nullable()();
 
   // DateTime? -> dateTime().nullable()
   DateTimeColumn get lastReviewed => dateTime().nullable()();

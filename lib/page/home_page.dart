@@ -12,6 +12,7 @@ import '../router/router.dart';
 import 'add_word/add_word_page.dart';
 import 'home_cubit.dart';
 import 'learning/flash_card/flash_card_page.dart';
+import 'list_word/list_word_page.dart';
 import 'widgets/avatar/avatar_widget.dart';
 
 class HomePage extends StatefulWidget {
@@ -219,7 +220,7 @@ class _HomePageState extends State<HomePage>
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => AddWordPage(),
+                builder: (context) => ListWordPage(),
               ),
             );
           },

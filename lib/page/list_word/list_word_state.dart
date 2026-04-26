@@ -33,10 +33,10 @@ class ListWordState extends Equatable {
   int get totalCount => allWords.length;
 
   // int get learnedCount =>
-  //     allWords.where((w) => w.isLearned == true).length;
+  //     allWords.where((w) => w.isFavorite == true).length;
   //
   // int get newCount =>
-  //     allWords.where((w) => w.isLearned != true).length;
+  //     allWords.where((w) => w.isFavorite != true).length;
 
   // ─── CopyWith ─────────────────────────────────────────────
 

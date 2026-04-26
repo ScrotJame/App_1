@@ -261,7 +261,7 @@ class _ListWordPageState extends State<ListWordPage> {
   }
 
   Widget _buildWordCard(VocabularyEntry word, int index) {
-    final isLearned = word.isLearned == true;
+    final isFavorite = word.isFavorite == true;
 
     return Dismissible(
       key: ValueKey(word.id),
@@ -289,7 +289,7 @@ class _ListWordPageState extends State<ListWordPage> {
             children: [
               Expanded(child: _buildWordContent(word)),
               const SizedBox(width: 8),
-              _buildCardActions(word, isLearned),
+              _buildCardActions(word, isFavorite),
             ],
           ),
         ),
@@ -386,7 +386,7 @@ class _ListWordPageState extends State<ListWordPage> {
     );
   }
 
-  Widget _buildCardActions(VocabularyEntry word, bool isLearned) {
+  Widget _buildCardActions(VocabularyEntry word, bool isFavorite) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -409,9 +409,9 @@ class _ListWordPageState extends State<ListWordPage> {
             transitionBuilder: (child, anim) =>
                 ScaleTransition(scale: anim, child: child),
             child: Icon(
-              isLearned ? Icons.star_rounded : Icons.star_border_rounded,
-              key: ValueKey(isLearned),
-              color: isLearned
+              isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
+              key: ValueKey(isFavorite),
+              color: isFavorite
                   ? const Color(0xFF6B7FD4)
                   : Colors.grey.shade400,
               size: 22,

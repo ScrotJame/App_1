@@ -1,0 +1,19 @@
+{
+  "vocabularyList": "Vocabulary List",
+  "addWord": "Add Word",
+  "wordCount": " words",
+  "tabAll": "All",
+  "tabLearned": "Learned",
+  "tabNew": "New",
+  "save": "Save",
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "errorEnterWord": "Please enter a word",
+  "errorEnterMeaning": "Please enter meaning",
+  "emptyList": "No vocabulary yet",
+  "emptyListHint": "Tap + to add new word",
+  "confirmDeleteMsg": "Delete \"{word}\"?",
+  "fieldVocabulary": "Vocabulary",
+  "fieldPronunciation": "Pronunciation",
+  "fieldMeaning": "Meaning"
+}
