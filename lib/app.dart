@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/router/router.dart';
 import 'cubit/app_cubit.dart';
 import 'database/app_db.dart';
+import 'generated/l10n.dart';
 import 'page/widgets/avatar/xp_cubit.dart';
 import 'router/app_router.dart';
 
@@ -55,6 +57,12 @@ class _MyAppState extends State<MyApp> {
 
   Widget _buildMaterialApp() {
     return MaterialApp(
+      localizationsDelegates: const [
+        S.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       title: 'Floating Island',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true),
