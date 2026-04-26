@@ -9,7 +9,9 @@ import '../commons/app_images.dart';
 import '../commons/enums.dart';
 import '../router/app_router.dart';
 import '../router/router.dart';
+import 'add_word/add_word_page.dart';
 import 'home_cubit.dart';
+import 'learning/flash_card/flash_card_page.dart';
 import 'widgets/avatar/avatar_widget.dart';
 
 class HomePage extends StatefulWidget {
@@ -213,7 +215,14 @@ class _HomePageState extends State<HomePage>
     return BlocBuilder<HomeCubit, HomeState>(
       builder: (ctx, state) {
         return GestureDetector(
-          onTap: state.isLoading ? null : () => _cubit.onPlayPressed(),
+          onTap: (){
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AddWordPage(),
+              ),
+            );
+          },
           child: AnimatedScale(
             scale: state.isLoading ? 0.95 : 1.0,
             duration: const Duration(milliseconds: 150),

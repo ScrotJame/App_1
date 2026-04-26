@@ -9,7 +9,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   void onPlayPressed() {
     emit(state.copyWith(isLoading: true));
-    // TODO: navigate to game
+
     Future.delayed(const Duration(milliseconds: 300), () {
       emit(state.copyWith(isLoading: false));
     });
