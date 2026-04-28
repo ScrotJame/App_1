@@ -1,30 +1,36 @@
 part of 'xp_cubit.dart';
 
 class XpState extends Equatable {
-  final int currentXp;
-  final int maxXp;
   final int level;
+  final int currentXp;
+  final int requiredXp;
+  final double progress;
+  final bool justLeveledUp;
 
   const XpState({
-    required this.currentXp,
-    required this.maxXp,
-    required this.level,
+    this.level = 1,
+    this.currentXp = 0,
+    this.requiredXp = 30,
+    this.progress = 0.0,
+    this.justLeveledUp = false,
   });
 
-  factory XpState.initial() => const XpState(
-    currentXp: 0,
-    maxXp: 36,
-    level: 1,
-  );
-
-  double get progress => (currentXp / maxXp).clamp(0.0, 1.0);
-
-  XpState copyWith({int? currentXp, int? maxXp, int? level}) => XpState(
-    currentXp: currentXp ?? this.currentXp,
-    maxXp: maxXp ?? this.maxXp,
-    level: level ?? this.level,
-  );
+  XpState copyWith({
+    int? level,
+    int? currentXp,
+    int? requiredXp,
+    double? progress,
+    bool? justLeveledUp,
+  }) {
+    return XpState(
+      level: level ?? this.level,
+      currentXp: currentXp ?? this.currentXp,
+      requiredXp: requiredXp ?? this.requiredXp,
+      progress: progress ?? this.progress,
+      justLeveledUp: justLeveledUp ?? false,
+    );
+  }
 
   @override
-  List<Object> get props => [currentXp, maxXp, level];
+  List<Object?> get props => [level, currentXp, requiredXp, progress, justLeveledUp];
 }

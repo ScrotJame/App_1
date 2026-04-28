@@ -1,5 +1,7 @@
 part of 'add_word_cubit.dart';
 
+enum PageType { Add, Put }
+
 class AddWordState extends Equatable {
   AddWordState({
     this.vocabulary = '',
@@ -9,6 +11,8 @@ class AddWordState extends Equatable {
     this.jlptLevel = '',
     this.loadstatus = LOADSTATUS.INITAL,
     this.errorMessage,
+    this.tags,
+    this.selectedTagIds = const [],
   });
 
   final String vocabulary;
@@ -19,6 +23,15 @@ class AddWordState extends Equatable {
   final LOADSTATUS? loadstatus;
   final String? errorMessage;
 
+  /// Toàn bộ tag lấy từ DB để hiển thị danh sách chọn
+  final List<Tag>? tags;
+
+  /// Các tag đang được chọn (theo id)
+  final List<int> selectedTagIds;
+
+  // ─── Helper ───────────────────────────────────────────────
+  bool isTagSelected(int tagId) => selectedTagIds.contains(tagId);
+
   AddWordState copyWith({
     String? vocabulary,
     String? furigana,
@@ -27,6 +40,8 @@ class AddWordState extends Equatable {
     String? jlptLevel,
     LOADSTATUS? loadstatus,
     String? errorMessage,
+    List<Tag>? tags,
+    List<int>? selectedTagIds,
   }) {
     return AddWordState(
       vocabulary: vocabulary ?? this.vocabulary,
@@ -36,6 +51,8 @@ class AddWordState extends Equatable {
       jlptLevel: jlptLevel ?? this.jlptLevel,
       loadstatus: loadstatus ?? this.loadstatus,
       errorMessage: errorMessage ?? this.errorMessage,
+      tags: tags ?? this.tags,
+      selectedTagIds: selectedTagIds ?? this.selectedTagIds,
     );
   }
 
@@ -51,5 +68,7 @@ class AddWordState extends Equatable {
     jlptLevel,
     loadstatus,
     errorMessage,
+    tags,
+    selectedTagIds,
   ];
 }

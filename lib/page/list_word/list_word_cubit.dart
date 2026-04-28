@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:test_abc/database/app_db.dart';
 
 import '../../commons/enums.dart';
+import '../../models/tag_vocab.dart';
 import '../../repository/vocabulary_repository.dart';
 
 part 'list_word_state.dart';
@@ -13,11 +14,10 @@ class ListWordCubit extends Cubit<ListWordState> {
   ListWordCubit(this._repo) : super(const ListWordState());
 
   // ─── Load ─────────────────────────────────────────────────
-
   Future<void> loadWords() async {
     emit(state.copyWith(loadstatus: LOADSTATUS.LOADING));
     try {
-      final words = await _repo.getAllWords();
+      final words = await _repo.watchAllWordsWithTags().first;
       emit(state.copyWith(
         allWords: words,
         filteredWords: _applyFilter(words, state.activeTab, state.searchQuery),
@@ -32,16 +32,13 @@ class ListWordCubit extends Cubit<ListWordState> {
   }
 
   // ─── Filter tab ───────────────────────────────────────────
-
   void onTabChanged(FilterTab tab) {
     final filtered = _applyFilter(state.allWords, tab, state.searchQuery);
     emit(state.copyWith(activeTab: tab, filteredWords: filtered));
   }
 
   // ─── Search ───────────────────────────────────────────────
-
   void toggleSearch() {
-    // Khi đóng search bar → reset query
     if (state.isSearching) {
       final filtered = _applyFilter(state.allWords, state.activeTab, '');
       emit(state.copyWith(
@@ -60,13 +57,10 @@ class ListWordCubit extends Cubit<ListWordState> {
   }
 
   // ─── Toggle learned ───────────────────────────────────────
-
   Future<void> toggleLearned(int id) async {
     try {
-      final word = state.allWords.firstWhere((w) => w.id == id);
-      final newValue = !(word.isFavorite ?? false);
       // await _repo.updateLearnedStatus(id, newValue);
-      await loadWords(); // reload để đồng bộ DB
+      await loadWords();
     } catch (e) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
@@ -76,7 +70,6 @@ class ListWordCubit extends Cubit<ListWordState> {
   }
 
   // ─── Delete ───────────────────────────────────────────────
-
   Future<void> deleteWord(int id) async {
     try {
       await _repo.deleteWord(id);
@@ -90,33 +83,31 @@ class ListWordCubit extends Cubit<ListWordState> {
   }
 
   // ─── Private helper ───────────────────────────────────────
-
-  List<VocabularyEntry> _applyFilter(
-      List<VocabularyEntry> words,
+  List<VocabularyWithTags> _applyFilter(
+      List<VocabularyWithTags> words,
       FilterTab tab,
       String query,
       ) {
-    List<VocabularyEntry> result = words;
+    List<VocabularyWithTags> result = words;
 
-    // Filter theo tab
     switch (tab) {
       case FilterTab.learned:
-        result = result.where((w) => w.isFavorite == true).toList();
+        result = result.where((w) => w.word.isFavorite == true).toList();
         break;
       case FilterTab.newWord:
-        result = result.where((w) => w.isFavorite != true).toList();
+        result = result.where((w) => w.word.isFavorite != true).toList();
         break;
       case FilterTab.all:
         break;
     }
 
-    // Filter theo search query
     if (query.trim().isNotEmpty) {
       final q = query.trim().toLowerCase();
       result = result.where((w) {
-        return w.word.toLowerCase().contains(q) ||
-            w.meaning.toLowerCase().contains(q) ||
-            (w.pronunciation?.toLowerCase().contains(q) ?? false);
+        return w.word.word.toLowerCase().contains(q) ||
+            w.word.meaning.toLowerCase().contains(q) ||
+            (w.word.pronunciation?.toLowerCase().contains(q) ?? false) ||
+            w.tags.any((t) => t.tagName.toLowerCase().contains(q));
       }).toList();
     }
 

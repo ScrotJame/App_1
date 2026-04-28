@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/app_colors.dart';
+import 'package:test_abc/commons/app_images.dart';
+import 'package:test_abc/generated/l10n.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
+import 'package:test_abc/repository/user_repository.dart';
 
+import '../../../database/app_db.dart';
 import '../../../router/app_router.dart';
 import '../../../router/router.dart';
 
@@ -24,7 +28,8 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _cubit = ProfileCubit()..loadProfile();
+    _cubit = ProfileCubit(context.read<UserRepository>());
+    _cubit.loadProfile();
   }
 
   @override
@@ -109,7 +114,7 @@ class _ProfilePageState extends State<ProfilePage> {
   // ─────────────────────────────────────────────────────────────
   // HEADER
   // ─────────────────────────────────────────────────────────────
-  Widget _buildHeader(ProfileData data) {
+  Widget _buildHeader(UsersEntrieData data) {
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.topCenter,
@@ -175,7 +180,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 height: 86,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
+                  color: Colors.white,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.18),
@@ -185,20 +190,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 child: ClipOval(
-                  child: Image.network(
-                    data.avatarUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: const Color(0xFFE0E0E0),
-                      child: const Icon(Icons.person,
-                          size: 44, color: Colors.grey),
-                    ),
+                  child: Image.asset(
+                    AppImages.imgAvatar
                   ),
                 ),
               ),
               const SizedBox(height: 10),
               Text(
-                data.name,
+                data.username,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 22,
@@ -222,7 +221,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 child: Text(
-                  data.level,
+                 "${(S.current.level.toUpperCase())}: ${data.level.toString()}",
                   style: const TextStyle(
                     color: Color(0xFF5D4037),
                     fontWeight: FontWeight.bold,
@@ -258,14 +257,14 @@ class _ProfilePageState extends State<ProfilePage> {
   // ─────────────────────────────────────────────────────────────
   // STATS
   // ─────────────────────────────────────────────────────────────
-  Widget _buildStats(ProfileData data) {
+  Widget _buildStats(UsersEntrieData data) {
     return Row(
       children: [
         Expanded(
           child: _StatCard(
             icon: Icons.local_fire_department_rounded,
             iconColor: const Color(0xFFFF6B35),
-            value: data.streak.toString(),
+            value: data.currentStreak.toString(),
           ),
         ),
         const SizedBox(width: 12),
@@ -273,7 +272,7 @@ class _ProfilePageState extends State<ProfilePage> {
           child: _StatCard(
             icon: Icons.park_rounded,
             iconColor: const Color(0xFFFF8C42),
-            value: data.totalPoints.toString(),
+            value: data.totalLearned.toString(),
           ),
         ),
       ],
@@ -283,7 +282,7 @@ class _ProfilePageState extends State<ProfilePage> {
   // ─────────────────────────────────────────────────────────────
   // LEARNING PROGRESS
   // ─────────────────────────────────────────────────────────────
-  Widget _buildLearningProgress(ProfileData data) {
+  Widget _buildLearningProgress(UsersEntrieData data) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -312,24 +311,24 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
         ),
         const SizedBox(height: 12),
-        _card(
-          child: Column(
-            children: data.courses.asMap().entries.map((e) {
-              final isLast = e.key == data.courses.length - 1;
-              return Column(
-                children: [
-                  _CourseItem(course: e.value),
-                  if (!isLast)
-                    const Divider(
-                        height: 1,
-                        indent: 16,
-                        endIndent: 16,
-                        color: Color(0xFFEEEEEE)),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
+        // _card(
+        //   child: Column(
+        //     children: data.courses.asMap().entries.map((e) {
+        //       final isLast = e.key == data.courses.length - 1;
+        //       return Column(
+        //         children: [
+        //           _CourseItem(course: e.value),
+        //           if (!isLast)
+        //             const Divider(
+        //                 height: 1,
+        //                 indent: 16,
+        //                 endIndent: 16,
+        //                 color: Color(0xFFEEEEEE)),
+        //         ],
+        //       );
+        //     }).toList(),
+        //   ),
+        // ),
       ],
     );
   }
@@ -337,7 +336,7 @@ class _ProfilePageState extends State<ProfilePage> {
   // ─────────────────────────────────────────────────────────────
   // GARDEN BADGES
   // ─────────────────────────────────────────────────────────────
-  Widget _buildGardenBadges(ProfileData data) {
+  Widget _buildGardenBadges(UsersEntrieData data) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -349,17 +348,18 @@ class _ProfilePageState extends State<ProfilePage> {
             color: Color(0xFF1A1A2E),
           ),
         ),
-        const SizedBox(height: 12),
-        _card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children:
-              data.badges.map((b) => _BadgeItem(badge: b)).toList(),
-            ),
-          ),
-        ),
+
+        // const SizedBox(height: 12),
+        // _card(
+        //   child: Padding(
+        //     padding: const EdgeInsets.symmetric(vertical: 8),
+        //     child: Row(
+        //       mainAxisAlignment: MainAxisAlignment.spaceAround,
+        //       children:
+        //       data.badges.map((b) => _BadgeItem(badge: b)).toList(),
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }
@@ -497,155 +497,155 @@ class _StatCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────
 // COURSE ITEM
 // ─────────────────────────────────────────────────────────────────
-class _CourseItem extends StatelessWidget {
-  final LearningCourse course;
-
-  const _CourseItem({required this.course});
-
-  String _fmt(int n) {
-    if (n >= 1000) {
-      final d = n / 1000;
-      return '${d % 1 == 0 ? d.toInt() : d.toStringAsFixed(1)}k';
-    }
-    return n.toString();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE3F2FD),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Center(
-                  child: Text(
-                    'Aǎ',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1565C0),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  course.title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                    color: Color(0xFF1A1A2E),
-                  ),
-                ),
-              ),
-              Text(
-                '${(course.progress * 100).toInt()}%',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: Color(0xFF1A1A2E),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: course.progress,
-              minHeight: 9,
-              backgroundColor: const Color(0xFFE8F5E9),
-              valueColor:
-              const AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${_fmt(course.current)} / ${_fmt(course.total)} ${course.unit}',
-                style:
-                const TextStyle(fontSize: 12, color: Color(0xFF9E9E9E)),
-              ),
-              Text(
-                '+${course.todayGain} today',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF4CAF50),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
+// class _CourseItem extends StatelessWidget {
+//   final LearningCourse course;
+//
+//   const _CourseItem({required this.course});
+//
+//   String _fmt(int n) {
+//     if (n >= 1000) {
+//       final d = n / 1000;
+//       return '${d % 1 == 0 ? d.toInt() : d.toStringAsFixed(1)}k';
+//     }
+//     return n.toString();
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Padding(
+//       padding: const EdgeInsets.all(16),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           Row(
+//             children: [
+//               Container(
+//                 width: 38,
+//                 height: 38,
+//                 decoration: BoxDecoration(
+//                   color: const Color(0xFFE3F2FD),
+//                   borderRadius: BorderRadius.circular(10),
+//                 ),
+//                 child: const Center(
+//                   child: Text(
+//                     'Aǎ',
+//                     style: TextStyle(
+//                       fontSize: 15,
+//                       fontWeight: FontWeight.bold,
+//                       color: Color(0xFF1565C0),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//               const SizedBox(width: 12),
+//               Expanded(
+//                 child: Text(
+//                   course.title,
+//                   style: const TextStyle(
+//                     fontWeight: FontWeight.w600,
+//                     fontSize: 15,
+//                     color: Color(0xFF1A1A2E),
+//                   ),
+//                 ),
+//               ),
+//               Text(
+//                 '${(course.progress * 100).toInt()}%',
+//                 style: const TextStyle(
+//                   fontWeight: FontWeight.bold,
+//                   fontSize: 15,
+//                   color: Color(0xFF1A1A2E),
+//                 ),
+//               ),
+//             ],
+//           ),
+//           const SizedBox(height: 10),
+//           ClipRRect(
+//             borderRadius: BorderRadius.circular(8),
+//             child: LinearProgressIndicator(
+//               value: course.progress,
+//               minHeight: 9,
+//               backgroundColor: const Color(0xFFE8F5E9),
+//               valueColor:
+//               const AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+//             ),
+//           ),
+//           const SizedBox(height: 8),
+//           Row(
+//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//             children: [
+//               Text(
+//                 '${_fmt(course.current)} / ${_fmt(course.total)} ${course.unit}',
+//                 style:
+//                 const TextStyle(fontSize: 12, color: Color(0xFF9E9E9E)),
+//               ),
+//               Text(
+//                 '+${course.todayGain} today',
+//                 style: const TextStyle(
+//                   fontSize: 12,
+//                   color: Color(0xFF4CAF50),
+//                   fontWeight: FontWeight.w600,
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
 
 // ─────────────────────────────────────────────────────────────────
 // BADGE ITEM
 // ─────────────────────────────────────────────────────────────────
-class _BadgeItem extends StatelessWidget {
-  final BadgeItem badge;
-
-  const _BadgeItem({required this.badge});
-
-  @override
-  Widget build(BuildContext context) {
-    final unlocked = badge.isUnlocked;
-    return Column(
-      children: [
-        Container(
-          width: 62,
-          height: 62,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: unlocked
-                ? const Color(0xFFE8F5E9)
-                : const Color(0xFFF0F0F0),
-            border: Border.all(
-              color: unlocked
-                  ? const Color(0xFF4CAF50)
-                  : const Color(0xFFCCCCCC),
-              width: 2.2,
-            ),
-          ),
-          child: Center(
-            child: unlocked
-                ? Text(badge.icon,
-                style: const TextStyle(fontSize: 26))
-                : const Icon(Icons.auto_awesome,
-                size: 24, color: Color(0xFFCCCCCC)),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          badge.name,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: unlocked
-                ? const Color(0xFF424242)
-                : const Color(0xFFAAAAAA),
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-}
+// class _BadgeItem extends StatelessWidget {
+//   final BadgeItem badge;
+//
+//   const _BadgeItem({required this.badge});
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     final unlocked = badge.isUnlocked;
+//     return Column(
+//       children: [
+//         Container(
+//           width: 62,
+//           height: 62,
+//           decoration: BoxDecoration(
+//             shape: BoxShape.circle,
+//             color: unlocked
+//                 ? const Color(0xFFE8F5E9)
+//                 : const Color(0xFFF0F0F0),
+//             border: Border.all(
+//               color: unlocked
+//                   ? const Color(0xFF4CAF50)
+//                   : const Color(0xFFCCCCCC),
+//               width: 2.2,
+//             ),
+//           ),
+//           child: Center(
+//             child: unlocked
+//                 ? Text(badge.icon,
+//                 style: const TextStyle(fontSize: 26))
+//                 : const Icon(Icons.auto_awesome,
+//                 size: 24, color: Color(0xFFCCCCCC)),
+//           ),
+//         ),
+//         const SizedBox(height: 8),
+//         Text(
+//           badge.name,
+//           style: TextStyle(
+//             fontSize: 11,
+//             fontWeight: FontWeight.w500,
+//             color: unlocked
+//                 ? const Color(0xFF424242)
+//                 : const Color(0xFFAAAAAA),
+//           ),
+//           textAlign: TextAlign.center,
+//         ),
+//       ],
+//     );
+//   }
+// }
 
 // ─────────────────────────────────────────────────────────────────
 // SETTINGS ITEM

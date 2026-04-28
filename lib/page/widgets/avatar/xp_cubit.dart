@@ -1,26 +1,67 @@
 import 'package:bloc/bloc.dart';
+import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
+import 'package:test_abc/repository/user_repository.dart';
+
+import '../../../database/app_db.dart';
+import '../../../helper/level_helper.dart';
 
 part 'xp_state.dart';
 
 class XpCubit extends Cubit<XpState> {
-  XpCubit() : super(XpState.initial());
-  // TODO: final XpRepository _repo; → inject khi có data
+  final UserRepository _userRepository;
 
-  void addXp(int amount) {
-    int xp = state.currentXp + amount;
-    int max = state.maxXp;
-    int lv = state.level;
+  XpCubit(this._userRepository) : super(const XpState());
 
-    while (xp >= max) {
-      xp -= max;
-      lv++;
-      max = (max * 1.35).round();
-    }
+  // ── Load XP từ DB khi khởi động ───────────────────────────
+  Future<void> loadXp() async {
+    final user = await _userRepository.getCurrentUser();
+    if (user == null) return;
 
-    emit(state.copyWith(currentXp: xp, maxXp: max, level: lv));
-    // TODO: _repo.save(xp, lv);
+    final info = LevelHelper.calculate(user.experience);
+    emit(state.copyWith(
+      level: user.level,
+      currentXp: info.currentXp,
+      requiredXp: info.requiredXp,
+      progress: info.progress,
+    ));
   }
 
-  void resetXp() => emit(XpState.initial());
+  // ── Cộng XP (gọi từ BubbleButton) ────────────────────────
+  Future<void> addXp(int gain) async {
+    final user = await _userRepository.getCurrentUser();
+    if (user == null) return;
+
+    final result = LevelHelper.addXp(
+      currentLevel: user.level,
+      currentXp: user.experience,
+      gainXp: gain,
+    );
+
+    // Tính tổng xp mới để lưu vào DB
+    final totalXpNew = _calcTotalXp(result.newLevel, result.newXp);
+
+    await _userRepository.updateUser(UsersEntrieCompanion(
+      level: Value(result.newLevel),
+      experience: Value(totalXpNew),
+    ));
+
+    final info = LevelHelper.calculate(totalXpNew);
+    emit(state.copyWith(
+      level: result.newLevel,
+      currentXp: info.currentXp,
+      requiredXp: info.requiredXp,
+      progress: info.progress,
+      justLeveledUp: result.levelUp,
+    ));
+  }
+
+  // Tính tổng xp tích lũy từ level + xp hiện tại
+  int _calcTotalXp(int level, int currentXp) {
+    int total = 0;
+    for (int i = 1; i < level; i++) {
+      total += LevelHelper.xpRequired(i);
+    }
+    return total + currentXp;
+  }
 }

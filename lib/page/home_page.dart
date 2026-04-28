@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/app_colors.dart';
 import 'package:test_abc/components/cloud_painter.dart';
+import 'package:test_abc/page/streak/streak_page.dart';
 import 'package:test_abc/page/widgets/app_bar_custom.dart';
+import 'package:test_abc/page/widgets/avatar/xp_cubit.dart';
 import 'package:test_abc/page/widgets/bottom_bar_custom.dart';
 import 'package:test_abc/page/widgets/bubble_button.dart';
 import '../commons/app_images.dart';
@@ -304,7 +306,22 @@ class _HomePageState extends State<HomePage>
           child: GestureDetector(
             onTap: () {},
             child: BubbleButton(
-              onTap: () {  },),
+              onTap: () async {
+                await context.read<XpCubit>().addXp(2);
+
+                // Hiện thông báo nếu lên level
+                final state = context.read<XpCubit>().state;
+                if (state.justLeveledUp && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('🎉 Lên Level ${state.level}!'),
+                      duration: const Duration(seconds: 2),
+                      backgroundColor: const Color(0xFF50C040),
+                    ),
+                  );
+                }
+              },
+            ),
           ),
         ),
       ],
@@ -318,11 +335,18 @@ class _HomePageState extends State<HomePage>
         appBar: AppBarCustom(
           showBack: false,
           actions: [
-            XpBarWidget(avatarUrl: 'https://picsum.photos/200/300' ?? AppImages.icAvatar,
+            XpBarWidget(avatarUrl: AppImages.imgAvatar ?? AppImages.icAvatar,
               onTap: (){AppRouter.router.navigateTo(context, Routes.profile);},),
             AppBarAction(
               icon: AppImages.icFire,
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => StreakPage(),
+                  ),
+                );
+              },
             ),
           ],
         ),

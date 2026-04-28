@@ -97,7 +97,7 @@ class XpBarWidget extends StatelessWidget {
   Widget _buildXpLabel(XpState state) {
     return Center(
       child: Text(
-        '${state.currentXp} / ${state.maxXp} XP',
+        '${state.currentXp} / ${state.requiredXp} XP',
         style: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
@@ -117,6 +117,7 @@ class XpBarWidget extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: const Color(0xFF43A047), width: 3),
+        color: Colors.white,
         boxShadow: const [
           BoxShadow(
             color: Color(0x33000000),
@@ -130,29 +131,6 @@ class XpBarWidget extends StatelessWidget {
   }
 
   Widget _buildAvatarImage() {
-    return Image.network(
-      avatarUrl,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const ColoredBox(
-        color: Color(0xFF81C784),
-        child: Icon(Icons.person, color: Colors.white, size: 28),
-      ),
-      loadingBuilder: (_, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return const ColoredBox(
-          color: Color(0xFFE8F5E9),
-          child: Center(
-            child: SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Color(0xFF43A047),
-              ),
-            ),
-          ),
-        );
-      },
-    );
+    return Image.asset(avatarUrl);
   }
 }

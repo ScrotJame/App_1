@@ -13,36 +13,25 @@ class ListWordState extends Equatable {
     this.errorMessage,
   });
 
-  /// Toàn bộ từ lấy từ DB
-  final List<VocabularyEntry> allWords;
+  /// Toàn bộ từ lấy từ DB (kèm tags)
+  final List<VocabularyWithTags> allWords;
 
   /// Danh sách hiển thị sau khi filter + search
-  final List<VocabularyEntry> filteredWords;
+  final List<VocabularyWithTags> filteredWords;
 
   final FilterTab activeTab;
   final String searchQuery;
-
-  /// Bật/tắt thanh tìm kiếm trên AppBar
   final bool isSearching;
-
   final LOADSTATUS loadstatus;
   final String? errorMessage;
 
-  // ─── Computed getters ─────────────────────────────────────
-
+  // ─── Computed ─────────────────────────────────────────────
   int get totalCount => allWords.length;
 
-  // int get learnedCount =>
-  //     allWords.where((w) => w.isFavorite == true).length;
-  //
-  // int get newCount =>
-  //     allWords.where((w) => w.isFavorite != true).length;
-
   // ─── CopyWith ─────────────────────────────────────────────
-
   ListWordState copyWith({
-    List<VocabularyEntry>? allWords,
-    List<VocabularyEntry>? filteredWords,
+    List<VocabularyWithTags>? allWords,
+    List<VocabularyWithTags>? filteredWords,
     FilterTab? activeTab,
     String? searchQuery,
     bool? isSearching,
