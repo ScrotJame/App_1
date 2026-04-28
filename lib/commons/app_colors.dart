@@ -35,7 +35,11 @@ class AppColors {
     colors: [Color(0xFF00C7FF), Color(0xFF3B77EE)],
   );
 
-
+  static const LinearGradient streakGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFFFF8C42), Color(0xFFFF5722)],
+  );
 }
 
 class AppCommonColors {
