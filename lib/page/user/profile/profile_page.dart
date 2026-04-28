@@ -83,18 +83,18 @@ class _ProfilePageState extends State<ProfilePage> {
                   SliverToBoxAdapter(
                     child: SizedBox(height: overlap + 8),
                   ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildLearningProgress(data),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                      child: _buildGardenBadges(data),
-                    ),
-                  ),
+                  // SliverToBoxAdapter(
+                  //   child: Padding(
+                  //     padding: const EdgeInsets.symmetric(horizontal: 16),
+                  //     child: _buildLearningProgress(data),
+                  //   ),
+                  // ),
+                  // SliverToBoxAdapter(
+                  //   child: Padding(
+                  //     padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                  //     child: _buildGardenBadges(data),
+                  //   ),
+                  // ),
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
