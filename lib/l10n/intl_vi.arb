@@ -15,5 +15,13 @@
   "confirmDeleteMsg": "Xóa \"{word}\"?",
   "fieldVocabulary": "Từ vựng",
   "fieldPronunciation": "Phát âm",
-  "fieldMeaning": "Nghĩa"
+  "fieldMeaning": "Nghĩa",
+  "noun": "Danh từ",
+  "verb":"Động từ",
+  "adjI":"Tính từ đuôi i",
+  "adjNa":"Tính từ đuôi na",
+  "adverb":"Trạng từ",
+  "expression": "Cụm từ",
+  "base_name": "Chiến binh",
+  "level": "Cấp độ"
 }

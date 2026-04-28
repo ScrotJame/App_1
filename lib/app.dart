@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
+import 'package:test_abc/repository/tag_repository.dart';
+import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/router/router.dart';
 import 'cubit/app_cubit.dart';
@@ -42,13 +44,21 @@ class _MyAppState extends State<MyApp> {
         RepositoryProvider<VocabularyRepository>(
           create: (_) => VocabularyRepository(_db),
         ),
+        RepositoryProvider<TagRepository>(
+            create: (_) => TagRepository(_db)
+        ),
+        RepositoryProvider<UserRepository>(
+            create: (_) => UserRepository(_db)),
       ],
       child: MultiBlocProvider(
         providers: [
-          BlocProvider<AppCubit>(create: (_) => AppCubit(),),
-          BlocProvider(create: (_) => XpCubit()),
-          BlocProvider(create: (_) => ProfileCubit()),
-          // TODO: thêm global cubit khác ở đây
+          BlocProvider<AppCubit>(create: (_) => AppCubit()),
+          BlocProvider(
+            create: (ctx) => XpCubit(ctx.read<UserRepository>())..loadXp(),
+          ),
+          BlocProvider(
+            create: (ctx) => ProfileCubit(ctx.read<UserRepository>()),
+          ),
         ],
         child: _buildMaterialApp(),
       ),
@@ -67,7 +77,7 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true),
       onGenerateRoute: AppRouter.router.generator,
-      initialRoute: Routes.home,
+      initialRoute: Routes.splash,
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context)

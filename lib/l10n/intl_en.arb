@@ -15,5 +15,13 @@
   "confirmDeleteMsg": "Delete \"{word}\"?",
   "fieldVocabulary": "Vocabulary",
   "fieldPronunciation": "Pronunciation",
-  "fieldMeaning": "Meaning"
+  "fieldMeaning": "Meaning",
+  "noun": "Noun",
+  "verb": "Verb",
+  "adjI": "I-adjective",
+  "adjNa": "Na-adjective",
+  "adverb": "Adverb",
+  "expression": "Expression",
+  "base_name": "Warrior",
+  "level": "level"
 }

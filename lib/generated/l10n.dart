@@ -178,6 +178,46 @@ class S {
   String get fieldMeaning {
     return Intl.message('Meaning', name: 'fieldMeaning', desc: '', args: []);
   }
+
+  /// `Noun`
+  String get noun {
+    return Intl.message('Noun', name: 'noun', desc: '', args: []);
+  }
+
+  /// `Verb`
+  String get verb {
+    return Intl.message('Verb', name: 'verb', desc: '', args: []);
+  }
+
+  /// `I-adjective`
+  String get adjI {
+    return Intl.message('I-adjective', name: 'adjI', desc: '', args: []);
+  }
+
+  /// `Na-adjective`
+  String get adjNa {
+    return Intl.message('Na-adjective', name: 'adjNa', desc: '', args: []);
+  }
+
+  /// `Adverb`
+  String get adverb {
+    return Intl.message('Adverb', name: 'adverb', desc: '', args: []);
+  }
+
+  /// `Expression`
+  String get expression {
+    return Intl.message('Expression', name: 'expression', desc: '', args: []);
+  }
+
+  /// `Warrior`
+  String get base_name {
+    return Intl.message('Warrior', name: 'base_name', desc: '', args: []);
+  }
+
+  /// `level`
+  String get level {
+    return Intl.message('level', name: 'level', desc: '', args: []);
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

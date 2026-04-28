@@ -25,6 +25,10 @@ class MessageLookup extends MessageLookupByLibrary {
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "addWord": MessageLookupByLibrary.simpleMessage("Add Word"),
+    "adjI": MessageLookupByLibrary.simpleMessage("I-adjective"),
+    "adjNa": MessageLookupByLibrary.simpleMessage("Na-adjective"),
+    "adverb": MessageLookupByLibrary.simpleMessage("Adverb"),
+    "base_name": MessageLookupByLibrary.simpleMessage("Warrior"),
     "cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
     "confirmDeleteMsg": m0,
     "delete": MessageLookupByLibrary.simpleMessage("Delete"),
@@ -38,13 +42,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "errorEnterWord": MessageLookupByLibrary.simpleMessage(
       "Please enter a word",
     ),
+    "expression": MessageLookupByLibrary.simpleMessage("Expression"),
     "fieldMeaning": MessageLookupByLibrary.simpleMessage("Meaning"),
     "fieldPronunciation": MessageLookupByLibrary.simpleMessage("Pronunciation"),
     "fieldVocabulary": MessageLookupByLibrary.simpleMessage("Vocabulary"),
+    "level": MessageLookupByLibrary.simpleMessage("level"),
+    "noun": MessageLookupByLibrary.simpleMessage("Noun"),
     "save": MessageLookupByLibrary.simpleMessage("Save"),
     "tabAll": MessageLookupByLibrary.simpleMessage("All"),
     "tabLearned": MessageLookupByLibrary.simpleMessage("Learned"),
     "tabNew": MessageLookupByLibrary.simpleMessage("New"),
+    "verb": MessageLookupByLibrary.simpleMessage("Verb"),
     "vocabularyList": MessageLookupByLibrary.simpleMessage("Vocabulary List"),
     "wordCount": MessageLookupByLibrary.simpleMessage(" words"),
   };

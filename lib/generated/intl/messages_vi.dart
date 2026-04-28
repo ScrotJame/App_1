@@ -25,6 +25,10 @@ class MessageLookup extends MessageLookupByLibrary {
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "addWord": MessageLookupByLibrary.simpleMessage("Thêm từ mới"),
+    "adjI": MessageLookupByLibrary.simpleMessage("Tính từ đuôi i"),
+    "adjNa": MessageLookupByLibrary.simpleMessage("Tính từ đuôi na"),
+    "adverb": MessageLookupByLibrary.simpleMessage("Trạng từ"),
+    "base_name": MessageLookupByLibrary.simpleMessage("Chiến binh"),
     "cancel": MessageLookupByLibrary.simpleMessage("Hủy"),
     "confirmDeleteMsg": m0,
     "delete": MessageLookupByLibrary.simpleMessage("Xóa"),
@@ -38,13 +42,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "errorEnterWord": MessageLookupByLibrary.simpleMessage(
       "Vui lòng nhập từ vựng",
     ),
+    "expression": MessageLookupByLibrary.simpleMessage("Cụm từ"),
     "fieldMeaning": MessageLookupByLibrary.simpleMessage("Nghĩa"),
     "fieldPronunciation": MessageLookupByLibrary.simpleMessage("Phát âm"),
     "fieldVocabulary": MessageLookupByLibrary.simpleMessage("Từ vựng"),
+    "level": MessageLookupByLibrary.simpleMessage("Cấp độ"),
+    "noun": MessageLookupByLibrary.simpleMessage("Danh từ"),
     "save": MessageLookupByLibrary.simpleMessage("Lưu"),
     "tabAll": MessageLookupByLibrary.simpleMessage("Tất cả"),
     "tabLearned": MessageLookupByLibrary.simpleMessage("Đã học"),
     "tabNew": MessageLookupByLibrary.simpleMessage("Mới"),
+    "verb": MessageLookupByLibrary.simpleMessage("Động từ"),
     "vocabularyList": MessageLookupByLibrary.simpleMessage("Danh sách từ vựng"),
     "wordCount": MessageLookupByLibrary.simpleMessage(" từ"),
   };
