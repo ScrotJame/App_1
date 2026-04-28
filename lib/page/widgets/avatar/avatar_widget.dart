@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_abc/generated/l10n.dart';
 import 'xp_cubit.dart';
 
 class XpBarWidget extends StatelessWidget {
@@ -7,6 +8,7 @@ class XpBarWidget extends StatelessWidget {
   final double avatarRadius;
   final double barHeight;
   final VoidCallback? onTap;
+  final VoidCallback? onTapChange;
 
   const XpBarWidget({
     super.key,
@@ -14,20 +16,18 @@ class XpBarWidget extends StatelessWidget {
     this.avatarRadius = 28,
     this.barHeight = 22,
     this.onTap,
+    this.onTapChange,
   });
 
-  // ─── PUBLIC BUILD ────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<XpCubit, XpState>(
-      builder: (context, state) => _buildRoot(state),
+      builder: (context, state) => _buildRoot(context, state),
     );
   }
 
-  // ─── ROOT ────────────────────────────────────────────────
-  Widget _buildRoot(XpState state) {
+  Widget _buildRoot(BuildContext context, XpState state) {
     final double avatarDiameter = avatarRadius * 2;
-
     return InkWell(
       onTap: onTap,
       child: SizedBox(
@@ -37,7 +37,7 @@ class XpBarWidget extends StatelessWidget {
           clipBehavior: Clip.none,
           alignment: Alignment.centerLeft,
           children: [
-            _buildBar(state, avatarDiameter),
+            _buildBar(context, state, avatarDiameter),
             _buildAvatar(avatarDiameter),
           ],
         ),
@@ -45,32 +45,37 @@ class XpBarWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildBar(XpState state, double avatarDiameter) {
+  Widget _buildBar(BuildContext context, XpState state, double avatarDiameter) {
     return Positioned(
       left: avatarRadius,
       right: 0,
       top: (avatarDiameter - barHeight) / 2,
-      child: Container(
-        height: barHeight,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE8F5E9),
-          borderRadius: BorderRadius.circular(barHeight / 2),
-          border: Border.all(color: const Color(0xFFA5D6A7), width: 1.5),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x1A000000),
-              blurRadius: 4,
-              offset: Offset(0, 2),
-            ),
-          ],
+      child: GestureDetector(
+        onTap: () => context.read<XpCubit>().changeLabel(
+          state.tab == Xp.xpTab ? Xp.levelTab : Xp.xpTab,
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(barHeight / 2),
-          child: Stack(
-            children: [
-              _buildBarFill(state),
-              _buildXpLabel(state),
+        child: Container(
+          height: barHeight,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8F5E9),
+            borderRadius: BorderRadius.circular(barHeight / 2),
+            border: Border.all(color: const Color(0xFFA5D6A7), width: 1.5),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1A000000),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
             ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(barHeight / 2),
+            child: Stack(
+              children: [
+                _buildBarFill(state),
+                _buildActiveLabel(state),
+              ],
+            ),
           ),
         ),
       ),
@@ -94,14 +99,18 @@ class XpBarWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildXpLabel(XpState state) {
+  Widget _buildActiveLabel(XpState state) {
+    final text = state.tab == Xp.xpTab
+        ? '${state.currentXp} / ${state.requiredXp} XP'
+        : '${(S.current.level).toUpperCase()}: ${state.level}';
+
     return Center(
       child: Text(
-        '${state.currentXp} / ${state.requiredXp} XP',
+        text,
         style: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: Colors.white,
+          color: Color(0x88070707),
           letterSpacing: 0.3,
           shadows: [Shadow(color: Colors.black26, blurRadius: 3)],
         ),
@@ -109,7 +118,6 @@ class XpBarWidget extends StatelessWidget {
     );
   }
 
-  // ─── AVATAR ──────────────────────────────────────────────
   Widget _buildAvatar(double size) {
     return Container(
       width: size,

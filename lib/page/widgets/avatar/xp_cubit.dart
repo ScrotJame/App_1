@@ -32,27 +32,27 @@ class XpCubit extends Cubit<XpState> {
     final user = await _userRepository.getCurrentUser();
     if (user == null) return;
 
-    final result = LevelHelper.addXp(
-      currentLevel: user.level,
-      currentXp: user.experience,
-      gainXp: gain,
-    );
-
-    // Tính tổng xp mới để lưu vào DB
-    final totalXpNew = _calcTotalXp(result.newLevel, result.newXp);
+    final totalXpNew = user.experience + gain;
 
     await _userRepository.updateUser(UsersEntrieCompanion(
-      level: Value(result.newLevel),
       experience: Value(totalXpNew),
     ));
 
     final info = LevelHelper.calculate(totalXpNew);
+    final levelUp = info.level > user.level;
+
+    if (levelUp) {
+      await _userRepository.updateUser(UsersEntrieCompanion(
+        level: Value(info.level),
+      ));
+    }
+
     emit(state.copyWith(
-      level: result.newLevel,
+      level: info.level,
       currentXp: info.currentXp,
       requiredXp: info.requiredXp,
       progress: info.progress,
-      justLeveledUp: result.levelUp,
+      justLeveledUp: levelUp,
     ));
   }
 
@@ -63,5 +63,9 @@ class XpCubit extends Cubit<XpState> {
       total += LevelHelper.xpRequired(i);
     }
     return total + currentXp;
+  }
+
+  void changeLabel(Xp type) {
+    emit(state.copyWith(tab: type));
   }
 }

@@ -1,11 +1,14 @@
 part of 'xp_cubit.dart';
 
+enum Xp {xpTab, levelTab}
+
 class XpState extends Equatable {
   final int level;
   final int currentXp;
   final int requiredXp;
   final double progress;
   final bool justLeveledUp;
+  final Xp tab;
 
   const XpState({
     this.level = 1,
@@ -13,6 +16,7 @@ class XpState extends Equatable {
     this.requiredXp = 30,
     this.progress = 0.0,
     this.justLeveledUp = false,
+    this.tab =Xp.xpTab,
   });
 
   XpState copyWith({
@@ -21,6 +25,7 @@ class XpState extends Equatable {
     int? requiredXp,
     double? progress,
     bool? justLeveledUp,
+    Xp? tab,
   }) {
     return XpState(
       level: level ?? this.level,
@@ -28,9 +33,17 @@ class XpState extends Equatable {
       requiredXp: requiredXp ?? this.requiredXp,
       progress: progress ?? this.progress,
       justLeveledUp: justLeveledUp ?? false,
+      tab: tab ?? this.tab
     );
   }
 
   @override
-  List<Object?> get props => [level, currentXp, requiredXp, progress, justLeveledUp];
+  List<Object?> get props => [
+    level,
+    currentXp,
+    requiredXp,
+    progress,
+    justLeveledUp,
+    tab
+  ];
 }
