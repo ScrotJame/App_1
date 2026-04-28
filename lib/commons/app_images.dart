@@ -5,8 +5,13 @@ class AppImages {
   AppImages._();
   static final icAvatar ='assets/images/ic_avatar.png';
   static final icFire ='assets/images/ic_fire.png';
+  static final icFire2 ='assets/images/ic_fire_2.png';
 
-
+  static final imgAvatar ='assets/avatar/img_avatar.png';
+  static final imgAvatar2 ='assets/avatar/img_avatar_2.png';
+  static final imgAvatar3 ='assets/avatar/img_avatar_3.png';
+  static final imgAvatar4 ='assets/avatar/img_avatar_4.png';
+  static final imgAvatar5 ='assets/avatar/img_avatar_5.png';
 }
 
 class AppLogoImages {
