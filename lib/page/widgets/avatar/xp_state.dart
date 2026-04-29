@@ -16,7 +16,7 @@ class XpState extends Equatable {
     this.requiredXp = 30,
     this.progress = 0.0,
     this.justLeveledUp = false,
-    this.tab =Xp.xpTab,
+    this.tab =Xp.levelTab,
   });
 
   XpState copyWith({

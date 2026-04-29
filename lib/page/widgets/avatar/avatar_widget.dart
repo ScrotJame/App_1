@@ -100,7 +100,7 @@ class XpBarWidget extends StatelessWidget {
   }
 
   Widget _buildActiveLabel(XpState state) {
-    final text = state.tab == Xp.xpTab
+    final text = state.tab == Xp.levelTab
         ? '${state.currentXp} / ${state.requiredXp} XP'
         : '${(S.current.level).toUpperCase()}: ${state.level}';
 
