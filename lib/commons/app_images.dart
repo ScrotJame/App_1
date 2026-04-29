@@ -12,6 +12,8 @@ class AppImages {
   static final imgAvatar3 ='assets/avatar/img_avatar_3.png';
   static final imgAvatar4 ='assets/avatar/img_avatar_4.png';
   static final imgAvatar5 ='assets/avatar/img_avatar_5.png';
+
+  static final icScanFile ='assets/vector/ic_scan_file.png';
 }
 
 class AppLogoImages {
