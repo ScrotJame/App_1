@@ -107,8 +107,6 @@ class AddWordCubit extends Cubit<AddWordState> {
         pronunciation:
         state.furigana.trim().isNotEmpty ? state.furigana.trim() : null,
       );
-      // FIX: xóa toàn bộ tag cũ trước rồi gắn lại
-      // để bỏ chọn tag có hiệu lực và tránh duplicate
       await _repo.detachAllTags(wordId: id);
       for (final tagId in state.selectedTagIds) {
         await _repo.attachTag(wordId: id, tagId: tagId);

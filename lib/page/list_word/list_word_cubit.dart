@@ -13,7 +13,6 @@ class ListWordCubit extends Cubit<ListWordState> {
 
   ListWordCubit(this._repo) : super(const ListWordState());
 
-  // ─── Load ─────────────────────────────────────────────────
   Future<void> loadWords() async {
     emit(state.copyWith(loadstatus: LOADSTATUS.LOADING));
     try {
@@ -31,13 +30,11 @@ class ListWordCubit extends Cubit<ListWordState> {
     }
   }
 
-  // ─── Filter tab ───────────────────────────────────────────
   void onTabChanged(FilterTab tab) {
     final filtered = _applyFilter(state.allWords, tab, state.searchQuery);
     emit(state.copyWith(activeTab: tab, filteredWords: filtered));
   }
 
-  // ─── Search ───────────────────────────────────────────────
   void toggleSearch() {
     if (state.isSearching) {
       final filtered = _applyFilter(state.allWords, state.activeTab, '');
@@ -56,7 +53,6 @@ class ListWordCubit extends Cubit<ListWordState> {
     emit(state.copyWith(searchQuery: query, filteredWords: filtered));
   }
 
-  // ─── Toggle learned ───────────────────────────────────────
   Future<void> toggleLearned(int id) async {
     try {
       // await _repo.updateLearnedStatus(id, newValue);
@@ -69,7 +65,6 @@ class ListWordCubit extends Cubit<ListWordState> {
     }
   }
 
-  // ─── Delete ───────────────────────────────────────────────
   Future<void> deleteWord(int id) async {
     try {
       await _repo.deleteWord(id);
@@ -82,7 +77,6 @@ class ListWordCubit extends Cubit<ListWordState> {
     }
   }
 
-  // ─── Private helper ───────────────────────────────────────
   List<VocabularyWithTags> _applyFilter(
       List<VocabularyWithTags> words,
       FilterTab tab,
@@ -113,4 +107,17 @@ class ListWordCubit extends Cubit<ListWordState> {
 
     return result;
   }
+
+  // Future<void> moveToUnit(int wordId, int? unitId) async {
+  //   try {
+  //     await _repo.updateWordUnit(wordId, unitId);
+  //     await loadWords();
+  //   } catch (e) {
+  //     emit(state.copyWith(
+  //       loadstatus: LOADSTATUS.FAILED,
+  //       errorMessage: 'Di chuyển thất bại: $e',
+  //     ));
+  //   }
+  // }
+
 }

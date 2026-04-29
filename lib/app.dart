@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:test_abc/page/list_unit/list_unit_cubit.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/repository/tag_repository.dart';
+import 'package:test_abc/repository/unit_repository.dart';
 import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/router/router.dart';
@@ -49,6 +51,8 @@ class _MyAppState extends State<MyApp> {
         ),
         RepositoryProvider<UserRepository>(
             create: (_) => UserRepository(_db)),
+        RepositoryProvider<UnitRepository>(
+            create: (_) => UnitRepository(_db)),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -58,6 +62,9 @@ class _MyAppState extends State<MyApp> {
           ),
           BlocProvider(
             create: (ctx) => ProfileCubit(ctx.read<UserRepository>()),
+          ),
+          BlocProvider<ListUnitCubit>(
+            create: (ctx) => ListUnitCubit(ctx.read<UnitRepository>())
           ),
         ],
         child: _buildMaterialApp(),

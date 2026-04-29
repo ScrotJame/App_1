@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/enums.dart';
@@ -7,6 +8,7 @@ import '../../models/tag_vocab.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../add_word/add_word_cubit.dart';
 import '../add_word/add_word_page.dart';
+import '../widgets/drop_down_widget.dart';
 import 'list_word_cubit.dart';
 
 class ListWordPage extends StatefulWidget {
@@ -17,7 +19,9 @@ class ListWordPage extends StatefulWidget {
 }
 
 class _ListWordPageState extends State<ListWordPage> {
+
   late final ListWordCubit _cubit;
+  final _menuKey = GlobalKey();
   final _searchController = TextEditingController();
 
   @override
@@ -256,41 +260,83 @@ class _ListWordPageState extends State<ListWordPage> {
   Widget _buildWordCard(VocabularyWithTags item) {
     final word = item.word;
     final tags = item.tags;
+    final _cardKey = GlobalKey();
 
-    return Dismissible(
-      key: ValueKey(word.id),
-      direction: DismissDirection.endToStart,
-      background: _buildDismissBackground(),
-      confirmDismiss: (_) => _confirmDelete(word),
-      onDismissed: (_) => _cubit.deleteWord(word.id),
-      child: GestureDetector(
-        onTap: () => _openEditPage(word),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: _buildWordContent(word, tags)),
-                const SizedBox(width: 8),
-                _buildCardActions(word),
-              ],
+    return GestureDetector(
+      onTap: () => _showWordMenu(context, _cardKey, item),
+      child: Container(
+        key: _cardKey,
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _buildWordContent(word, tags)),
+              const SizedBox(width: 8),
+              _buildCardActions(word),
+            ],
           ),
         ),
       ),
+    );
+  }
+
+  void _showWordMenu(
+      BuildContext context,
+      GlobalKey anchorKey,
+      VocabularyWithTags item,
+      ) {
+    final word = item.word;
+
+    DropDownWidget.show(
+      context: context,
+      anchorKey: anchorKey,
+      alignRight: true,
+      items: [
+        DropDownItem(
+          label: 'Chỉnh sửa',
+          icon: CupertinoIcons.pencil,
+          onTap: () => _openEditPage(word),
+        ),
+        DropDownItem(
+          label: word.isFavorite == true
+              ? 'Bỏ đánh dấu học'
+              : 'Đánh dấu đã học',
+          icon: word.isFavorite == true
+              ? CupertinoIcons.star_slash
+              : CupertinoIcons.star,
+          onTap: () => _cubit.toggleLearned(word.id),
+        ),
+        DropDownItem(
+          label: 'Phát âm',
+          icon: CupertinoIcons.volume_up,
+          onTap: () {
+            // TODO: TTS
+          },
+        ),
+        DropDownItem(
+          label: 'Xóa từ',
+          icon: CupertinoIcons.trash,
+          isDestructive: true,
+          hasDividerAbove: true,
+          onTap: () async {
+            final confirm = await _confirmDelete(word);
+            if (confirm) _cubit.deleteWord(word.id);
+          },
+        ),
+      ],
     );
   }
 

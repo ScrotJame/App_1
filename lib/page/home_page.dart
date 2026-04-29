@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/app_colors.dart';
 import 'package:test_abc/components/cloud_painter.dart';
+import 'package:test_abc/page/list_unit/list_unit_page.dart';
 import 'package:test_abc/page/streak/streak_page.dart';
 import 'package:test_abc/page/widgets/app_bar_custom.dart';
 import 'package:test_abc/page/widgets/avatar/xp_cubit.dart';
@@ -217,6 +218,11 @@ class _HomePageState extends State<HomePage>
   Widget _buildPlayButton() {
     return BlocBuilder<HomeCubit, HomeState>(
       builder: (ctx, state) {
+
+        final pages = [
+
+        ];
+
         return GestureDetector(
           onTap: (){
             Navigator.push(
@@ -351,62 +357,62 @@ class _HomePageState extends State<HomePage>
           ],
         ),
         body: _buildBody(),
-      bottomNavigationBar: LodgeBottomNavBar(
-        selectedIndex: _cubit.state.selected?.index,
-        onTabSelected: (int index) {
-          context.read<HomeCubit>().changeTab(TabItem.values[index]);
-        },
-        onCenterButtonPressed: () {
-          context.read<HomeCubit>().changeTab(TabItem.home);
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'House',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border),
-            activeIcon: Icon(Icons.favorite),
-            label: 'Favorite',
-          ),
-          // Tab 2: Explore - sẽ được thay thế bằng centerIcon
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search_outlined),
-            activeIcon: Icon(Icons.search),
-            label: 'Explore',
-          ),
-          // Tab 3: Messenger với Badge
-          BottomNavigationBarItem(
-            icon: Badge(
-              label: Text('1'),
-              child: Icon(Icons.messenger_outline),
-            ),
-            activeIcon: Badge(
-              label: Text('1'),
-              child: Icon(Icons.messenger),
-            ),
-            label: 'Messenger',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_circle_outlined),
-            activeIcon: Icon(Icons.account_circle),
-            label: 'User',
-          ),
-        ],
-        backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF96705B),
-        unselectedItemColor: Colors.grey,
-        centerButtonColor: const Color(0xFF96705B),
-        centerButtonSize: 60.0,
-        iconSize: 24.0,
-        // centerIcon đại diện cho Tab 2: Explore
-        centerIcon: const Icon(
-          Icons.search_outlined,
-          color: Colors.white,
-          size: 30,
-        ),
-      ),
+      // bottomNavigationBar: LodgeBottomNavBar(
+      //   selectedIndex: _cubit.state.selected?.index,
+      //   onTabSelected: (int index) {
+      //     context.read<HomeCubit>().changeTab(TabItem.values[index]);
+      //   },
+      //   onCenterButtonPressed: () {
+      //     context.read<HomeCubit>().changeTab(TabItem.home);
+      //   },
+      //   items: const [
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.home_outlined),
+      //       activeIcon: Icon(Icons.home),
+      //       label: 'House',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.favorite_border),
+      //       activeIcon: Icon(Icons.favorite),
+      //       label: 'Favorite',
+      //     ),
+      //     // Tab 2: Explore - sẽ được thay thế bằng centerIcon
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.search_outlined),
+      //       activeIcon: Icon(Icons.search),
+      //       label: 'Explore',
+      //     ),
+      //     // Tab 3: Messenger với Badge
+      //     BottomNavigationBarItem(
+      //       icon: Badge(
+      //         label: Text('1'),
+      //         child: Icon(Icons.messenger_outline),
+      //       ),
+      //       activeIcon: Badge(
+      //         label: Text('1'),
+      //         child: Icon(Icons.messenger),
+      //       ),
+      //       label: 'Messenger',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.account_circle_outlined),
+      //       activeIcon: Icon(Icons.account_circle),
+      //       label: 'User',
+      //     ),
+      //   ],
+      //   backgroundColor: Colors.white,
+      //   selectedItemColor: const Color(0xFF96705B),
+      //   unselectedItemColor: Colors.grey,
+      //   centerButtonColor: const Color(0xFF96705B),
+      //   centerButtonSize: 60.0,
+      //   iconSize: 24.0,
+      //   // centerIcon đại diện cho Tab 2: Explore
+      //   centerIcon: const Icon(
+      //     Icons.search_outlined,
+      //     color: Colors.white,
+      //     size: 30,
+      //   ),
+      // ),
 
     );
   }
