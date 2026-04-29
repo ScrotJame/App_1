@@ -9,8 +9,10 @@ class Tags extends Table {
 }
 
 class VocabularyTags extends Table {
-  IntColumn get wordId => integer().references(VocabularyEntries, #id)();
-  IntColumn get tagId => integer().references(Tags, #id)();
+  IntColumn get wordId => integer()
+      .references(VocabularyEntries, #id, onDelete: KeyAction.cascade)();
+  IntColumn get tagId => integer()
+      .references(Tags, #id, onDelete: KeyAction.cascade)();
 
   @override
   Set<Column> get primaryKey => {wordId, tagId};
