@@ -8,6 +8,8 @@ import '../../models/tag_vocab.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../add_word/add_word_cubit.dart';
 import '../add_word/add_word_page.dart';
+import '../module_scan/scan_vocab/scan_vocab_page.dart';
+import '../scan_vocab/scan_vocab_page.dart';
 import '../widgets/drop_down_widget.dart';
 import 'list_word_cubit.dart';
 
@@ -317,7 +319,9 @@ class _ListWordPageState extends State<ListWordPage> {
           icon: word.isFavorite == true
               ? CupertinoIcons.star_slash
               : CupertinoIcons.star,
-          onTap: () => _cubit.toggleLearned(word.id),
+          onTap: () => {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanVocabPage())),
+          },
         ),
         DropDownItem(
           label: 'Phát âm',
