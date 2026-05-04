@@ -418,7 +418,7 @@ class TestCubit extends Cubit<TestState> {
 
       _handleSchedule(secondsToWait, entry.word);
 
-      print('🔔 Đã set thông báo ID: $notificationId cho từ "${entry.word}" (Lv.${entry.level}) vào lúc: $nextReviewTime (Sau $secondsToWait giây)');
+      print(' Đã set thông báo ID: $notificationId cho từ "${entry.word}" (Lv.${entry.level}) vào lúc: $nextReviewTime (Sau $secondsToWait giây)');
     }
   }
 
