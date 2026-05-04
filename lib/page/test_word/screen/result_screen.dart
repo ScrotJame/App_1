@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_abc/page/widgets/avatar/xp_cubit.dart';
 
 import '../../../commons/app_colors.dart';
 import '../../../database/app_db.dart';
+import '../../../repository/user_repository.dart';
 import '../../../router/app_router.dart';
 import '../../../router/router.dart';
 import '../test_cubit.dart';

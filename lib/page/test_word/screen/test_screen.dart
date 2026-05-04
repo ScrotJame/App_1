@@ -360,26 +360,26 @@ class _TestingScreenState extends State<TestingScreen> {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // Container(
-            //   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-            //   decoration: BoxDecoration(
-            //     color: const Color(0xFFFFFBEB),
-            //     borderRadius: BorderRadius.circular(14),
-            //     border: Border.all(color: const Color(0xFFFCD34D)),
-            //   ),
-            //   child: Row(
-            //     mainAxisSize: MainAxisSize.min,
-            //     children: const [
-            //       Text('💡', style: TextStyle(fontSize: 17)),
-            //       SizedBox(width: 6),
-            //       Text('Gợi ý',
-            //           style: TextStyle(
-            //               fontWeight: FontWeight.w600,
-            //               color: Color(0xFF92400E),
-            //               fontSize: 13)),
-            //     ],
-            //   ),
-            // ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFFCD34D)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Text('💡', style: TextStyle(fontSize: 17)),
+                  SizedBox(width: 6),
+                  Text('Gợi ý',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF92400E),
+                          fontSize: 13)),
+                ],
+              ),
+            ),
             if (remaining > 0)
               Positioned(
                 top: -6,
@@ -466,11 +466,11 @@ class _TestingScreenState extends State<TestingScreen> {
           ),
           child: Row(
             children: [
-              _buildHintBtn(
-                remaining: s.hintsRemaining,
-                enabled: !s.hasAnsweredCurrent && s.hintsRemaining > 0,
-                onTap: c.useHint,
-              ),
+              // _buildHintBtn(
+              //   remaining: s.hintsRemaining,
+              //   enabled: !s.hasAnsweredCurrent && s.hintsRemaining > 0,
+              //   onTap: c.useHint,
+              // ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildNextBtn(

@@ -12,6 +12,7 @@ import '../../commons/app_colors.dart';
 import '../../commons/enums.dart';
 import '../../database/app_db.dart';
 import '../test_word/test_cubit.dart';
+import '../widgets/avatar/xp_cubit.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ENTRY POINT
@@ -39,7 +40,12 @@ class _TestView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<TestCubit, TestState>(
+    return BlocConsumer<TestCubit, TestState>(
+      listenWhen: (p, c) => p.phase != c.phase && c.phase == TestPhase.result,
+      listener: (context, state) {
+        final double xpTest = state.score / 2;
+        context.read<XpCubit>().addXp(xpTest.toInt());
+      },
       buildWhen: (p, c) => p.phase != c.phase,
       builder: (_, s) => switch (s.phase) {
         TestPhase.config  => const ConfigScreen(),

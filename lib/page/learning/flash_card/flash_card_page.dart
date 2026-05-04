@@ -1,9 +1,6 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../../../commons/enums.dart';
-import '../../../models/flash_card_model.dart';
 import '../../../repository/vocabulary_repository.dart';
 import '../../../router/app_router.dart';
 import '../../../router/router.dart';
@@ -12,8 +9,7 @@ import 'flash_card_cubit.dart';
 import 'flash_card_widget.dart';
 
 
-/// XP thưởng khi hoàn thành 1 session flashcard. Tuỳ chỉnh tại đây.
-const int _kXpSessionBonus = 20;
+const int _kXpSessionBonus = 2;
 
 class FlashCardPage extends StatefulWidget {
   const FlashCardPage({super.key});
@@ -42,70 +38,69 @@ class _FlashCardPageState extends State<FlashCardPage> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _cubit,
-      child: BlocListener<FlashCardCubit, FlashCardState>(
-        listenWhen: (prev, cur) =>
-        prev.status != cur.status &&
-            cur.status == FlashcardArenaStatus.completed,
-        listener: (context, state) {
-          context.read<XpCubit>().addXp(_kXpSessionBonus);
-          _showResultDialog(context, state);
-        },
-        child: Scaffold(
-          backgroundColor: const Color(0xFFF2F3F7),
-          body: BlocBuilder<FlashCardCubit, FlashCardState>(
-            builder: (context, state) {
-              if (state.loadstatus == LOADSTATUS.LOADING ||
-                  state.loadstatus == LOADSTATUS.INITAL) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF42C8F5)),
-                );
-              }
-              if (state.loadstatus == LOADSTATUS.FAILED) {
-                return Center(
-                  child: Text(
-                    state.errorMessage ?? 'Tải dữ liệu thất bại',
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                );
-              }
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF2F3F7),
+        body: BlocConsumer<FlashCardCubit, FlashCardState>(
+          listenWhen: (prev, cur) =>
+          prev.status != cur.status &&
+              cur.status == FlashcardArenaStatus.completed,
+          listener: (context, state) {
+            context.read<XpCubit>().addXp(_kXpSessionBonus);
+            _showResultDialog(context, state);
+          },
 
-              final card = state.currentCard;
-              if (card == null) return const SizedBox.shrink();
+          builder: (context, state) {
+            if (state.loadstatus == LOADSTATUS.LOADING ||
+                state.loadstatus == LOADSTATUS.INITAL) {
+              return const Center(
+                child: CircularProgressIndicator(color: Color(0xFF42C8F5)),
+              );
+            }
+            if (state.loadstatus == LOADSTATUS.FAILED) {
+              return Center(
+                child: Text(
+                  state.errorMessage ?? 'Tải dữ liệu thất bại',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
+            }
 
-              return CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: _buildHeader(context, state),
-                  ),
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: FlipCard(
-                              key: ValueKey(card.word.id),
-                              card: card,
-                              isFlipped: state.isFlipped,
-                              onTap: _cubit.flipCard,
-                            ),
+            final card = state.currentCard;
+            if (card == null) return const SizedBox.shrink();
+
+            return CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _buildHeader(context, state),
+                ),
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: FlipCard(
+                            key: ValueKey(card.word.id),
+                            card: card,
+                            isFlipped: state.isFlipped,
+                            onTap: _cubit.flipCard,
                           ),
-                          const SizedBox(height: 24),
-                          // _RatingSection(
-                          //   selected: state.pendingRating,
-                          //   onRated: _cubit.rate,
-                          // ),
-                          _nextButton(_cubit.nextCard),
-                          const SizedBox(height: 20),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 24),
+                        // _RatingSection(
+                        //   selected: state.pendingRating,
+                        //   onRated: _cubit.rate,
+                        // ),
+                        _nextButton(_cubit.nextCard),
+                        const SizedBox(height: 20),
+                      ],
                     ),
                   ),
-                ],
-              );
-            },
-          ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
