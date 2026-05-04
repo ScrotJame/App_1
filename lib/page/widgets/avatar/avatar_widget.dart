@@ -4,7 +4,7 @@ import 'package:test_abc/generated/l10n.dart';
 import 'xp_cubit.dart';
 
 class XpBarWidget extends StatelessWidget {
-  final String avatarUrl;
+  final String? avatarUrl;
   final double avatarRadius;
   final double barHeight;
   final VoidCallback? onTap;
@@ -12,7 +12,7 @@ class XpBarWidget extends StatelessWidget {
 
   const XpBarWidget({
     super.key,
-    required this.avatarUrl,
+    this.avatarUrl,
     this.avatarRadius = 28,
     this.barHeight = 22,
     this.onTap,
@@ -139,6 +139,6 @@ class XpBarWidget extends StatelessWidget {
   }
 
   Widget _buildAvatarImage() {
-    return Image.asset(avatarUrl);
+    return Image.asset(avatarUrl!);
   }
 }

@@ -56,8 +56,12 @@ class StreakCubit extends Cubit<StreakState> {
   /// Đếm streak liên tục từ hôm nay lùi về quá khứ.
   int _calcCurrentStreak(Set<String> markedDates) {
     final today = _dateOnly(DateTime.now());
+    final startCursor = markedDates.contains(_dateKey(today))
+        ? today
+        : today.subtract(const Duration(days: 1));
+
     int streak = 0;
-    DateTime cursor = today;
+    DateTime cursor = startCursor;
     while (markedDates.contains(_dateKey(cursor))) {
       streak++;
       cursor = cursor.subtract(const Duration(days: 1));
@@ -68,7 +72,11 @@ class StreakCubit extends Cubit<StreakState> {
   /// Ngày đầu tiên của chuỗi streak liên tục hiện tại.
   DateTime? _calcStreakStartDate(Set<String> markedDates) {
     final today = _dateOnly(DateTime.now());
-    DateTime cursor = today;
+    final startCursor = markedDates.contains(_dateKey(today))
+        ? today
+        : today.subtract(const Duration(days: 1));
+
+    DateTime cursor = startCursor;
     DateTime? startDate;
     while (markedDates.contains(_dateKey(cursor))) {
       startDate = cursor;
@@ -120,23 +128,12 @@ class StreakCubit extends Cubit<StreakState> {
         return;
       }
 
-      final today = _dateOnly(DateTime.now());
-      final yesterday = today.subtract(const Duration(days: 1));
-      final lastActive = user.lastActiveDate != null
-          ? _dateOnly(user.lastActiveDate!)
-          : null;
-
-      // ── Kiểm tra streak bị gián đoạn ──────────────────────────────
-      // lastActiveDate không phải hôm nay và không phải hôm qua
-      // → bỏ lỡ ≥ 1 ngày → reset currentStreak = 0
-      bool streakWasReset = false;
-      int dbCurrentStreak = user.currentStreak;
       final int dbLongestStreak = user.longestStreak;
+      final markedDates = await _loadMarkedDates();
 
-      if (lastActive != null &&
-          lastActive.isBefore(yesterday) &&
-          dbCurrentStreak > 0) {
-        dbCurrentStreak = 0;
+      final currentStreak = _calcCurrentStreak(markedDates);
+      bool streakWasReset = false;
+      if (currentStreak == 0 && user.currentStreak > 0) {
         streakWasReset = true;
         await _syncStreakToDB(
           currentStreak: 0,
@@ -145,8 +142,6 @@ class StreakCubit extends Cubit<StreakState> {
         );
       }
 
-      final markedDates = await _loadMarkedDates();
-      final currentStreak = _calcCurrentStreak(markedDates);
       final streakStart = _calcStreakStartDate(markedDates);
       final weekDays = _buildWeekDays(0, markedDates);
 

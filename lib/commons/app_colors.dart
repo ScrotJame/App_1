@@ -10,6 +10,14 @@ class AppColors {
   static const Color mainRealAgent = Color(0xFF005CF7);
   static const Color mainTopSky = Color(0xFF1A3A8F);
   static const Color white = Color(0xFFFFFFFF);
+  static const kBlue = Color(0xFF2563EB);
+  static const kBlueBg = Color(0xFFEFF6FF);
+  static const kBlueMid = Color(0xFFDBEAFE);
+  static const kGreen = Color(0xFF16A34A);
+  static const kRed = Color(0xFFDC2626);
+  static const kAmber = Color(0xFFF59E0B);
+  static const kSurface = Color(0xFFF5F7FF);
+  static const kBorder = Color(0xFFE2E8F0);
 
   ///Gradient
   static const LinearGradient mainGradient = LinearGradient(

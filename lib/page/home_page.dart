@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/app_colors.dart';
 import 'package:test_abc/components/cloud_painter.dart';
-import 'package:test_abc/page/list_unit/list_unit_page.dart';
 import 'package:test_abc/page/streak/streak_page.dart';
+import 'package:test_abc/page/test_word/test_page.dart';
 import 'package:test_abc/page/widgets/app_bar_custom.dart';
 import 'package:test_abc/page/widgets/avatar/xp_cubit.dart';
-import 'package:test_abc/page/widgets/bottom_bar_custom.dart';
 import 'package:test_abc/page/widgets/bubble_button.dart';
 import '../commons/app_images.dart';
-import '../commons/enums.dart';
+import '../models/land_model.dart';
 import '../router/app_router.dart';
 import '../router/router.dart';
 import 'add_word/add_word_page.dart';
@@ -30,6 +29,10 @@ class _HomePageState extends State<HomePage>
   late final AnimationController _floatController;
   late final Animation<double> _floatAnimation;
 
+  late final PageController _pageController;
+
+  int _currentIndex = 0;
+
   static const _starOffsets = [
     Offset(0.12, 0.06),
     Offset(0.45, 0.03),
@@ -39,12 +42,41 @@ class _HomePageState extends State<HomePage>
     Offset(0.60, 0.10),
   ];
 
+  /// Danh sách các trang có thể chuyển tới
+  static final List<IslandItem> _islandItems = [
+    IslandItem(
+      label: 'Thư viện',
+      primaryColor: const Color(0xFF5EC95C),
+      secondaryColor: const Color(0xFF3A7D34),
+      pageBuilder: (_) => ListWordPage(),
+    ),
+    IslandItem(
+      label: 'Flash Card',
+      primaryColor: const Color(0xFF5B9EF5),
+      secondaryColor: const Color(0xFF2A62C0),
+      pageBuilder: (_) => FlashCardPage(),
+    ),
+    IslandItem(
+      label: 'Thêm từ mới',
+      primaryColor: const Color(0xFFF5A623),
+      secondaryColor: const Color(0xFFC47A0A),
+      pageBuilder: (_) => AddWordPage(),
+    ),
+    IslandItem(
+      label: 'Kiểm tra',
+      primaryColor: const Color(0xFFF52323),
+      secondaryColor: const Color(0xFFC40A0A),
+      pageBuilder: (_) => TestPage(),
+    ),
+  ];
+
   late HomeCubit _cubit;
 
   @override
   void initState() {
     super.initState();
     _cubit = context.read<HomeCubit>();
+
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
@@ -53,14 +85,20 @@ class _HomePageState extends State<HomePage>
     _floatAnimation = Tween<double>(begin: -12, end: 12).animate(
       CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
     );
+
+    _pageController = PageController(
+      viewportFraction: 0.78, // Cho thấy 1 phần card kế bên
+    );
   }
 
   @override
   void dispose() {
     _floatController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
+  // ─── Background & Decoration ─────────────────────────────────────────────
 
   Widget _buildSkyBackground() {
     return Container(
@@ -131,76 +169,135 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  Widget _buildIslandPlaceholder() {
-    return SizedBox(
-      width: 260,
-      height: 260,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned(
-            bottom: 12,
-            child: Container(
-              width: 160,
-              height: 18,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(50),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.25),
-                    blurRadius: 18,
-                    spreadRadius: 4,
-                  ),
-                ],
-              ),
+  // ─── Island Carousel ─────────────────────────────────────────────────────
+
+  /// Mỗi card trong carousel
+  Widget _buildIslandCard(IslandItem item, int index) {
+    final isSelected = index == _currentIndex;
+
+    return AnimatedScale(
+      scale: isSelected ? 1.0 : 0.88,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+      child: AnimatedOpacity(
+        opacity: isSelected ? 1.0 : 0.65,
+        duration: const Duration(milliseconds: 250),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [item.primaryColor, item.secondaryColor],
             ),
-          ),
-          Container(
-            width: 220,
-            height: 220,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF5EC95C), Color(0xFF3A7D34)],
+            boxShadow: [
+              BoxShadow(
+                color: item.secondaryColor.withOpacity(isSelected ? 0.55 : 0.25),
+                blurRadius: isSelected ? 24 : 12,
+                offset: const Offset(0, 10),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.20),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Hoa văn trang trí nền
+                Positioned(
+                  right: -20,
+                  top: -20,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.08),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: -30,
+                  bottom: -30,
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.06),
+                    ),
+                  ),
+                ),
+                // Nội dung chính
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 12),
+                    Text(
+                      item.label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black26,
+                            offset: Offset(0, 2),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isSelected) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.25),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'Đang chọn',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  const Icon(
-                    Icons.landscape_rounded,
-                    size: 90,
-                    color: Colors.white54,
-                  ),
-                  Positioned(
-                    bottom: 12,
-                    child: Text(
-                      'Island coming soon',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
-        ],
+        ),
       ),
+    );
+  }
+
+  /// Dot indicator bên dưới carousel
+  Widget _buildDotIndicator() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(_islandItems.length, (i) {
+        final isActive = i == _currentIndex;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: isActive ? 20 : 8,
+          height: 8,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            color: isActive
+                ? Colors.white
+                : Colors.white.withOpacity(0.4),
+          ),
+        );
+      }),
     );
   }
 
@@ -211,31 +308,53 @@ class _HomePageState extends State<HomePage>
         offset: Offset(0, _floatAnimation.value),
         child: child,
       ),
-      child: _buildIslandPlaceholder(),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 240,
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: _islandItems.length,
+              onPageChanged: (index) {
+                setState(() => _currentIndex = index);
+              },
+              itemBuilder: (context, index) {
+                return _buildIslandCard(_islandItems[index], index);
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildDotIndicator(),
+        ],
+      ),
     );
   }
 
+  // ─── Play Button ──────────────────────────────────────────────────────────
+
   Widget _buildPlayButton() {
+    final currentItem = _islandItems[_currentIndex];
+
     return BlocBuilder<HomeCubit, HomeState>(
       builder: (ctx, state) {
-
-        final pages = [
-
-        ];
-
         return GestureDetector(
-          onTap: (){
+          onTap: state.isLoading
+              ? null
+              : () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ListWordPage(),
+                // Mở đúng trang tương ứng với card đang chọn
+                builder: currentItem.pageBuilder,
               ),
             );
           },
           child: AnimatedScale(
             scale: state.isLoading ? 0.95 : 1.0,
             duration: const Duration(milliseconds: 150),
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
               width: 200,
               height: 60,
               decoration: BoxDecoration(
@@ -265,23 +384,27 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
               )
-                  : const Center(
-                child: Text(
-                  'PLAY',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 3,
-                    shadows: [
-                      Shadow(
-                        color: Color(0xFF1A5C10),
-                        offset: Offset(0, 2),
-                        blurRadius: 2,
-                      ),
-                    ],
+                  : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(width: 8),
+                  const Text(
+                    'PLAY',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 3,
+                      shadows: [
+                        Shadow(
+                          color: Color(0xFF1A5C10),
+                          offset: Offset(0, 2),
+                          blurRadius: 2,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
@@ -289,6 +412,8 @@ class _HomePageState extends State<HomePage>
       },
     );
   }
+
+  // ─── Body ────────────────────────────────────────────────────────────────
 
   Widget _buildBody() {
     return Stack(
@@ -302,32 +427,28 @@ class _HomePageState extends State<HomePage>
           children: [
             const SizedBox(height: 40),
             _buildFloatingIsland(),
-            const SizedBox(height: 60),
+            const SizedBox(height: 48),
             _buildPlayButton(),
           ],
         ),
         Positioned(
           right: 20,
           bottom: 90,
-          child: GestureDetector(
-            onTap: () {},
-            child: BubbleButton(
-              onTap: () async {
-                await context.read<XpCubit>().addXp(2);
+          child: BubbleButton(
+            onTap: () async {
+              await context.read<XpCubit>().addXp(2);
 
-                // Hiện thông báo nếu lên level
-                final state = context.read<XpCubit>().state;
-                if (state.justLeveledUp && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('🎉 Lên Level ${state.level}!'),
-                      duration: const Duration(seconds: 2),
-                      backgroundColor: const Color(0xFF50C040),
-                    ),
-                  );
-                }
-              },
-            ),
+              final state = context.read<XpCubit>().state;
+              if (state.justLeveledUp && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('🎉 Lên Level ${state.level}!'),
+                    duration: const Duration(seconds: 2),
+                    backgroundColor: const Color(0xFF50C040),
+                  ),
+                );
+              }
+            },
           ),
         ),
       ],
@@ -338,82 +459,29 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-        appBar: AppBarCustom(
-          showBack: false,
-          actions: [
-            XpBarWidget(avatarUrl: AppImages.imgAvatar ?? AppImages.icAvatar,
-              onTap: (){AppRouter.router.navigateTo(context, Routes.profile);},),
-            AppBarAction(
-              icon: AppImages.icFire,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => StreakPage(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-        body: _buildBody(),
-      // bottomNavigationBar: LodgeBottomNavBar(
-      //   selectedIndex: _cubit.state.selected?.index,
-      //   onTabSelected: (int index) {
-      //     context.read<HomeCubit>().changeTab(TabItem.values[index]);
-      //   },
-      //   onCenterButtonPressed: () {
-      //     context.read<HomeCubit>().changeTab(TabItem.home);
-      //   },
-      //   items: const [
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.home_outlined),
-      //       activeIcon: Icon(Icons.home),
-      //       label: 'House',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.favorite_border),
-      //       activeIcon: Icon(Icons.favorite),
-      //       label: 'Favorite',
-      //     ),
-      //     // Tab 2: Explore - sẽ được thay thế bằng centerIcon
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.search_outlined),
-      //       activeIcon: Icon(Icons.search),
-      //       label: 'Explore',
-      //     ),
-      //     // Tab 3: Messenger với Badge
-      //     BottomNavigationBarItem(
-      //       icon: Badge(
-      //         label: Text('1'),
-      //         child: Icon(Icons.messenger_outline),
-      //       ),
-      //       activeIcon: Badge(
-      //         label: Text('1'),
-      //         child: Icon(Icons.messenger),
-      //       ),
-      //       label: 'Messenger',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.account_circle_outlined),
-      //       activeIcon: Icon(Icons.account_circle),
-      //       label: 'User',
-      //     ),
-      //   ],
-      //   backgroundColor: Colors.white,
-      //   selectedItemColor: const Color(0xFF96705B),
-      //   unselectedItemColor: Colors.grey,
-      //   centerButtonColor: const Color(0xFF96705B),
-      //   centerButtonSize: 60.0,
-      //   iconSize: 24.0,
-      //   // centerIcon đại diện cho Tab 2: Explore
-      //   centerIcon: const Icon(
-      //     Icons.search_outlined,
-      //     color: Colors.white,
-      //     size: 30,
-      //   ),
-      // ),
-
+      appBar: AppBarCustom(
+        showBack: false,
+        actions: [
+          XpBarWidget(
+            avatarUrl: AppImages.imgAvatar ?? AppImages.icAvatar,
+            onTap: () {
+              AppRouter.router.navigateTo(context, Routes.profile);
+            },
+          ),
+          AppBarAction(
+            icon: AppImages.icFire,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StreakPage(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: _buildBody(),
     );
   }
 }

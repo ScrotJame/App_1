@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/database/app_db.dart';
 import 'package:test_abc/repository/tag_repository.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../commons/app_colors.dart';
 import '../../repository/vocabulary_repository.dart';
+import '../scan_vocab/scan_vocab_page.dart';
 import 'add_word_cubit.dart';
 
 class AddWordPage extends StatefulWidget {
@@ -52,8 +55,6 @@ class _AddWordPageState extends State<AddWordPage>
       _furiganaController.text = entry.pronunciation ?? '';
       _meaningController.text = entry.meaning;
 
-      // FIX: loadTags() trước, sau đó mới initForEdit() để tags có sẵn
-      // khi selectedTagIds được emit → card hiển thị đúng ngay lần đầu
       _cubit.loadTags().then((_) => _cubit.initForEdit(entry));
     } else {
       _cubit.loadTags();
@@ -164,6 +165,17 @@ class _AddWordPageState extends State<AddWordPage>
               color: Color(0xFF6B7FD4), size: 22),
           onPressed: () {},
         ),
+        InkWell(
+          onTap: (){
+            Navigator.push(context,
+                MaterialPageRoute(
+                    builder: (_) => const ScanVocabPage()));
+          },
+          child: SvgPicture.asset(AppImages.icScanFile,
+              color: Color(0xFF6B7FD4),
+          ),
+        ),
+        const SizedBox(width: 16,)
       ],
     );
   }
@@ -171,7 +183,6 @@ class _AddWordPageState extends State<AddWordPage>
   // ─── Preview card ─────────────────────────────────────────
   Widget _buildPreviewCard() {
     return BlocBuilder<AddWordCubit, AddWordState>(
-      // FIX: thêm selectedTagIds vào buildWhen để card rebuild khi toggle tag
       buildWhen: (prev, curr) =>
       prev.vocabulary != curr.vocabulary ||
           prev.furigana != curr.furigana ||
