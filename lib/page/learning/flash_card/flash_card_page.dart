@@ -4,9 +4,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../commons/enums.dart';
 import '../../../models/flash_card_model.dart';
+import '../../../repository/vocabulary_repository.dart';
+import '../../../router/app_router.dart';
+import '../../../router/router.dart';
+import '../../widgets/avatar/xp_cubit.dart';
 import 'flash_card_cubit.dart';
 import 'flash_card_widget.dart';
 
+
+/// XP thưởng khi hoàn thành 1 session flashcard. Tuỳ chỉnh tại đây.
+const int _kXpSessionBonus = 20;
 
 class FlashCardPage extends StatefulWidget {
   const FlashCardPage({super.key});
@@ -21,7 +28,8 @@ class _FlashCardPageState extends State<FlashCardPage> {
   @override
   void initState() {
     super.initState();
-    _cubit = FlashCardCubit()..start();
+    _cubit = FlashCardCubit(context.read<VocabularyRepository>());
+    _cubit.start();
   }
 
   @override
@@ -34,71 +42,70 @@ class _FlashCardPageState extends State<FlashCardPage> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _cubit,
-      child: const _FlashCardView(),
-    );
-  }
-}
+      child: BlocListener<FlashCardCubit, FlashCardState>(
+        listenWhen: (prev, cur) =>
+        prev.status != cur.status &&
+            cur.status == FlashcardArenaStatus.completed,
+        listener: (context, state) {
+          context.read<XpCubit>().addXp(_kXpSessionBonus);
+          _showResultDialog(context, state);
+        },
+        child: Scaffold(
+          backgroundColor: const Color(0xFFF2F3F7),
+          body: BlocBuilder<FlashCardCubit, FlashCardState>(
+            builder: (context, state) {
+              if (state.loadstatus == LOADSTATUS.LOADING ||
+                  state.loadstatus == LOADSTATUS.INITAL) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF42C8F5)),
+                );
+              }
+              if (state.loadstatus == LOADSTATUS.FAILED) {
+                return Center(
+                  child: Text(
+                    state.errorMessage ?? 'Tải dữ liệu thất bại',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                );
+              }
 
-class _FlashCardView extends StatelessWidget {
-  const _FlashCardView();
+              final card = state.currentCard;
+              if (card == null) return const SizedBox.shrink();
 
-  @override
-  Widget build(BuildContext context) {
-    return BlocListener<FlashCardCubit, FlashCardState>(
-      listenWhen: (prev, cur) =>
-      prev.status != cur.status &&
-          cur.status == FlashcardArenaStatus.completed,
-      listener: (context, state) => _showResultDialog(context, state),
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF2F3F7),
-        body: BlocBuilder<FlashCardCubit, FlashCardState>(
-          builder: (context, state) {
-            if (state.status == FlashcardArenaStatus.initial) {
-              return const Center(
-                child: CircularProgressIndicator(color: Color(0xFF42C8F5)),
-              );
-            }
-
-            final card = state.currentCard;
-            if (card == null) return const SizedBox.shrink();
-
-            final cubit = context.read<FlashCardCubit>();
-
-            return CustomScrollView(
-              slivers: [
-                // Header Gradient style Profile
-                SliverToBoxAdapter(
-                  child: _buildHeader(context, state),
-                ),
-
-                // Nội dung Arena
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: FlipCard(
-                            key: ValueKey(card.id),
-                            card: card,
-                            isFlipped: state.isFlipped,
-                            onTap: cubit.flipCard,
+              return CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: _buildHeader(context, state),
+                  ),
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: FlipCard(
+                              key: ValueKey(card.word.id),
+                              card: card,
+                              isFlipped: state.isFlipped,
+                              onTap: _cubit.flipCard,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-                        _RatingSection(
-                          selected: state.pendingRating,
-                          onRated: cubit.rate,
-                        ),
-                        const SizedBox(height: 20),
-                      ],
+                          const SizedBox(height: 24),
+                          // _RatingSection(
+                          //   selected: state.pendingRating,
+                          //   onRated: _cubit.rate,
+                          // ),
+                          _nextButton(_cubit.nextCard),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -248,7 +255,27 @@ class _FlashCardView extends StatelessWidget {
           Navigator.of(context).pop();
           context.read<FlashCardCubit>().restart();
         },
-        onClose: () => Navigator.of(context).pop(),
+        onClose: () => AppRouter.router.navigateTo(context, Routes.home),
+      ),
+    );
+  }
+
+  Widget _nextButton(VoidCallback onTap){
+    return ElevatedButton.icon(
+      onPressed: onTap,
+      icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+      label: const Text(
+        'Next Card',
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF42C8F5),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        elevation: 0,
       ),
     );
   }

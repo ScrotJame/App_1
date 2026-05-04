@@ -4,16 +4,19 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:test_abc/models/flash_card_model.dart';
 
-class FlipCard extends StatefulWidget {
-  final FlashcardModel card;
-  final bool isFlipped;
-  final VoidCallback onTap;
+import '../../../models/tag_vocab.dart';
 
-  const FlipCard(
-      {super.key,
-        required this.card,
-        required this.isFlipped,
-        required this.onTap});
+class FlipCard extends StatefulWidget {
+  final VocabularyWithTags? card;
+  final bool isFlipped;
+  final VoidCallback? onTap;
+
+  const FlipCard({
+    super.key,
+    this.card,
+    required this.isFlipped,
+    this.onTap,
+  });
 
   @override
   State<FlipCard> createState() => FlipCardState();
@@ -54,92 +57,98 @@ class FlipCardState extends State<FlipCard>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: AnimatedBuilder(
-        animation: _anim,
-        builder: (_, __) {
-          final angle = _anim.value * math.pi;
-          return Transform(
-            transform: Matrix4.identity()
-              ..setEntry(3, 2, 0.001)
-              ..rotateY(angle),
-            alignment: Alignment.center,
-            child: _showBack
-                ? Transform(
-              transform: Matrix4.identity()..rotateY(math.pi),
+    return Container(
+      width: double.infinity,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedBuilder(
+          animation: _anim,
+          builder: (_, __) {
+            final angle = _anim.value * math.pi;
+            return Transform(
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.001)
+                ..rotateY(angle),
               alignment: Alignment.center,
-              child: _CardSide(card: widget.card, isFront: false),
-            )
-                : _CardSide(card: widget.card, isFront: true),
-          );
-        },
+              child: _showBack
+                  ? Transform(
+                transform: Matrix4.identity()..rotateY(math.pi),
+                alignment: Alignment.center,
+                child: _cardSide(widget.card, false,),
+              )
+                  : _cardSide(widget.card, true),
+            );
+          },
+        ),
       ),
     );
   }
 }
 
-class _CardSide extends StatelessWidget {
-  final FlashcardModel card;
-  final bool isFront;
-  const _CardSide({required this.card, required this.isFront});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isFront ? Colors.white : const Color(0xFF1A1A2E),
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+Widget _cardSide(VocabularyWithTags? card, bool? isFront,) {
+  final front = isFront ?? true;
+  return Container(
+    decoration: BoxDecoration(
+      color: front ? Colors.white : const Color(0xFF1A1A2E),
+      borderRadius: BorderRadius.circular(30),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 20,
+          offset: const Offset(0, 10),
+        ),
+      ],
+    ),
+    padding: const EdgeInsets.all(32),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if ((card?.word.example ?? '').isNotEmpty)
           Text(
-            card.category.toUpperCase(),
+            card!.word.example!.toUpperCase(),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
               letterSpacing: 2,
-              color: isFront ? const Color(0xFF29B6F6) : Colors.white54,
+              color: front ? const Color(0xFF29B6F6) : Colors.white54,
             ),
           ),
-          const Spacer(),
+        const Spacer(),
+        Text(
+          front ? (card?.word.word ?? '') : (card?.word.meaning ?? ''),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 42,
+            fontWeight: FontWeight.bold,
+            color: front ? const Color(0xFF1A1A2E) : Colors.white,
+          ),
+        ),
+        if (front) ...[
+          const SizedBox(height: 12),
           Text(
-            isFront ? card.frontText : card.backText,
-            textAlign: TextAlign.center,
+            card?.word.pronunciation ?? '',
             style: TextStyle(
-              fontSize: 42,
-              fontWeight: FontWeight.bold,
-              color: isFront ? const Color(0xFF1A1A2E) : Colors.white,
+              fontSize: 18,
+              color: Colors.grey.shade400,
+              fontStyle: FontStyle.italic,
             ),
           ),
-          if (isFront) ...[
-            const SizedBox(height: 12),
-            Text(card.pronunciation,
-                style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey.shade400,
-                    fontStyle: FontStyle.italic)),
-          ],
-          const Spacer(),
-          Icon(isFront ? Icons.touch_app_outlined : Icons.replay_rounded,
-              color: isFront ? Colors.grey : Colors.white24, size: 28),
+        ],
+        const Spacer(),
+          Icon(
+            front ? Icons.touch_app_outlined : Icons.replay_rounded,
+            color: front ? Colors.grey : Colors.white24,
+            size: 28,
+          ),
           const SizedBox(height: 8),
           Text(
-            isFront ? "Tap to reveal" : "Tap to flip back",
+            front ? "Tap to reveal" : "Tap to flip back",
             style: TextStyle(
-                color: isFront ? Colors.grey : Colors.white24, fontSize: 12),
-          )
+              color: front ? Colors.grey : Colors.white24,
+              fontSize: 12,
+            ),
+          ),
         ],
-      ),
-    );
-  }
+    ),
+  );
 }

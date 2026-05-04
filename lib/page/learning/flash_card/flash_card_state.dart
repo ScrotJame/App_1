@@ -4,11 +4,13 @@ part of 'flash_card_cubit.dart';
 
 class FlashCardState {
   final FlashcardArenaStatus status;
-  final List<FlashcardModel> cards;
+  final List<VocabularyWithTags> cards;
   final int currentIndex;
   final bool isFlipped;
   final List<FlashcardResult> results;
   final DifficultyRating? pendingRating; // highlight trước khi advance
+  final LOADSTATUS? loadstatus;
+  final String? errorMessage;
 
   const FlashCardState({
     this.status = FlashcardArenaStatus.initial,
@@ -17,10 +19,12 @@ class FlashCardState {
     this.isFlipped = false,
     this.results = const [],
     this.pendingRating,
+    this.loadstatus = LOADSTATUS.INITAL,
+    this.errorMessage,
   });
 
   // ── Computed ────────────────────────────────
-  FlashcardModel? get currentCard =>
+  VocabularyWithTags? get currentCard =>
       currentIndex < cards.length ? cards[currentIndex] : null;
 
   int get totalCards => cards.length;
@@ -37,12 +41,14 @@ class FlashCardState {
   // ── copyWith ────────────────────────────────
   FlashCardState copyWith({
     FlashcardArenaStatus? status,
-    List<FlashcardModel>? cards,
+    List<VocabularyWithTags>? cards,
     int? currentIndex,
     bool? isFlipped,
     List<FlashcardResult>? results,
     DifficultyRating? pendingRating,
     bool clearPending = false,
+    LOADSTATUS? loadstatus,
+    String? errorMessage,
   }) =>
       FlashCardState(
         status: status ?? this.status,
@@ -51,5 +57,19 @@ class FlashCardState {
         isFlipped: isFlipped ?? this.isFlipped,
         results: results ?? this.results,
         pendingRating: clearPending ? null : pendingRating ?? this.pendingRating,
+        loadstatus:  loadstatus ?? this.loadstatus,
+        errorMessage: errorMessage ?? this. errorMessage,
       );
+
+  @override
+  List<Object?> get props =>[
+    status,
+    cards,
+    currentIndex,
+    isFlipped,
+    results,
+    pendingRating,
+    loadstatus,
+    errorMessage,
+  ];
 }
