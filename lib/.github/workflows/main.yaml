@@ -1,0 +1,64 @@
+name: Flutter CI/CD
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    # Môi trường chạy workflow (máy ảo Ubuntu)
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Clone source code từ repo của bạn về máy ảo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Cài đặt Java (Bắt buộc để build Android)
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # 3. Cài đặt môi trường Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.41.2'
+
+      # 4. Tải các package dependencies
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 5. Chạy sinh code đa ngôn ngữ (intl)
+      - name: Run intl_utils generate
+        run: flutter pub run intl_utils:generate
+
+      # 6. Chạy code generation
+      - name: Run build_runner
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      # 7. Kiểm tra lỗi cú pháp và format code
+      - name: Analyze project source
+        run: flutter analyze
+
+      # 8. Chạy Unit test (nếu có trong thư mục test/)
+      - name: Run tests
+        run: flutter test
+
+      # 9. Build file APK release cho Android (CÓ TRUYỀN TOKEN VÀO ĐÂY)
+      - name: Build Android APK
+        run: flutter build apk --release
+        env: # Truyền token vào môi trường máy ảo
+          API_TOKEN: ${{ secrets.SECRET_TOKEN }}
+
+      # 10. Lưu trữ file APK sau khi build xong để tải về
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk

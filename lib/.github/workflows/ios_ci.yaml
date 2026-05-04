@@ -1,0 +1,44 @@
+name: Flutter iOS CI/CD
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build-ios:
+    # Bắt buộc phải dùng máy ảo Mac để chạy môi trường Xcode
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Setup Flutter với phiên bản của bạn
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.41.2'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run intl_utils generate
+        run: flutter pub run intl_utils:generate
+
+      - name: Run build_runner
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze project source
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      # Build iOS (Chỉ kiểm tra khả năng biên dịch) kèm Token
+      - name: Build iOS (No Codesign)
+        run: flutter build ios --release --no-codesign
+        env: # Truyền token vào môi trường máy ảo cho luồng build này
+          API_TOKEN: ${{ secrets.SECRET_TOKEN }}
