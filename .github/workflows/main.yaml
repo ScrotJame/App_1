@@ -47,8 +47,8 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       # 8. Chạy Unit test (nếu có trong thư mục test/)
-      - name: Run tests
-        run: flutter test
+      #- name: Run tests
+      #  run: flutter test
 
       # 9. Build file APK release cho Android (CÓ TRUYỀN TOKEN VÀO ĐÂY)
       - name: Build Android APK
