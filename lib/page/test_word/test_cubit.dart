@@ -4,10 +4,12 @@ import 'dart:math';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:test_abc/database/app_db.dart';
+import 'package:test_abc/helper/set_time_helper.dart';
 
 import '../../commons/enums.dart';
 import '../../models/tag_vocab.dart';
 import '../../repository/vocabulary_repository.dart';
+import '../../service/alarm_service.dart';
 
 part 'test_state.dart';
 
@@ -19,6 +21,8 @@ class TestCubit extends Cubit<TestState> {
   TestCubit(this._repo) : super(const TestState()) {
     _loadConfigData();
   }
+
+  String get currentWord => "";
 
   // ─────────────────────────────────────────────────────────────────────────────
   // INIT — tải tags + ngôn ngữ để hiện ở màn Config
@@ -273,25 +277,31 @@ class TestCubit extends Cubit<TestState> {
   Future<void> _finishTest() async {
     emit(state.copyWith(isLevelingUp: true));
 
-    // Lấy id của các từ trả lời đúng
-    final correctWordIds = <int>[];
+    final leveledUpWords = <VocabularyEntry>[];
+    final wordsToSchedule = <VocabularyEntry>[];
+
     for (final entry in state.answerStatuses.entries) {
+      final vocabEntry = state.questions[entry.key].word.word;
+
       if (entry.value == AnswerStatus.correct) {
-        correctWordIds.add(state.questions[entry.key].word.word.id);
+        try {
+          final updated = await _repo.incrementWordLevel(vocabEntry.id);
+          if (updated != null) {
+            leveledUpWords.add(updated);
+            wordsToSchedule.add(updated);
+          }
+        } catch (_) {
+          wordsToSchedule.add(vocabEntry);
+        }
+      } else {
+        wordsToSchedule.add(vocabEntry);
+
+        /// giảm level khi sai tính sau
       }
     }
 
-    // Tăng level tất cả từ trả lời đúng
-    final leveledUpWords = <VocabularyEntry>[];
-    for (final id in correctWordIds) {
-      try {
-        final updated = await _repo.incrementWordLevel(id);
-        if (updated != null) {
-          leveledUpWords.add(updated);
-        }
-      } catch (_) {
-        // Lỗi 1 từ không dừng toàn bộ flow
-      }
+    if (wordsToSchedule.isNotEmpty) {
+      _scheduleIndividualNotifications(wordsToSchedule);
     }
 
     emit(state.copyWith(
@@ -397,6 +407,25 @@ class TestCubit extends Cubit<TestState> {
     }
   }
 
+  void _scheduleIndividualNotifications(List<VocabularyEntry> words) {
+    final now = DateTime.now();
+
+    for (final entry in words) {
+      final nextReviewTime = SetTimeHelper.calculateNextReviewTime(entry.level);
+      final notificationId = entry.id;
+
+      final secondsToWait = nextReviewTime.difference(now).inSeconds;
+
+      _handleSchedule(secondsToWait, entry.word);
+
+      print('🔔 Đã set thông báo ID: $notificationId cho từ "${entry.word}" (Lv.${entry.level}) vào lúc: $nextReviewTime (Sau $secondsToWait giây)');
+    }
+  }
+
+  void _handleSchedule(int seconds, String? label) {
+    AlarmService.schedule("Đã đến lúc ôn lại từ $label", seconds);
+  }
+  
   void _stopTimer() {
     _timer?.cancel();
     _timer = null;

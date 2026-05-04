@@ -1,7 +1,6 @@
 import 'package:flutter/services.dart';
 
 class AlarmService {
-  // Phải trùng với CHANNEL trong MainActivity.kt
   static const MethodChannel _channel = MethodChannel('com.example.test_abc/alarm');
 
   static Future<void> schedule(String word, int seconds) async {
