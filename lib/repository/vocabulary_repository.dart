@@ -27,8 +27,9 @@ abstract class IVocabularyRepository {
   // tag
   Future<void> attachTag({required int wordId, required int tagId});
   Future<void> detachTag({required int wordId, required int tagId});
-  Future<void> detachAllTags({required int wordId});       // NEW
-  Future<List<int>> getTagIdsByWordId(int wordId);         // NEW
+  Future<void> detachAllTags({required int wordId});
+  Future<List<int>> getTagIdsByWordId(int wordId);
+  Future<VocabularyEntry?> incrementWordLevel(int id);
 }
 
 class VocabularyRepository implements IVocabularyRepository {
@@ -131,5 +132,25 @@ class VocabularyRepository implements IVocabularyRepository {
       ..where((t) => t.wordId.equals(wordId)))
         .get();
     return rows.map((r) => r.tagId).toList();
+  }
+
+  @override
+  Future<VocabularyEntry?> incrementWordLevel(int id) async {
+    final word = await (_db.select(_db.vocabularyEntries)
+      ..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+
+    if (word == null) return null;
+
+    final newLevel = (word.level) + 1;
+
+    await (_db.update(_db.vocabularyEntries)
+      ..where((t) => t.id.equals(id)))
+        .write(VocabularyEntriesCompanion(level: Value(newLevel)));
+
+    // Trả về bản ghi mới nhất từ DB
+    return (_db.select(_db.vocabularyEntries)
+      ..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
   }
 }
