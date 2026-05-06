@@ -215,9 +215,11 @@ class _SplashPageState extends State<SplashPage>
         );
       },
       child: Center(
-        child: CustomPaint(
-          size: const Size(64, 80),
-          painter: _SplashFlamePainter(),
+        child: Image.asset(
+          'assets/images/ic_logo.png',
+          width: 64,
+          height: 80,
+          fit: BoxFit.contain,
         ),
       ),
     );
@@ -226,7 +228,7 @@ class _SplashPageState extends State<SplashPage>
   // ── Title ────────────────────────────────────────────────────
   Widget _buildTitle() {
     return const Text(
-      'VOCAFIRE',
+      'DUNGEONARY',
       style: TextStyle(
         fontSize: 32,
         fontWeight: FontWeight.w900,
@@ -384,62 +386,4 @@ class _AnimatedDotsState extends State<_AnimatedDots>
       }),
     );
   }
-}
-
-// ── Flame painter (giống streak nhưng tối hơn cho nền đen) ──────
-class _SplashFlamePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    final outerPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFFFFAA44), Color(0xFFFF4500)],
-      ).createShader(Rect.fromLTWH(0, 0, w, h))
-      ..style = PaintingStyle.fill;
-
-    final outerPath = Path()
-      ..moveTo(w * 0.5, 0)
-      ..cubicTo(w * 0.92, h * 0.18, w * 1.0, h * 0.45, w * 0.84, h * 0.65)
-      ..cubicTo(w * 0.74, h * 0.8, w * 0.55, h * 0.72, w * 0.5, h * 0.62)
-      ..cubicTo(w * 0.45, h * 0.72, w * 0.26, h * 0.8, w * 0.16, h * 0.65)
-      ..cubicTo(w * 0.0, h * 0.45, w * 0.08, h * 0.18, w * 0.5, 0)
-      ..close();
-
-    canvas.drawPath(outerPath, outerPaint);
-
-    // Inner glow
-    final innerPaint = Paint()
-      ..color = Colors.white.withOpacity(0.2)
-      ..style = PaintingStyle.fill;
-
-    final innerPath = Path()
-      ..moveTo(w * 0.5, h * 0.18)
-      ..cubicTo(w * 0.7, h * 0.33, w * 0.76, h * 0.5, w * 0.64, h * 0.64)
-      ..cubicTo(w * 0.57, h * 0.72, w * 0.5, h * 0.67, w * 0.5, h * 0.62)
-      ..cubicTo(w * 0.5, h * 0.67, w * 0.43, h * 0.72, w * 0.36, h * 0.64)
-      ..cubicTo(w * 0.24, h * 0.5, w * 0.3, h * 0.33, w * 0.5, h * 0.18)
-      ..close();
-
-    canvas.drawPath(innerPath, innerPaint);
-
-    // Teardrop core
-    final corePaint = Paint()
-      ..color = Colors.white.withOpacity(0.9)
-      ..style = PaintingStyle.fill;
-
-    final corePath = Path()
-      ..moveTo(w * 0.5, h * 0.2)
-      ..cubicTo(w * 0.58, h * 0.3, w * 0.58, h * 0.4, w * 0.5, h * 0.44)
-      ..cubicTo(w * 0.42, h * 0.4, w * 0.42, h * 0.3, w * 0.5, h * 0.2)
-      ..close();
-
-    canvas.drawPath(corePath, corePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

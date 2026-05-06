@@ -13,9 +13,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
 
     <application
-        android:label="test_abc"
+        android:label="Dungeonary"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@drawable/ic_logo">
 
         <activity
             android:name=".MainActivity"

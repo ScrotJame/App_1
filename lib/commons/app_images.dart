@@ -3,6 +3,7 @@ class AppImages {
   //     AppConfig.appIdentifier.logoImages ?? const AppCommonImages();
 
   AppImages._();
+  static final imgLogo ='assets/images/ic_logo.png';
   static final icAvatar ='assets/images/ic_avatar.png';
   static final icFire ='assets/images/ic_fire.png';
   static final icFire2 ='assets/images/ic_fire_2.png';

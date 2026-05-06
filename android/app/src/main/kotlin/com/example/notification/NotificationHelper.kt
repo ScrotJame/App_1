@@ -47,7 +47,7 @@ class NotificationHelper(private val context: Context) {
 
         // 3. Xây dựng thông báo với ContentIntent
         val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_logo)
             .setContentTitle("Đã đến giờ học lại!")
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
