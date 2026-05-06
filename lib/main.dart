@@ -1,9 +1,11 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:test_abc/page/home_page.dart';
 import 'package:test_abc/router/app_router.dart';
 import 'package:test_abc/router/router.dart';
 import 'app.dart';
+import 'firebase_options.dart';
 import 'study_page.dart';
 
 Future<void> _requestPermissions() async {
@@ -18,6 +20,9 @@ Future<void> _requestPermissions() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await _requestPermissions();
 
   AppRouter.configure();

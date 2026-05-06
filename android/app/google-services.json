@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "789268793267",
+    "project_id": "project-dungeon-b317f",
+    "storage_bucket": "project-dungeon-b317f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:789268793267:android:82785b60edc517d84fedc6",
+        "android_client_info": {
+          "package_name": "com.example.test_abc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDaxhxEzSzxv6-YtwvWOttotFr7R75471A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
