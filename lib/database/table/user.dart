@@ -3,7 +3,7 @@ import 'package:test_abc/database/table/vocabulary_entity.dart';
 
 class UsersEntrie extends Table {
   TextColumn get id => text().nullable()();
-  TextColumn get keyOpen => text().unique()();
+  TextColumn get keyOpen => text()();
   @override
   Set<Column> get primaryKey => {keyOpen};
 
