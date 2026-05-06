@@ -3,13 +3,13 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:test_abc/database/app_db.dart';
 import '../database/backup_data.dart';
 import '../models/backup_entity.dart';
+import '../service/cloud_service.dart';
 
 abstract class IBackupRepository {
   // -- Export --
@@ -20,8 +20,7 @@ abstract class IBackupRepository {
   /// Lưu file JSON thẳng vào Downloads (Android) / Documents (iOS)
   Future<ExportResult> exportToFile();
 
-  /// Upload file JSON lên server bằng secret key
-  /// Server nhận POST multipart/form-data với field "file" và header "X-Secret-Key"
+  /// Upload JSON lên Firestore bằng secret key
   Future<ExportResult> exportToServer({required String secretKey});
 
   // -- Import --
@@ -32,7 +31,7 @@ abstract class IBackupRepository {
   /// Import trực tiếp từ một File object
   Future<ImportResult> importFromFile(File file);
 
-  /// Nhập secret key → gọi server → tải JSON về → import
+  /// Nhập secret key → tải JSON từ Firestore → import
   Future<ImportResult> importFromServer({required String secretKey});
 
   /// Import từ JSON string thuần (dùng nội bộ hoặc test)
@@ -41,18 +40,14 @@ abstract class IBackupRepository {
 
 // ─── Implementation ────────────────────────────────────────────────────────────
 
-/// URL gốc của server backup. Thay bằng URL thật khi deploy.
-/// Đặt vào một config / env file để dễ thay đổi.
-const _kServerBaseUrl = 'https://your-backup-server.com';
-
 class BackupRepository implements IBackupRepository {
   final AppDatabase _db;
+  final CloudService _cloudService;
 
-  BackupRepository(this._db);
-
-  // ═══════════════════════════════════════════════════════════════
-  // EXPORT
-  // ═══════════════════════════════════════════════════════════════
+  /// [cloudService] có thể inject từ ngoài vào (tiện cho unit test).
+  /// Nếu không truyền, tự tạo instance mặc định.
+  BackupRepository(this._db, {CloudService? cloudService})
+      : _cloudService = cloudService ?? CloudService();
 
   @override
   Future<ExportResult> exportAndShare() async {
@@ -82,42 +77,23 @@ class BackupRepository implements IBackupRepository {
     }
   }
 
+  /// Upload JSON lên Firestore với secretKey làm document ID.
   @override
   Future<ExportResult> exportToServer({required String secretKey}) async {
     try {
-      final tempFile = await _writeTempFile();
+      final jsonStr = await _buildJsonString();
+      final success = await _cloudService.uploadBackup(secretKey, jsonStr);
 
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$_kServerBaseUrl/backup/upload'),
-      );
-      request.headers['X-Secret-Key'] = secretKey;
-      request.files.add(
-        await http.MultipartFile.fromPath('file', tempFile.path,
-            filename: tempFile.uri.pathSegments.last),
-      );
-
-      final streamed = await request.send();
-      final response = await http.Response.fromStream(streamed);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (success) {
         return const ExportResult.ok();
       }
-
-      // Thử lấy message lỗi từ server
-      final body = _tryDecodeJson(response.body);
-      final serverMsg = body?['message'] as String? ?? response.reasonPhrase;
-      return ExportResult.fail('Server lỗi ${response.statusCode}: $serverMsg');
+      return const ExportResult.fail('Không thể upload lên server.');
     } on SocketException {
-      return ExportResult.fail('Không có kết nối mạng');
+      return const ExportResult.fail('Không có kết nối mạng');
     } catch (e) {
       return ExportResult.fail('Upload thất bại: $e');
     }
   }
-
-  // ═══════════════════════════════════════════════════════════════
-  // IMPORT
-  // ═══════════════════════════════════════════════════════════════
 
   @override
   Future<ImportResult> importFromFilePicker() async {
@@ -145,27 +121,18 @@ class BackupRepository implements IBackupRepository {
     }
   }
 
+  /// Tải JSON từ Firestore bằng secretKey rồi merge vào DB local.
   @override
   Future<ImportResult> importFromServer({required String secretKey}) async {
     try {
-      final response = await http.get(
-        Uri.parse('$_kServerBaseUrl/backup/download'),
-        headers: {'X-Secret-Key': secretKey},
-      );
+      final jsonStr = await _cloudService.downloadBackup(secretKey);
 
-      if (response.statusCode == 401) {
-        return const ImportResult.fail('Secret key không đúng');
-      }
-      if (response.statusCode == 404) {
-        return const ImportResult.fail('Chưa có backup nào trên server');
-      }
-      if (response.statusCode != 200) {
-        final body = _tryDecodeJson(response.body);
-        final msg = body?['message'] as String? ?? response.reasonPhrase;
-        return ImportResult.fail('Server lỗi ${response.statusCode}: $msg');
+      if (jsonStr == null) {
+        return const ImportResult.fail(
+            'Không tìm thấy backup nào với key này.');
       }
 
-      return _parseAndMerge(response.body);
+      return _parseAndMerge(jsonStr);
     } on SocketException {
       return const ImportResult.fail('Không có kết nối mạng');
     } catch (e) {
@@ -202,14 +169,6 @@ class BackupRepository implements IBackupRepository {
   Future<File> _writeTempFile() async {
     final dir = await getTemporaryDirectory();
     return _writeFile(dir.path);
-  }
-
-  Map<String, dynamic>? _tryDecodeJson(String body) {
-    try {
-      return json.decode(body) as Map<String, dynamic>;
-    } catch (_) {
-      return null;
-    }
   }
 
   Future<ImportResult> _parseAndMerge(String jsonStr) async {
@@ -415,8 +374,10 @@ class BackupRepository implements IBackupRepository {
             .getSingleOrNull();
 
         if (existing == null) {
-          final newUnitId = vocab.unitId != null ? unitIdMap[vocab.unitId] : null;
-          final inserted = await _db.into(_db.vocabularyEntries).insertReturningOrNull(
+          final newUnitId =
+          vocab.unitId != null ? unitIdMap[vocab.unitId] : null;
+          final inserted =
+          await _db.into(_db.vocabularyEntries).insertReturningOrNull(
             VocabularyEntriesCompanion.insert(
               word: vocab.word,
               meaning: vocab.meaning,
@@ -590,7 +551,8 @@ class BackupRepository implements IBackupRepository {
             ..where((t) =>
             t.userId.equals(item.userId) &
             t.itemId.equals(item.itemId)))
-              .write(UserItemsEntrieCompanion(quantity: Value(item.quantity)));
+              .write(
+              UserItemsEntrieCompanion(quantity: Value(item.quantity)));
           userItemsMerged++;
         }
       }
