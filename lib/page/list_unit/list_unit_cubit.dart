@@ -86,9 +86,9 @@ class ListUnitCubit extends Cubit<ListUnitState> {
     }
   }
 
-  Future<void> updateUnit(int id, String newTitle) async {
+  Future<void> updateUnit(int id, String newTitle, DateTime? createdAt, DateTime updatedAt) async {
     try {
-      await _repo.updateUnit(id, newTitle);
+      await _repo.updateUnit(id, newTitle, createdAt, updatedAt);
       await loadUnits();
     } catch (e) {
       emit(state.copyWith(

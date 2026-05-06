@@ -43,6 +43,8 @@ class UserRepository implements IUserRepository {
       UsersEntrieCompanion.insert(
         keyOpen: localKey,
         username: username,
+        createdAt: Value(DateTime.now()),
+        updatedAt: Value(DateTime.now()),
       ),
     );
 

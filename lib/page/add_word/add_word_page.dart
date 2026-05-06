@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/database/app_db.dart';
+import 'package:test_abc/page/backup/backup_page.dart';
 import 'package:test_abc/repository/tag_repository.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -163,7 +164,11 @@ class _AddWordPageState extends State<AddWordPage>
         IconButton(
           icon: const Icon(Icons.bookmark_border_rounded,
               color: Color(0xFF6B7FD4), size: 22),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(context,
+                MaterialPageRoute(
+                    builder: (_) => const BackupPage()));
+          },
         ),
         InkWell(
           onTap: (){

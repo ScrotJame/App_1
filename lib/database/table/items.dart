@@ -9,7 +9,7 @@ class ItemsEntrie extends Table {
 }
 
 class UserItemsEntrie extends Table {
-  IntColumn get userId => integer().references(UsersEntrie, #id)();
+  TextColumn get userId => text().references(UsersEntrie, #keyOpen)();
   IntColumn get itemId => integer().references(ItemsEntrie, #id)();
 
   // Số lượng vật phẩm người dùng đang có

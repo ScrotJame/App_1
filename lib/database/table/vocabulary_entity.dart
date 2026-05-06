@@ -1,14 +1,13 @@
 import 'package:drift/drift.dart';
 import 'package:test_abc/database/table/unit_entity.dart';
 
-// Tên bảng trong DB sẽ là "vocabulary_entries" (Drift tự thêm 's')
 class VocabularyEntries extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get word => text().withLength(min: 1, max: 225)();
   TextColumn get meaning => text()();
   TextColumn get example => text().nullable()();
   TextColumn get pronunciation => text().nullable()();
-  TextColumn get language => text().nullable()(); // Lưu 'en', 'jp',...
+  TextColumn get language => text().nullable()();
 
   IntColumn get level => integer().withDefault(const Constant(0))();
   IntColumn get correctCount => integer().withDefault(const Constant(0))();
@@ -21,4 +20,9 @@ class VocabularyEntries extends Table {
   IntColumn get unitId => integer()
       .nullable()
       .references(UnitsEntries, #id, onDelete: KeyAction.cascade)();
+
+  DateTimeColumn get createdAt => dateTime()
+      .withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime()
+      .withDefault(currentDateAndTime)();
 }

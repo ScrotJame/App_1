@@ -7,7 +7,7 @@ abstract class IUnitRepository {
   Stream<List<UnitWithWords>> watchAllUnitsWithWords();
 
   Future<int> insertUnit(String title);
-  Future<bool> updateUnit(int id, String newTitle);
+  Future<bool> updateUnit(int id, String newTitle, DateTime? createdAt, DateTime updatedAt);
   Future<int> deleteUnit(int id);
 }
 
@@ -42,9 +42,9 @@ class UnitRepository implements IUnitRepository {
   }
 
   @override
-  Future<bool> updateUnit(int id, String newTitle) {
+  Future<bool> updateUnit(int id, String newTitle, DateTime? createdAt, DateTime updatedAt) {
     return _db.update(_db.unitsEntries).replace(
-      UnitsEntry(id: id, title: newTitle),
+      UnitsEntry(id: id, title: newTitle, createdAt: createdAt, updatedAt: updatedAt),
     );
   }
 

@@ -1,26 +1,25 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:test_abc/database/app_db.dart';
 import 'package:test_abc/repository/user_repository.dart';
 
 part 'splash_state.dart';
 
 class SplashCubit extends Cubit<SplashState> {
-  final AppDatabase _db;
-
   final UserRepository _userRepository;
 
-  SplashCubit(this._db, this._userRepository) : super(const SplashState());
+  SplashCubit(this._userRepository) : super(const SplashState());
 
   Future<void> init() async {
+    if (isClosed) return;
     emit(state.copyWith(status: SplashStatus.loading));
 
     try {
       await checkAndCreateUser();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      if (isClosed) return;
       emit(state.copyWith(
         status: SplashStatus.error,
-        errorMessage: 'Khởi tạo thất bại: $e',
+        errorMessage: 'Khởi tạo thất bại: $e\n\n$stackTrace',
       ));
     }
   }
@@ -28,11 +27,13 @@ class SplashCubit extends Cubit<SplashState> {
   // ─── Kiểm tra và tạo user mặc định ───────────────────────
   Future<void> checkAndCreateUser() async {
     final user = await _userRepository.getCurrentUser();
+    if (isClosed) return;
 
     if (user == null) {
       // Lần đầu mở app → tạo user local
       final newName = _generateDefaultUsername();
       await _userRepository.createLocalUser(newName);
+      if (isClosed) return;
 
       emit(state.copyWith(
         status: SplashStatus.newUser,
@@ -49,11 +50,11 @@ class SplashCubit extends Cubit<SplashState> {
 
   // ─── Sinh tên mặc định ngẫu nhiên ────────────────────────
   String _generateDefaultUsername() {
-    final  adjectives = [
+    final adjectives = [
       'Swift', 'Brave', 'Calm', 'Bright', 'Cool',
       'Sharp', 'Wise', 'Bold', 'Quick', 'Keen',
     ];
-    final  nouns = [
+    final nouns = [
       'Panda', 'Fox', 'Hawk', 'Wolf', 'Bear',
       'Eagle', 'Tiger', 'Lion', 'Deer', 'Owl',
     ];

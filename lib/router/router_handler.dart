@@ -28,7 +28,7 @@ Handler splashHandler = Handler(
   handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
     final ctx = context!;
     return BlocProvider(
-      create: (_) => SplashCubit(ctx.read<AppDatabase>(), ctx.read<UserRepository>()),
+      create: (_) => SplashCubit(ctx.read<UserRepository>()),
       child: SplashPage(
         onReady: () => AppRouter.navigateAndClearStack(ctx, Routes.home),
       ),

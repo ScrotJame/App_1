@@ -4,8 +4,12 @@ import 'package:test_abc/database/table/vocabulary_entity.dart';
 class Tags extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get tagName => text().withLength(min: 1, max: 50)();
-
   TextColumn get targetLanguage => text().nullable()();
+
+  DateTimeColumn get createdAt => dateTime()
+      .withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime()
+      .withDefault(currentDateAndTime)();
 }
 
 class VocabularyTags extends Table {

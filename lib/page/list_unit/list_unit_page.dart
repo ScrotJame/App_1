@@ -346,7 +346,12 @@ class _ListUnitPageState extends State<ListUnitPage> {
                       padding: EdgeInsets.zero,
                       constraints:
                       const BoxConstraints(minWidth: 32, minHeight: 32),
-                      onPressed: () => _showEditDialog(unit.id, unit.title),
+                      onPressed: () => _showEditDialog(
+                        unit.id,
+                        unit.title,
+                        unit.createdAt,
+                        unit.updatedAt,
+                      ),
                     ),
                     // Expand arrow
                     AnimatedRotation(
@@ -508,12 +513,12 @@ class _ListUnitPageState extends State<ListUnitPage> {
     );
   }
 
-  void _showEditDialog(int id, String currentTitle) {
+  void _showEditDialog(int id, String currentTitle, DateTime? createdAt ,DateTime updatedAt) {
     _showUnitDialog(
       title: 'Đổi tên unit',
       initialValue: currentTitle,
       confirmLabel: 'Lưu',
-      onConfirm: (text) => _cubit.updateUnit(id, text),
+      onConfirm: (text) => _cubit.updateUnit(id, text, createdAt, updatedAt),
     );
   }
 

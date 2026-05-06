@@ -2,6 +2,8 @@ part of 'splash_cubit.dart';
 
 enum SplashStatus { initial, loading, newUser, returning, error }
 
+const _absent = Object();
+
 class SplashState extends Equatable {
   final SplashStatus status;
   final String? username;
@@ -15,13 +17,14 @@ class SplashState extends Equatable {
 
   SplashState copyWith({
     SplashStatus? status,
-    String? username,
-    String? errorMessage,
+    // Dùng Object? + sentinel để phân biệt "không truyền" vs "truyền null"
+    Object? username = _absent,
+    Object? errorMessage = _absent,
   }) {
     return SplashState(
       status: status ?? this.status,
-      username: username ?? this.username,
-      errorMessage: errorMessage ?? this.errorMessage,
+      username: username == _absent ? this.username : username as String?,
+      errorMessage: errorMessage == _absent ? this.errorMessage : errorMessage as String?,
     );
   }
 

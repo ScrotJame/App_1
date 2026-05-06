@@ -3,7 +3,7 @@ import 'package:test_abc/database/table/vocabulary_entity.dart';
 
 class UsersEntrie extends Table {
   TextColumn get id => text().nullable()();
-  TextColumn get keyOpen => text()();
+  TextColumn get keyOpen => text().unique()();
   @override
   Set<Column> get primaryKey => {keyOpen};
 
@@ -18,6 +18,11 @@ class UsersEntrie extends Table {
   IntColumn get gems => integer().withDefault(const Constant(0))();
   IntColumn get level => integer().withDefault(const Constant(1))();
   IntColumn get experience => integer().withDefault(const Constant(0))();
+
+  DateTimeColumn get createdAt => dateTime()
+      .withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime()
+      .withDefault(currentDateAndTime)();
 }
 
 class UserActivitiesEntrie extends Table {
@@ -25,10 +30,13 @@ class UserActivitiesEntrie extends Table {
   TextColumn get userKey => text().references(UsersEntrie, #keyOpen)();
   DateTimeColumn get activityDate => dateTime()();
   TextColumn get note => text().nullable()();
+
+  DateTimeColumn get createdAt => dateTime()
+      .withDefault(currentDateAndTime)();
 }
 
 class UserWordProgressEntrie extends Table {
-  IntColumn get userId => integer().references(UsersEntrie, #id)();
+  TextColumn get userId => text().references(UsersEntrie, #keyOpen)();
   IntColumn get wordId => integer().references(VocabularyEntries, #id)();
 
   // 0: Chưa học, 1: Đang học, 2: Đã thuộc
@@ -36,6 +44,9 @@ class UserWordProgressEntrie extends Table {
 
   DateTimeColumn get lastPracticed => dateTime().nullable()();
   DateTimeColumn get nextReview => dateTime().nullable()();
+
+  DateTimeColumn get updatedAt => dateTime()
+      .withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {userId, wordId};

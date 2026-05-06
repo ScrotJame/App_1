@@ -77,13 +77,18 @@ class _SplashPageState extends State<SplashPage>
 
   Future<void> _runAnimSequence() async {
     await Future.delayed(const Duration(milliseconds: 200));
+    if (!mounted) return;
     _logoCtrl.forward();
+
     await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
     _textCtrl.forward();
+
     await Future.delayed(const Duration(milliseconds: 400));
+    if (!mounted) return;
     _dotCtrl.forward();
 
-    // Trigger logic
+    // Trigger logic — context chỉ dùng sau khi đã kiểm tra mounted
     context.read<SplashCubit>().init();
   }
 
@@ -255,11 +260,31 @@ class _SplashPageState extends State<SplashPage>
   Widget _buildLoadingDots() {
     return BlocBuilder<SplashCubit, SplashState>(
       builder: (context, state) {
-        final isError = state.status == SplashStatus.error;
-        if (isError) {
-          return Text(
-            state.errorMessage ?? 'Có lỗi xảy ra',
-            style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+        if (state.status == SplashStatus.error) {
+          return GestureDetector(
+            onTap: () => showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Chi tiết lỗi',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+                content: SingleChildScrollView(
+                  child: SelectableText(
+                    state.errorMessage ?? 'Không có thông tin lỗi',
+                    style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Đóng'),
+                  ),
+                ],
+              ),
+            ),
+            child: const Text(
+              'Có lỗi xảy ra — nhấn để xem chi tiết',
+              style: TextStyle(color: Colors.redAccent, fontSize: 12),
+            ),
           );
         }
         return _AnimatedDots();
