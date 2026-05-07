@@ -60,9 +60,14 @@ class UserRepository implements IUserRepository {
     final localKey = await _getLocalKey();
     if (localKey == null) return false;
 
+    final now = DateTime.now();
+    final userWithTimestamp = user.updatedAt.present
+        ? user
+        : user.copyWith(updatedAt: Value(now));
+
     final count = await (_db.update(_db.usersEntrie)
       ..where((u) => u.keyOpen.equals(localKey)))
-        .write(user);
+        .write(userWithTimestamp);
     return count > 0;
   }
 

@@ -19,7 +19,8 @@ class _BackupPageState extends State<BackupPage> {
   @override
   void initState() {
     super.initState();
-    _cubit = BackupCubit(context.read<BackupRepository>());
+    _cubit = BackupCubit(context.read<BackupRepository>(),
+    );
   }
 
   @override
@@ -235,7 +236,7 @@ class _BackupPageState extends State<BackupPage> {
       title: 'Upload lên server',
       subtitle: 'Dùng secret key để lưu backup trên server',
       loading: state.isLoading,
-      onTap: () => _cubit.exportToServer(_secretController.text),
+      onTap: () => _cubit.exportToServer(),
     );
   }
 

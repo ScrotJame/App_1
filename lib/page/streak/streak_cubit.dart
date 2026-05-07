@@ -129,18 +129,22 @@ class StreakCubit extends Cubit<StreakState> {
       }
 
       final int dbLongestStreak = user.longestStreak;
-      final markedDates = await _loadMarkedDates();
+      var markedDates = await _loadMarkedDates();
+
+      if (markedDates.isEmpty && user.currentStreak > 0 && user.lastActiveDate != null) {
+        final end = _dateOnly(user.lastActiveDate!);
+        final generated = <String>{};
+        for (int i = 0; i < user.currentStreak; i++) {
+          final d = end.subtract(Duration(days: i));
+          generated.add(_dateKey(d));
+        }
+        markedDates = generated;
+        await _saveMarkedDates(markedDates);
+      }
 
       final currentStreak = _calcCurrentStreak(markedDates);
       bool streakWasReset = false;
-      if (currentStreak == 0 && user.currentStreak > 0) {
-        streakWasReset = true;
-        await _syncStreakToDB(
-          currentStreak: 0,
-          longestStreak: dbLongestStreak,
-          lastActiveDate: user.lastActiveDate,
-        );
-      }
+      // Không auto-reset DB streak chỉ vì prefs trống/thiếu dữ liệu.
 
       final streakStart = _calcStreakStartDate(markedDates);
       final weekDays = _buildWeekDays(0, markedDates);
@@ -151,7 +155,7 @@ class StreakCubit extends Cubit<StreakState> {
         weekOffset: 0,
         markedDates: markedDates,
         weekDays: weekDays,
-        weekStreak: currentStreak,
+        weekStreak: currentStreak == 0 ? user.currentStreak : currentStreak,
         longestStreak: dbLongestStreak,
         streakStartDate: streakStart,
         streakWasReset: streakWasReset,
@@ -183,12 +187,10 @@ class StreakCubit extends Cubit<StreakState> {
     final streakStart = _calcStreakStartDate(updated);
     final weekDays = _buildWeekDays(state.weekOffset, updated);
 
-    // longestStreak chỉ tăng khi mark, không giảm khi unmark
     final newLongest = wasMarked
         ? state.longestStreak
         : (newStreak > state.longestStreak ? newStreak : state.longestStreak);
 
-    // Cập nhật UI ngay lập tức
     emit(state.copyWith(
       markedDates: updated,
       weekDays: weekDays,
@@ -199,13 +201,11 @@ class StreakCubit extends Cubit<StreakState> {
       streakWasReset: false,
     ));
 
-    // Lưu SharedPreferences + DB song song
     await Future.wait([
       _saveMarkedDates(updated),
       _syncStreakToDB(
         currentStreak: newStreak,
         longestStreak: newLongest,
-        // Nếu unmark hết streak thì xóa lastActiveDate
         lastActiveDate: streakStart != null ? now : null,
       ),
     ]);

@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../models/backup_entity.dart';
 import '../../repository/backup_data_repository.dart';
+import '../../service/auth_service.dart';
 
 part 'backup_state.dart';
 
@@ -17,9 +18,18 @@ class BackupCubit extends Cubit<BackupState> {
     emit(state.copyWith(mode: mode));
   }
 
-  // ─── EXPORT ───────────────────────────────────────────────────────────────
+  Future<void> loadBackupKey() async {
+    final key = await _repo.getBackupKey();
+    if (key != null) {
+      emit(state.copyWith(backupKey: key));
+    } else {
+      emit(state.copyWith(
+        status: BackupStatus.failed,
+        errorMessage: 'Chưa có backup key. Vui lòng thử lại sau.',
+      ));
+    }
+  }
 
-  /// Xuất file JSON + mở share sheet
   Future<void> exportAndShare() async {
     emit(state.copyWith(status: BackupStatus.loading));
     final result = await _repo.exportAndShare();
@@ -36,7 +46,6 @@ class BackupCubit extends Cubit<BackupState> {
     }
   }
 
-  /// Lưu file JSON vào bộ nhớ máy (Downloads / Documents)
   Future<void> exportToFile() async {
     emit(state.copyWith(status: BackupStatus.loading));
     final result = await _repo.exportToFile();
@@ -54,17 +63,17 @@ class BackupCubit extends Cubit<BackupState> {
     }
   }
 
-  /// Upload backup lên server bằng secret key
-  Future<void> exportToServer(String secretKey) async {
-    if (secretKey.trim().isEmpty) {
+  Future<void> exportToServer() async {
+    final key = state.backupKey ?? await _repo.getBackupKey();
+    if (key == null) {
       emit(state.copyWith(
         status: BackupStatus.failed,
-        errorMessage: 'Vui lòng nhập secret key',
+        errorMessage: 'Không lấy được backup key. Vui lòng thử lại.',
       ));
       return;
     }
     emit(state.copyWith(status: BackupStatus.loading));
-    final result = await _repo.exportToServer(secretKey: secretKey.trim());
+    final result = await _repo.exportToServer(secretKey: key);
     if (result.success) {
       emit(state.copyWith(
         status: BackupStatus.success,
@@ -78,16 +87,12 @@ class BackupCubit extends Cubit<BackupState> {
     }
   }
 
-  // ─── IMPORT ───────────────────────────────────────────────────────────────
-
-  /// Mở file picker → chọn file .json → import
   Future<void> importFromFile() async {
     emit(state.copyWith(status: BackupStatus.loading));
     final result = await _repo.importFromFilePicker();
     _handleImportResult(result);
   }
 
-  /// Tải backup từ server bằng secret key → import
   Future<void> importFromServer(String secretKey) async {
     if (secretKey.trim().isEmpty) {
       emit(state.copyWith(
@@ -101,13 +106,10 @@ class BackupCubit extends Cubit<BackupState> {
     _handleImportResult(result);
   }
 
-  // ─── Private ──────────────────────────────────────────────────────────────
-
   void _handleImportResult(ImportResult result) {
     if (result.success) {
       final s = result.summary;
       if (s == null) {
-        // Phòng trường hợp summary không có (không nên xảy ra nhưng an toàn hơn)
         emit(state.copyWith(
           status: BackupStatus.success,
           successMessage: 'Import thành công!',
@@ -115,9 +117,10 @@ class BackupCubit extends Cubit<BackupState> {
         return;
       }
       final msg = 'Import thành công!\n'
-          '• ${s.vocabulariesAdded} từ vựng · ${s.tagsAdded} tag\n'
+          '• User: ${s.usersUpdated} bản ghi được thêm/cập nhật\n'
+          '• ${s.vocabulariesAdded} từ vựng · ${s.tagsAdded} tag · ${s.vocabularyTagsAdded} gắn tag\n'
           '• ${s.unitsAdded} unit · ${s.activitiesAdded} hoạt động\n'
-          '• ${s.wordProgressMerged} tiến độ được cập nhật';
+          '• ${s.wordProgressMerged} tiến độ word · ${s.userItemsMerged} items';
       emit(state.copyWith(
         status: BackupStatus.success,
         successMessage: msg,

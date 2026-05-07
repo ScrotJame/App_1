@@ -1,15 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:drift/drift.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:test_abc/database/app_db.dart';
 import '../database/backup_data.dart';
 import '../models/backup_entity.dart';
+import '../service/auth_service.dart';
 import '../service/cloud_service.dart';
+import '../service/sercurity_service.dart';
 
 abstract class IBackupRepository {
   // -- Export --
@@ -21,7 +26,7 @@ abstract class IBackupRepository {
   Future<ExportResult> exportToFile();
 
   /// Upload JSON lên Firestore bằng secret key
-  Future<ExportResult> exportToServer({required String secretKey});
+  Future<ExportResult> exportToServer({String? secretKey});
 
   // -- Import --
 
@@ -36,6 +41,8 @@ abstract class IBackupRepository {
 
   /// Import từ JSON string thuần (dùng nội bộ hoặc test)
   Future<ImportResult> importFromJsonString(String jsonStr);
+
+  Future<String?> getBackupKey();
 }
 
 // ─── Implementation ────────────────────────────────────────────────────────────
@@ -43,35 +50,60 @@ abstract class IBackupRepository {
 class BackupRepository implements IBackupRepository {
   final AppDatabase _db;
   final CloudService _cloudService;
+  final AuthService _authService;
+  static const String _localKeyPref = 'local_key';
 
-  /// [cloudService] có thể inject từ ngoài vào (tiện cho unit test).
-  /// Nếu không truyền, tự tạo instance mặc định.
-  BackupRepository(this._db, {CloudService? cloudService})
-      : _cloudService = cloudService ?? CloudService();
+  BackupRepository(
+      this._db, {
+        CloudService? cloudService,
+        AuthService? authService,
+      })  : _cloudService = cloudService ?? CloudService(),
+        _authService = authService ?? AuthService();
 
   @override
   Future<ExportResult> exportAndShare() async {
     try {
-      final file = await _writeTempFile();
+      final jsonStr = await _buildJsonString();
+      final encryptedStr = SecurityService.encryptData(jsonStr);
+      final file = await _writeTempEncryptedFile(encryptedStr);
       await Share.shareXFiles(
         [XFile(file.path, mimeType: 'application/json')],
-        subject: 'VocaFire Backup',
+        subject: 'Dungeonary Backup',
       );
+
       return const ExportResult.ok();
     } catch (e) {
-      return ExportResult.fail('Xuất thất bại: $e');
+      return ExportResult.fail('Xuất và chia sẻ thất bại: $e');
     }
   }
 
+  Future<File> _writeTempEncryptedFile(String encryptedData) async {
+    final tempDir = await getTemporaryDirectory();
+    final fileName = '${_buildFileNameWithoutExt()}.json';
+    final file = File('${tempDir.path}/$fileName');
+    return await file.writeAsString(encryptedData);
+  }
+
+  /// Lưu file JSON vào thư mục Downloads bằng [file_saver].
+  ///
+  /// Android: ghi vào Downloads qua MediaStore (không cần xin quyền).
+  /// iOS    : lưu vào Documents của app, có thể truy cập qua Files app.
   @override
   Future<ExportResult> exportToFile() async {
     try {
-      final dir = Platform.isAndroid
-          ? Directory('/storage/emulated/0/Download')
-          : await getApplicationDocumentsDirectory();
+      final jsonStr = await _buildJsonString();
+      final encryptedStr = SecurityService.encryptData(jsonStr);
+      final bytes = Uint8List.fromList(utf8.encode(encryptedStr));
+      final fileName = _buildFileNameWithoutExt();
 
-      final file = await _writeFile(dir.path);
-      return ExportResult.ok(filePath: file.path);
+      final savedPath = await FileSaver.instance.saveFile(
+        name: fileName,
+        bytes: bytes,
+        fileExtension: 'json',
+        mimeType: MimeType.json,
+      );
+
+      return ExportResult.ok(filePath: savedPath);
     } catch (e) {
       return ExportResult.fail('Lưu file thất bại: $e');
     }
@@ -79,14 +111,17 @@ class BackupRepository implements IBackupRepository {
 
   /// Upload JSON lên Firestore với secretKey làm document ID.
   @override
-  Future<ExportResult> exportToServer({required String secretKey}) async {
+  Future<ExportResult> exportToServer({String? secretKey}) async {
     try {
-      final jsonStr = await _buildJsonString();
-      final success = await _cloudService.uploadBackup(secretKey, jsonStr);
-
-      if (success) {
-        return const ExportResult.ok();
+      final key = secretKey ?? await _authService.getBackupKey();
+      if (key == null) {
+        return const ExportResult.fail('Không lấy được backup key.');
       }
+      final jsonStr = await _buildJsonString();
+      final encryptedStr = SecurityService.encryptData(jsonStr);
+      final success = await _cloudService.uploadBackup(key, encryptedStr);
+
+      if (success) return const ExportResult.ok();
       return const ExportResult.fail('Không thể upload lên server.');
     } on SocketException {
       return const ExportResult.fail('Không có kết nối mạng');
@@ -112,11 +147,44 @@ class BackupRepository implements IBackupRepository {
   @override
   Future<ImportResult> importFromFile(File file) async {
     try {
-      final jsonStr = await file.readAsString(encoding: utf8);
+      print("📁 ĐANG ĐỌC FILE TỪ THIẾT BỊ...");
+      print("   📍 Đường dẫn file: ${file.path}");
+
+      final fileContent = await file.readAsString(encoding: utf8);
+      print("   📄 Đọc file thành công. Tổng ký tự: ${fileContent.length}");
+
+      if (fileContent.isEmpty) {
+        return const ImportResult.fail('File rỗng, không có dữ liệu!');
+      }
+
+      final cleanContent = fileContent.trim();
+
+      String? jsonStr;
+
+      // Kiểm tra ký tự đầu tiên
+      final firstChar = cleanContent.isNotEmpty ? cleanContent[0] : '';
+      print("   🔍 Ký tự đầu tiên của file là: '$firstChar'");
+
+      if (cleanContent.startsWith('{')) {
+        print("   ⚠️ Phát hiện file JSON cũ (chưa mã hóa). Tiến hành nạp trực tiếp...");
+        jsonStr = cleanContent;
+      } else {
+        print("   🔒 Phát hiện file mã hóa AES. Bắt đầu giải mã...");
+        jsonStr = SecurityService.decryptData(cleanContent);
+      }
+
+      if (jsonStr == null) {
+        return const ImportResult.fail('File đã bị can thiệp hoặc sai hệ thống giải mã!');
+      }
+
+      print("🔄 Bắt đầu Merge dữ liệu vào Database...");
       return _parseAndMerge(jsonStr);
+
     } on FormatException catch (e) {
+      print("❌ LỖI FORMAT: $e");
       return ImportResult.fail('File không hợp lệ: $e');
     } catch (e) {
+      print("❌ LỖI KHÔNG XÁC ĐỊNH KHI ĐỌC FILE: $e");
       return ImportResult.fail('Lỗi khi đọc file: $e');
     }
   }
@@ -125,11 +193,14 @@ class BackupRepository implements IBackupRepository {
   @override
   Future<ImportResult> importFromServer({required String secretKey}) async {
     try {
-      final jsonStr = await _cloudService.downloadBackup(secretKey);
 
+      final encryptedStr = await _cloudService.downloadBackup(secretKey);
+      if (encryptedStr == null) {
+        return const ImportResult.fail('Không tìm thấy backup nào với key này.');
+      }
+      final jsonStr = SecurityService.decryptData(encryptedStr);
       if (jsonStr == null) {
-        return const ImportResult.fail(
-            'Không tìm thấy backup nào với key này.');
+        return const ImportResult.fail('Dữ liệu trên server bị lỗi hoặc mã hóa không khớp!');
       }
 
       return _parseAndMerge(jsonStr);
@@ -149,9 +220,15 @@ class BackupRepository implements IBackupRepository {
     }
   }
 
-  String _buildFileName() {
+  @override
+  Future<String?> getBackupKey() => _authService.getBackupKey();
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  /// Trả về tên file KHÔNG có đuôi mở rộng (file_saver tự thêm ext).
+  String _buildFileNameWithoutExt() {
     final ts = DateTime.now().millisecondsSinceEpoch;
-    return 'vocafire_backup_$ts.json';
+    return 'vocafire_backup_$ts';
   }
 
   Future<String> _buildJsonString() async {
@@ -161,7 +238,8 @@ class BackupRepository implements IBackupRepository {
 
   Future<File> _writeFile(String dirPath) async {
     final jsonStr = await _buildJsonString();
-    final file = File('$dirPath/${_buildFileName()}');
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final file = File('$dirPath/vocafire_backup_$ts.json');
     await file.writeAsString(jsonStr, encoding: utf8);
     return file;
   }
@@ -182,7 +260,14 @@ class BackupRepository implements IBackupRepository {
   }
 
   Future<BackupData> _buildBackupData() async {
-    final user = await (_db.select(_db.usersEntrie)..limit(1)).getSingle();
+    final prefs = await SharedPreferences.getInstance();
+    final localKey = prefs.getString(_localKeyPref);
+    final user = localKey == null
+        ? await (_db.select(_db.usersEntrie)..limit(1)).getSingle()
+        : await (_db.select(_db.usersEntrie)
+              ..where((u) => u.keyOpen.equals(localKey))
+              ..limit(1))
+            .getSingle();
 
     final activities = await (_db.select(_db.userActivitiesEntrie)
       ..where((t) => t.userKey.equals(user.keyOpen)))
@@ -215,11 +300,10 @@ class BackupRepository implements IBackupRepository {
       ),
       activities: activities
           .map((a) => BackupActivity(
-        id: a.id,
         userKey: a.userKey,
         activityDate: a.activityDate,
         note: a.note,
-        createdAt: a.createdAt,
+        createdAt: a.createdAt, id: a.id,
       ))
           .toList(),
       wordProgress: wordProgress
@@ -291,16 +375,20 @@ class BackupRepository implements IBackupRepository {
     int vocabularyTagsAdded = 0;
     int userItemsMerged = 0;
 
+    final prefs = await SharedPreferences.getInstance();
+    final currentLocalKey = prefs.getString(_localKeyPref);
+    final targetUserKey = currentLocalKey ?? backup.user.keyOpen;
+
     await _db.transaction(() async {
       // ── 1. User ────────────────────────────────────────────────
       final existingUser = await (_db.select(_db.usersEntrie)
-        ..where((t) => t.keyOpen.equals(backup.user.keyOpen)))
+        ..where((t) => t.keyOpen.equals(targetUserKey)))
           .getSingleOrNull();
 
       if (existingUser == null) {
         await _db.into(_db.usersEntrie).insert(
           UsersEntrieCompanion.insert(
-            keyOpen: backup.user.keyOpen,
+            keyOpen: targetUserKey,
             username: backup.user.username,
             currentStreak: Value(backup.user.currentStreak),
             longestStreak: Value(backup.user.longestStreak),
@@ -311,13 +399,16 @@ class BackupRepository implements IBackupRepository {
             experience: Value(backup.user.experience),
             createdAt: Value(backup.user.createdAt),
             updatedAt: Value(backup.user.updatedAt),
+          ).copyWith(
+            id: Value(backup.user.id),
           ),
         );
         usersUpdated++;
-      } else if (backup.user.updatedAt.isAfter(existingUser.updatedAt)) {
+      } else {
         await (_db.update(_db.usersEntrie)
-          ..where((t) => t.keyOpen.equals(backup.user.keyOpen)))
+          ..where((t) => t.keyOpen.equals(targetUserKey)))
             .write(UsersEntrieCompanion(
+          id: Value(backup.user.id),
           username: Value(backup.user.username),
           currentStreak: Value(backup.user.currentStreak),
           longestStreak: Value(backup.user.longestStreak),
@@ -326,6 +417,7 @@ class BackupRepository implements IBackupRepository {
           gems: Value(backup.user.gems),
           level: Value(backup.user.level),
           experience: Value(backup.user.experience),
+          createdAt: Value(backup.user.createdAt),
           updatedAt: Value(backup.user.updatedAt),
         ));
         usersUpdated++;
@@ -473,7 +565,7 @@ class BackupRepository implements IBackupRepository {
 
       // ── 6. Activities ──────────────────────────────────────────
       final existingCreatedAts = await (_db.select(_db.userActivitiesEntrie)
-        ..where((t) => t.userKey.equals(backup.userKey)))
+        ..where((t) => t.userKey.equals(targetUserKey)))
           .get()
           .then((list) => list.map((a) => a.createdAt).toSet());
 
@@ -481,7 +573,7 @@ class BackupRepository implements IBackupRepository {
         if (!existingCreatedAts.contains(activity.createdAt)) {
           await _db.into(_db.userActivitiesEntrie).insert(
             UserActivitiesEntrieCompanion.insert(
-              userKey: activity.userKey,
+              userKey: targetUserKey,
               activityDate: activity.activityDate,
               note: Value(activity.note),
               createdAt: Value(activity.createdAt),
@@ -497,14 +589,14 @@ class BackupRepository implements IBackupRepository {
 
         final existing = await (_db.select(_db.userWordProgressEntrie)
           ..where((t) =>
-          t.userId.equals(progress.userId) &
+          t.userId.equals(targetUserKey) &
           t.wordId.equals(newWordId)))
             .getSingleOrNull();
 
         if (existing == null) {
           await _db.into(_db.userWordProgressEntrie).insert(
             UserWordProgressEntrieCompanion.insert(
-              userId: progress.userId,
+              userId: targetUserKey,
               wordId: newWordId,
               status: Value(progress.status),
               lastPracticed: Value(progress.lastPracticed),
@@ -517,7 +609,7 @@ class BackupRepository implements IBackupRepository {
         } else if (progress.updatedAt.isAfter(existing.updatedAt)) {
           await (_db.update(_db.userWordProgressEntrie)
             ..where((t) =>
-            t.userId.equals(progress.userId) &
+            t.userId.equals(targetUserKey) &
             t.wordId.equals(newWordId)))
               .write(UserWordProgressEntrieCompanion(
             status: Value(progress.status),
@@ -533,13 +625,13 @@ class BackupRepository implements IBackupRepository {
       for (final item in backup.userItems) {
         final existing = await (_db.select(_db.userItemsEntrie)
           ..where((t) =>
-          t.userId.equals(item.userId) & t.itemId.equals(item.itemId)))
+          t.userId.equals(targetUserKey) & t.itemId.equals(item.itemId)))
             .getSingleOrNull();
 
         if (existing == null) {
           await _db.into(_db.userItemsEntrie).insert(
             UserItemsEntrieCompanion.insert(
-              userId: item.userId,
+              userId: targetUserKey,
               itemId: item.itemId,
               quantity: Value(item.quantity),
             ),
@@ -549,7 +641,7 @@ class BackupRepository implements IBackupRepository {
         } else if (item.quantity > existing.quantity) {
           await (_db.update(_db.userItemsEntrie)
             ..where((t) =>
-            t.userId.equals(item.userId) &
+            t.userId.equals(targetUserKey) &
             t.itemId.equals(item.itemId)))
               .write(
               UserItemsEntrieCompanion(quantity: Value(item.quantity)));
