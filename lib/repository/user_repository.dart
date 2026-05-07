@@ -5,6 +5,8 @@ import '../database/app_db.dart';
 
 abstract class IUserRepository {
   Future<UsersEntrieData?> getCurrentUser();
+  Future<String?> getLocalKey();
+  Stream<UsersEntrieData?> watchCurrentUser();
   Future<UsersEntrieData> createLocalUser(String username);
   Future<bool> updateUser(UsersEntrieCompanion user);
   Future<void> linkAccount(String serverId);
@@ -23,6 +25,9 @@ class UserRepository implements IUserRepository {
     return prefs.getString(_keyLocal);
   }
 
+  @override
+  Future<String?> getLocalKey() => _getLocalKey();
+
   // ── Lấy thông tin user hiện tại ───────────────────────────
   @override
   Future<UsersEntrieData?> getCurrentUser() async {
@@ -32,6 +37,18 @@ class UserRepository implements IUserRepository {
     return (_db.select(_db.usersEntrie)
       ..where((u) => u.keyOpen.equals(localKey)))
         .getSingleOrNull();
+  }
+
+  @override
+  Stream<UsersEntrieData?> watchCurrentUser() async* {
+    final localKey = await _getLocalKey();
+    if (localKey == null) {
+      yield null;
+      return;
+    }
+
+    yield* (_db.select(_db.usersEntrie)..where((u) => u.keyOpen.equals(localKey)))
+        .watchSingleOrNull();
   }
 
   // ── Tạo user local lần đầu mở app ────────────────────────

@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
 import 'package:test_abc/repository/user_repository.dart';
+import 'dart:async';
 
 import '../../../database/app_db.dart';
 import '../../../helper/level_helper.dart';
@@ -10,11 +11,23 @@ part 'xp_state.dart';
 
 class XpCubit extends Cubit<XpState> {
   final UserRepository _userRepository;
+  StreamSubscription<UsersEntrieData?>? _userSub;
 
   XpCubit(this._userRepository) : super(const XpState());
 
   // ── Load XP từ DB khi khởi động ───────────────────────────
   Future<void> loadXp() async {
+    _userSub ??= _userRepository.watchCurrentUser().listen((user) {
+      if (user == null) return;
+      final info = LevelHelper.calculate(user.experience);
+      emit(state.copyWith(
+        level: user.level,
+        currentXp: info.currentXp,
+        requiredXp: info.requiredXp,
+        progress: info.progress,
+      ));
+    });
+
     final user = await _userRepository.getCurrentUser();
     if (user == null) return;
 
@@ -67,5 +80,11 @@ class XpCubit extends Cubit<XpState> {
 
   void changeLabel(Xp type) {
     emit(state.copyWith(tab: type));
+  }
+
+  @override
+  Future<void> close() async {
+    await _userSub?.cancel();
+    return super.close();
   }
 }

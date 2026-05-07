@@ -225,7 +225,6 @@ class BackupRepository implements IBackupRepository {
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
-  /// Trả về tên file KHÔNG có đuôi mở rộng (file_saver tự thêm ext).
   String _buildFileNameWithoutExt() {
     final ts = DateTime.now().millisecondsSinceEpoch;
     return 'vocafire_backup_$ts';
