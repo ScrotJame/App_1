@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:test_abc/commons/app_colors.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/generated/l10n.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/repository/user_repository.dart';
 
+import '../../../cubit/app_cubit.dart';
 import '../../../database/app_db.dart';
 import '../../../router/app_router.dart';
 import '../../../router/router.dart';
@@ -125,8 +127,8 @@ class _ProfilePageState extends State<ProfilePage> {
           width: double.infinity,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.only(
-              bottomRight: Radius.circular(50),
-              bottomLeft: Radius.circular(50)
+                bottomRight: Radius.circular(50),
+                bottomLeft: Radius.circular(50)
             ),
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
@@ -149,26 +151,26 @@ class _ProfilePageState extends State<ProfilePage> {
           child: InkWell(
             onTap: (){AppRouter.router.navigateTo(context, Routes.home);},
             child: Container(
-            padding:const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.home),
-                const SizedBox(width: 8,),
-                Text(
-                  'Home',
-                  style: const TextStyle(
-                    color: Color(0xFF5D4037),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
+              padding:const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.home),
+                  const SizedBox(width: 8,),
+                  Text(
+                    'Home',
+                    style: const TextStyle(
+                      color: Color(0xFF5D4037),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
                     ),
+                  ),
+                ],
+              ),
+            ),
           ),),
         // Avatar + name + level badge
         Positioned(
@@ -191,7 +193,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 child: ClipOval(
                   child: Image.asset(
-                    AppImages.imgAvatar
+                      AppImages.imgAvatar
                   ),
                 ),
               ),
@@ -221,7 +223,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 child: Text(
-                 "${(S.current.level.toUpperCase())}: ${data.level.toString()}",
+                  "${(S.current.level.toUpperCase())}: ${data.level.toString()}",
                   style: const TextStyle(
                     color: Color(0xFF5D4037),
                     fontWeight: FontWeight.bold,
@@ -389,29 +391,35 @@ class _ProfilePageState extends State<ProfilePage> {
         _card(
           child: Column(
             children: [
-              _SettingsItem(
-                  icon: Icons.person_outline_rounded,
-                  label: 'Edit Profile',
+              settingsItem(
+                  icon: AppImages.icAccount,
+                  label: S.current.profile,
                   onTap: () {}),
               divider,
-              _SettingsItem(
-                  icon: Icons.notifications_outlined,
-                  label: 'Notifications',
+              settingsItem(
+                  icon: AppImages.icBackup,
+                  label: S.current.save_data,
                   onTap: () {}),
               divider,
-              _SettingsItem(
-                  icon: Icons.lock_outline_rounded,
-                  label: 'Privacy',
+              settingsItem(
+                  icon: AppImages.icPrivacy,
+                  label: S.current.privacy,
                   onTap: () {}),
               divider,
-              _SettingsItem(
-                  icon: Icons.help_outline_rounded,
-                  label: 'Help & Support',
+              settingsItem(
+                icon: AppImages.icHelpAndSupport,
+                label: S.current.language,
+                onTap: () => _showLanguagePicker(context),
+              ),
+              divider,
+              settingsItem(
+                  icon: AppImages.icHelpAndSupport,
+                  label: S.current.help_support,
                   onTap: () {}),
               divider,
-              _SettingsItem(
-                icon: Icons.logout_rounded,
-                label: 'Log Out',
+              settingsItem(
+                icon: AppImages.icLogOut,
+                label: S.current.logout,
                 iconColor: const Color(0xFFE53935),
                 labelColor: const Color(0xFFE53935),
                 showArrow: false,
@@ -424,6 +432,70 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  void _showLanguagePicker(BuildContext context) {
+    final appCubit = context.read<AppCubit>();
+    final currentCode = appCubit.state.locale?.languageCode ?? 'en';
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,          // tránh bị chặn bởi nested navigator
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40, height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDDDDDD),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              S.current.language,          // ← dùng intl
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A2E),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...appCubit.state.supportedLanguages.map((lang) {
+              final (code, label) = lang;
+              final isSelected = code == currentCode;
+              return ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                tileColor: isSelected ? const Color(0xFFE3F2FD) : null,
+                title: Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected
+                        ? const Color(0xFF1565C0)
+                        : const Color(0xFF1A1A2E),
+                  ),
+                ),
+                trailing: isSelected
+                    ? const Icon(Icons.check_rounded, color: Color(0xFF1565C0))
+                    : null,
+                onTap: () {
+                  appCubit.setLanguageCode(code);
+                  Navigator.pop(sheetContext);
+                },
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
   // ─────────────────────────────────────────────────────────────
   // HELPER — white card
   // ─────────────────────────────────────────────────────────────
@@ -650,54 +722,47 @@ class _StatCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────
 // SETTINGS ITEM
 // ─────────────────────────────────────────────────────────────────
-class _SettingsItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color iconColor;
-  final Color labelColor;
-  final bool showArrow;
-  final VoidCallback onTap;
-
-  const _SettingsItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.iconColor = const Color(0xFF616161),
-    this.labelColor = const Color(0xFF1A1A2E),
-    this.showArrow = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Icon(icon, color: iconColor, size: 22),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: labelColor,
-                    fontWeight: FontWeight.w500,
-                  ),
+Widget settingsItem({
+  required String icon,
+  required String label,
+  required VoidCallback onTap,
+  Color iconColor = const Color(0xFF616161),
+  Color labelColor = const Color(0xFF1A1A2E),
+  bool showArrow = true,
+}) {
+  return Material(
+    color: Colors.transparent,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        child: Row(
+          children: [
+            SvgPicture.asset(icon, color: iconColor, width: 22, height: 22,),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: labelColor,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              if (showArrow)
-                const Icon(Icons.chevron_right_rounded,
-                    color: Color(0xFFBDBDBD), size: 22),
-            ],
-          ),
+            ),
+            if (showArrow)
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFFBDBDBD),
+                size: 22,
+              ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }

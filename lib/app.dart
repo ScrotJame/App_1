@@ -59,7 +59,7 @@ class _MyAppState extends State<MyApp> {
       ],
       child: MultiBlocProvider(
         providers: [
-          BlocProvider<AppCubit>(create: (_) => AppCubit()),
+          BlocProvider<AppCubit>(create: (_) => AppCubit()..loadLocale()),
           BlocProvider(
             create: (ctx) => XpCubit(ctx.read<UserRepository>())..loadXp(),
           ),
@@ -76,23 +76,29 @@ class _MyAppState extends State<MyApp> {
   }
 
   Widget _buildMaterialApp() {
-    return MaterialApp(
-      localizationsDelegates: const [
-        S.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      title: 'Floating Island',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true),
-      onGenerateRoute: AppRouter.router.generator,
-      initialRoute: Routes.splash,
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context)
-              .copyWith(textScaler: TextScaler.linear(1.0)),
-          child: child!,
+    return BlocBuilder<AppCubit, AppState>(
+      builder: (context, state) {
+        return MaterialApp(
+          localizationsDelegates: const [
+            S.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: S.delegate.supportedLocales,
+          locale: state.locale,
+          title: 'Floating Island',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(useMaterial3: true),
+          onGenerateRoute: AppRouter.router.generator,
+          initialRoute: Routes.splash,
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(1.0)),
+              child: child!,
+            );
+          },
         );
       },
     );
