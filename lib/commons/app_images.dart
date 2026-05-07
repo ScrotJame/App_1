@@ -14,7 +14,13 @@ class AppImages {
   static final imgAvatar4 ='assets/avatar/img_avatar_4.png';
   static final imgAvatar5 ='assets/avatar/img_avatar_5.png';
 
+  ///svg
   static final icScanFile ='assets/vector/ic_scan_file.svg';
+  static final icAccount ='assets/vector/ic_account.svg';
+  static final icBackup ='assets/vector/ic_backup.svg';
+  static final icHelpAndSupport ='assets/vector/ic_help_and_support.svg';
+  static final icLogOut ='assets/vector/ic_log_out.svg';
+  static final icPrivacy ='assets/vector/ic_privacy.svg';
 }
 
 class AppLogoImages {
