@@ -23,5 +23,10 @@
   "adverb":"Trạng từ",
   "expression": "Cụm từ",
   "base_name": "Chiến binh",
-  "level": "Cấp độ"
+  "level": "Cấp độ",
+  "profile": "Chỉnh sửa thông tin",
+  "save_data": "Sao lưu & Khôi phục",
+  "privacy": "Riêng tư",
+  "help_support": "Trợ giúp & Hỗ trợ",
+  "logout": "Đăng xuất"
 }

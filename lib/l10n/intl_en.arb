@@ -23,5 +23,10 @@
   "adverb": "Adverb",
   "expression": "Expression",
   "base_name": "Warrior",
-  "level": "level"
+  "level": "level",
+  "profile": "Edit Profile",
+  "save_data": "Backup & Restore",
+  "privacy": "Privacy",
+  "help_support": "Help & Support",
+  "logout": "Log Out"
 }
