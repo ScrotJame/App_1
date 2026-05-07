@@ -7,18 +7,20 @@ class SetTimeHelper {
 
     switch (level) {
       case 1:
-        durationToWait = const Duration(hours: 2); //seconds
+        durationToWait = const Duration(minutes: 15); //seconds
         break;
       case 2:
-        durationToWait = const Duration(hours: 4);
+        durationToWait = const Duration(minutes: 30);
         break;
       case 3:
-        durationToWait = const Duration(hours: 6);
+        durationToWait = const Duration(hours: 1);
         break;
       case 4:
-        durationToWait = const Duration(hours: 8);
+        durationToWait = const Duration(hours: 2);
         break;
       case 5:
+        durationToWait = const Duration(days: 8);
+        break;
       default:
         durationToWait = const Duration(days: 5);
         break;
