@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -38,6 +40,63 @@ class _ProfilePageState extends State<ProfilePage> {
   void dispose() {
     _cubit.close();
     super.dispose();
+  }
+
+
+  void _showEditNameDialog(String currentName) {
+    final controller = TextEditingController(text: currentName);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          S.current.base_name, // thêm key này vào l10n nếu chưa có
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: InputDecoration(
+            hintText: S.current.base_name,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(S.current.cancel,
+                style: const TextStyle(color: Colors.grey)),
+          ),
+          BlocBuilder<ProfileCubit, ProfileState>(
+            builder: (_, state) => TextButton(
+              onPressed: state.isSaving
+                  ? null
+                  : () async {
+                final ok =
+                await _cubit.updateUsername(controller.text);
+                if (ok && ctx.mounted) Navigator.pop(ctx);
+              },
+              child: state.isSaving
+                  ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+                  : Text(S.current.save,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1565C0))),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -81,22 +140,11 @@ class _ProfilePageState extends State<ProfilePage> {
               onRefresh: () async => _cubit.refresh(),
               child: CustomScrollView(
                 slivers: [
-                  SliverToBoxAdapter(child: _buildHeader(data)),
+                  SliverToBoxAdapter(
+                      child: _buildHeader(data, state)),
                   SliverToBoxAdapter(
                     child: SizedBox(height: overlap + 8),
                   ),
-                  // SliverToBoxAdapter(
-                  //   child: Padding(
-                  //     padding: const EdgeInsets.symmetric(horizontal: 16),
-                  //     child: _buildLearningProgress(data),
-                  //   ),
-                  // ),
-                  // SliverToBoxAdapter(
-                  //   child: Padding(
-                  //     padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                  //     child: _buildGardenBadges(data),
-                  //   ),
-                  // ),
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
@@ -116,7 +164,7 @@ class _ProfilePageState extends State<ProfilePage> {
   // ─────────────────────────────────────────────────────────────
   // HEADER
   // ─────────────────────────────────────────────────────────────
-  Widget _buildHeader(UsersEntrieData data) {
+  Widget _buildHeader(UsersEntrieData data, ProfileState state) {
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.topCenter,
@@ -126,10 +174,9 @@ class _ProfilePageState extends State<ProfilePage> {
           height: headerHeight,
           width: double.infinity,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.only(
+            borderRadius: const BorderRadius.only(
                 bottomRight: Radius.circular(50),
-                bottomLeft: Radius.circular(50)
-            ),
+                bottomLeft: Radius.circular(50)),
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -139,30 +186,32 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Stack(
             children: [
               Positioned(top: -40, right: -30, child: _bubble(140, 0.09)),
-              Positioned(top: 30,  left: -20,  child: _bubble(100, 0.07)),
+              Positioned(top: 30, left: -20, child: _bubble(100, 0.07)),
               Positioned(bottom: 10, right: 60, child: _bubble(60, 0.06)),
             ],
           ),
         ),
 
+        // Home button
         Positioned(
-          top:50,
+          top: 50,
           left: -15,
           child: InkWell(
-            onTap: (){AppRouter.router.navigateTo(context, Routes.home);},
+            onTap: () => AppRouter.router.navigateTo(context, Routes.home),
             child: Container(
-              padding:const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
               decoration: BoxDecoration(
                 color: AppColors.white,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.home),
-                  const SizedBox(width: 8,),
-                  Text(
+                  const Icon(Icons.home),
+                  const SizedBox(width: 8),
+                  const Text(
                     'Home',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Color(0xFF5D4037),
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
@@ -171,43 +220,118 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ),
-          ),),
+          ),
+        ),
+
         // Avatar + name + level badge
         Positioned(
           top: 36,
           child: Column(
             children: [
-              Container(
-                width: 86,
-                height: 86,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.18),
-                      blurRadius: 14,
-                      offset: const Offset(0, 5),
+              // ── Avatar với nút edit ──
+              GestureDetector(
+                onTap: _cubit.pickAndSaveAvatar, // mở thư viện
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Ảnh avatar
+                    Container(
+                      width: 86,
+                      height: 86,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.18),
+                            blurRadius: 14,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: state.isSaving
+                        // Hiện shimmer nhẹ khi đang upload
+                            ? ColoredBox(
+                          color: Colors.grey.shade200,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF1E9FD8)),
+                          ),
+                        )
+                            : state.avatarPath != null
+                            ? Image.file(
+                          File(state.avatarPath!),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              Image.asset(AppImages.imgAvatar,
+                                  fit: BoxFit.cover),
+                        )
+                            : Image.asset(AppImages.imgAvatar,
+                            fit: BoxFit.cover),
+                      ),
+                    ),
+
+                    Positioned(
+                      right: -4,
+                      bottom: -4,
+                      child: Container(
+                        width: 26,
+                        height: 26,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.12),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: SvgPicture.asset(
+                            AppImages.icEdit,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                child: ClipOval(
-                  child: Image.asset(
-                      AppImages.imgAvatar
-                  ),
-                ),
               ),
+
               const SizedBox(height: 10),
-              Text(
-                data.username,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.2,
-                ),
+
+              // ── Tên + nút edit ──
+              Row(
+                children: [
+                  Text(
+                    data.username,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  InkWell(
+                    onTap: () => _showEditNameDialog(data.username),
+                    child: SvgPicture.asset(
+                      AppImages.icEdit,
+                      width: 20,
+                      height: 20,
+                    ),
+                  ),
+                ],
               ),
+
               const SizedBox(height: 8),
+
+              // Level badge
               Container(
                 padding:
                 const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
@@ -223,7 +347,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 child: Text(
-                  "${(S.current.level.toUpperCase())}: ${data.level.toString()}",
+                  "${(S.current.level.toUpperCase())}: ${data.level}",
                   style: const TextStyle(
                     color: Color(0xFF5D4037),
                     fontWeight: FontWeight.bold,
@@ -234,6 +358,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
         ),
+
         Positioned(
           top: statsTop,
           left: 0,
@@ -242,7 +367,7 @@ class _ProfilePageState extends State<ProfilePage> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: _buildStats(data),
           ),
-        )
+        ),
       ],
     );
   }
@@ -282,106 +407,18 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // LEARNING PROGRESS
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildLearningProgress(UsersEntrieData data) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Learning Progress',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1A2E),
-              ),
-            ),
-            GestureDetector(
-              onTap: () {},
-              child: const Text(
-                'See All',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF29B6F6),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        // _card(
-        //   child: Column(
-        //     children: data.courses.asMap().entries.map((e) {
-        //       final isLast = e.key == data.courses.length - 1;
-        //       return Column(
-        //         children: [
-        //           _CourseItem(course: e.value),
-        //           if (!isLast)
-        //             const Divider(
-        //                 height: 1,
-        //                 indent: 16,
-        //                 endIndent: 16,
-        //                 color: Color(0xFFEEEEEE)),
-        //         ],
-        //       );
-        //     }).toList(),
-        //   ),
-        // ),
-      ],
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // GARDEN BADGES
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildGardenBadges(UsersEntrieData data) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Garden Badges',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1A1A2E),
-          ),
-        ),
-
-        // const SizedBox(height: 12),
-        // _card(
-        //   child: Padding(
-        //     padding: const EdgeInsets.symmetric(vertical: 8),
-        //     child: Row(
-        //       mainAxisAlignment: MainAxisAlignment.spaceAround,
-        //       children:
-        //       data.badges.map((b) => _BadgeItem(badge: b)).toList(),
-        //     ),
-        //   ),
-        // ),
-      ],
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
   // ACCOUNT SETTINGS
   // ─────────────────────────────────────────────────────────────
   Widget _buildAccountSettings() {
     const divider = Divider(
-        height: 1,
-        indent: 54,
-        endIndent: 16,
-        color: Color(0xFFEEEEEE));
+        height: 1, indent: 54, endIndent: 16, color: Color(0xFFEEEEEE));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Account Settings',
-          style: TextStyle(
+        Text(
+          S.of(context).setting,
+          style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.bold,
             color: Color(0xFF1A1A2E),
@@ -391,11 +428,6 @@ class _ProfilePageState extends State<ProfilePage> {
         _card(
           child: Column(
             children: [
-              settingsItem(
-                  icon: AppImages.icAccount,
-                  label: S.current.profile,
-                  onTap: () {}),
-              divider,
               settingsItem(
                   icon: AppImages.icBackup,
                   label: S.current.save_data,
@@ -438,7 +470,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     showModalBottomSheet(
       context: context,
-      useRootNavigator: true,          // tránh bị chặn bởi nested navigator
+      useRootNavigator: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -447,9 +479,9 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle bar
             Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
                 color: const Color(0xFFDDDDDD),
@@ -457,7 +489,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             Text(
-              S.current.language,          // ← dùng intl
+              S.current.language,
               style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
@@ -476,14 +508,17 @@ class _ProfilePageState extends State<ProfilePage> {
                 title: Text(
                   label,
                   style: TextStyle(
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                     color: isSelected
                         ? const Color(0xFF1565C0)
                         : const Color(0xFF1A1A2E),
                   ),
                 ),
                 trailing: isSelected
-                    ? const Icon(Icons.check_rounded, color: Color(0xFF1565C0))
+                    ? const Icon(Icons.check_rounded,
+                    color: Color(0xFF1565C0))
                     : null,
                 onTap: () {
                   appCubit.setLanguageCode(code);
@@ -496,6 +531,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
   // ─────────────────────────────────────────────────────────────
   // HELPER — white card
   // ─────────────────────────────────────────────────────────────
@@ -567,159 +603,6 @@ class _StatCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// COURSE ITEM
-// ─────────────────────────────────────────────────────────────────
-// class _CourseItem extends StatelessWidget {
-//   final LearningCourse course;
-//
-//   const _CourseItem({required this.course});
-//
-//   String _fmt(int n) {
-//     if (n >= 1000) {
-//       final d = n / 1000;
-//       return '${d % 1 == 0 ? d.toInt() : d.toStringAsFixed(1)}k';
-//     }
-//     return n.toString();
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Padding(
-//       padding: const EdgeInsets.all(16),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Row(
-//             children: [
-//               Container(
-//                 width: 38,
-//                 height: 38,
-//                 decoration: BoxDecoration(
-//                   color: const Color(0xFFE3F2FD),
-//                   borderRadius: BorderRadius.circular(10),
-//                 ),
-//                 child: const Center(
-//                   child: Text(
-//                     'Aǎ',
-//                     style: TextStyle(
-//                       fontSize: 15,
-//                       fontWeight: FontWeight.bold,
-//                       color: Color(0xFF1565C0),
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//               const SizedBox(width: 12),
-//               Expanded(
-//                 child: Text(
-//                   course.title,
-//                   style: const TextStyle(
-//                     fontWeight: FontWeight.w600,
-//                     fontSize: 15,
-//                     color: Color(0xFF1A1A2E),
-//                   ),
-//                 ),
-//               ),
-//               Text(
-//                 '${(course.progress * 100).toInt()}%',
-//                 style: const TextStyle(
-//                   fontWeight: FontWeight.bold,
-//                   fontSize: 15,
-//                   color: Color(0xFF1A1A2E),
-//                 ),
-//               ),
-//             ],
-//           ),
-//           const SizedBox(height: 10),
-//           ClipRRect(
-//             borderRadius: BorderRadius.circular(8),
-//             child: LinearProgressIndicator(
-//               value: course.progress,
-//               minHeight: 9,
-//               backgroundColor: const Color(0xFFE8F5E9),
-//               valueColor:
-//               const AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
-//             ),
-//           ),
-//           const SizedBox(height: 8),
-//           Row(
-//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//             children: [
-//               Text(
-//                 '${_fmt(course.current)} / ${_fmt(course.total)} ${course.unit}',
-//                 style:
-//                 const TextStyle(fontSize: 12, color: Color(0xFF9E9E9E)),
-//               ),
-//               Text(
-//                 '+${course.todayGain} today',
-//                 style: const TextStyle(
-//                   fontSize: 12,
-//                   color: Color(0xFF4CAF50),
-//                   fontWeight: FontWeight.w600,
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-// ─────────────────────────────────────────────────────────────────
-// BADGE ITEM
-// ─────────────────────────────────────────────────────────────────
-// class _BadgeItem extends StatelessWidget {
-//   final BadgeItem badge;
-//
-//   const _BadgeItem({required this.badge});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     final unlocked = badge.isUnlocked;
-//     return Column(
-//       children: [
-//         Container(
-//           width: 62,
-//           height: 62,
-//           decoration: BoxDecoration(
-//             shape: BoxShape.circle,
-//             color: unlocked
-//                 ? const Color(0xFFE8F5E9)
-//                 : const Color(0xFFF0F0F0),
-//             border: Border.all(
-//               color: unlocked
-//                   ? const Color(0xFF4CAF50)
-//                   : const Color(0xFFCCCCCC),
-//               width: 2.2,
-//             ),
-//           ),
-//           child: Center(
-//             child: unlocked
-//                 ? Text(badge.icon,
-//                 style: const TextStyle(fontSize: 26))
-//                 : const Icon(Icons.auto_awesome,
-//                 size: 24, color: Color(0xFFCCCCCC)),
-//           ),
-//         ),
-//         const SizedBox(height: 8),
-//         Text(
-//           badge.name,
-//           style: TextStyle(
-//             fontSize: 11,
-//             fontWeight: FontWeight.w500,
-//             color: unlocked
-//                 ? const Color(0xFF424242)
-//                 : const Color(0xFFAAAAAA),
-//           ),
-//           textAlign: TextAlign.center,
-//         ),
-//       ],
-//     );
-//   }
-// }
-
-// ─────────────────────────────────────────────────────────────────
 // SETTINGS ITEM
 // ─────────────────────────────────────────────────────────────────
 Widget settingsItem({
@@ -736,13 +619,10 @@ Widget settingsItem({
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            SvgPicture.asset(icon, color: iconColor, width: 22, height: 22,),
+            SvgPicture.asset(icon, color: iconColor, width: 22, height: 22),
             const SizedBox(width: 14),
             Expanded(
               child: Text(

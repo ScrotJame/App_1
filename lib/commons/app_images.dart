@@ -21,6 +21,7 @@ class AppImages {
   static final icHelpAndSupport ='assets/vector/ic_help_and_support.svg';
   static final icLogOut ='assets/vector/ic_log_out.svg';
   static final icPrivacy ='assets/vector/ic_privacy.svg';
+  static final icEdit ='assets/vector/ic_edit_pencil.svg';
 }
 
 class AppLogoImages {
