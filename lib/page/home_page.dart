@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/app_colors.dart';
 import 'package:test_abc/components/cloud_painter.dart';
+import 'package:test_abc/generated/l10n.dart';
 import 'package:test_abc/page/streak/streak_page.dart';
 import 'package:test_abc/page/test_word/test_page.dart';
 import 'package:test_abc/page/widgets/app_bar_custom.dart';
@@ -45,25 +46,25 @@ class _HomePageState extends State<HomePage>
   /// Danh sách các trang có thể chuyển tới
   static final List<IslandItem> _islandItems = [
     IslandItem(
-      label: 'Thư viện',
+      label: (ctx) => S.of(ctx).library,
       primaryColor: const Color(0xFF5EC95C),
       secondaryColor: const Color(0xFF3A7D34),
       pageBuilder: (_) => ListWordPage(),
     ),
     IslandItem(
-      label: 'Flash Card',
+      label: (ctx) => S.of(ctx).flash_card,
       primaryColor: const Color(0xFF5B9EF5),
       secondaryColor: const Color(0xFF2A62C0),
       pageBuilder: (_) => FlashCardPage(),
     ),
     IslandItem(
-      label: 'Thêm từ mới',
+      label: (ctx) => S.of(ctx).add_word,
       primaryColor: const Color(0xFFF5A623),
       secondaryColor: const Color(0xFFC47A0A),
       pageBuilder: (_) => AddWordPage(),
     ),
     IslandItem(
-      label: 'Kiểm tra',
+      label: (ctx) => S.of(ctx).test,
       primaryColor: const Color(0xFFF52323),
       secondaryColor: const Color(0xFFC40A0A),
       pageBuilder: (_) => TestPage(),
@@ -235,7 +236,7 @@ class _HomePageState extends State<HomePage>
                   children: [
                     const SizedBox(height: 12),
                     Text(
-                      item.label,
+                      item.label(context),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,

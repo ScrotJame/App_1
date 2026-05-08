@@ -5,9 +5,11 @@ import 'package:test_abc/commons/app_images.dart';
 
 import '../../commons/app_colors.dart';
 import '../../commons/enums.dart';
+import '../../generated/l10n.dart';
 import '../../repository/user_repository.dart';
 import '../../router/app_router.dart';
 import '../../router/router.dart';
+import '../../ultis/extension/label_extension.dart';
 import '../widgets/buble_stack.dart';
 import 'streak_cubit.dart';
 
@@ -566,7 +568,7 @@ class _StreakPageState extends State<StreakPage>
       padding: const EdgeInsets.fromLTRB(8, 20, 8, 8),
       child: Column(
         children: [
-          Text('Your Stats',
+          Text(S.of(context).your_stats.capitalizeWords(),
               style: GoogleFonts.balooBhai2(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
