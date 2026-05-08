@@ -101,8 +101,8 @@ class XpBarWidget extends StatelessWidget {
 
   Widget _buildActiveLabel(XpState state) {
     final text = state.tab == Xp.levelTab
-        ? '${state.currentXp} / ${state.requiredXp} XP'
-        : '${(S.current.level).toUpperCase()}: ${state.level}';
+        ? '${(S.current.level).toUpperCase()}: ${state.level}'
+        : '${state.currentXp} / ${state.requiredXp} XP';
 
     return Center(
       child: Text(

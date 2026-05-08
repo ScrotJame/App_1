@@ -14,6 +14,9 @@ class AppImages {
   static final imgAvatar4 ='assets/avatar/img_avatar_4.png';
   static final imgAvatar5 ='assets/avatar/img_avatar_5.png';
 
+  static final imgLabelGem = 'assets/images/ic_gems_label.png';
+  static final imgGem = 'assets/images/ic_diamond.png';
+
   ///svg
   static final icScanFile ='assets/vector/ic_scan_file.svg';
   static final icAccount ='assets/vector/ic_account.svg';

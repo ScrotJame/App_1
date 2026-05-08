@@ -165,9 +165,7 @@ class _AddWordPageState extends State<AddWordPage>
           icon: const Icon(Icons.bookmark_border_rounded,
               color: Color(0xFF6B7FD4), size: 22),
           onPressed: () {
-            Navigator.push(context,
-                MaterialPageRoute(
-                    builder: (_) => const BackupPage()));
+
           },
         ),
         InkWell(

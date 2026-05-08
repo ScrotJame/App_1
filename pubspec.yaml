@@ -67,6 +67,7 @@ dependencies:
   file_saver: ^0.3.1
   encrypt: ^5.0.3
   flutter_dotenv: ^6.0.1
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:test_abc/commons/app_colors.dart';
 
 import '../../commons/app_colors.dart';
 
-class AppBarCustom extends StatelessWidget implements PreferredSizeWidget {
+class AppBarCustom extends StatelessWidget
+    implements PreferredSizeWidget {
   final String? title;
   final bool showBack;
-  final List<Widget>? actions;
+  final List<Widget>? topActions;
+  final List<Widget>? bottomActions;
   final VoidCallback? onBackPressed;
   final Color? backgroundColor;
   final Color? foregroundColor;
@@ -18,7 +19,8 @@ class AppBarCustom extends StatelessWidget implements PreferredSizeWidget {
     super.key,
     this.title,
     this.showBack = true,
-    this.actions,
+    this.topActions,
+    this.bottomActions,
     this.onBackPressed,
     this.backgroundColor,
     this.foregroundColor,
@@ -27,7 +29,9 @@ class AppBarCustom extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(56);
+  Size get preferredSize => Size.fromHeight(
+    bottomActions != null ? 190 : 56,
+  );
 
   Color get _bgColor =>
       backgroundColor ?? AppColors.mainTopSky.withOpacity(0.85);
@@ -39,13 +43,20 @@ class AppBarCustom extends StatelessWidget implements PreferredSizeWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Container(
-        height: preferredSize.height + MediaQuery.of(context).padding.top,
-        padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+        height: preferredSize.height +
+            MediaQuery.of(context).padding.top,
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top,
+        ),
         decoration: BoxDecoration(
-          color: showBack  ? _bgColor : Color(0xFF1A3A8F),
+          color: showBack
+              ? _bgColor
+              : const Color(0xFF1A3A8F),
           border: Border(
             bottom: BorderSide(
-              color: showBack  ? Colors.white.withOpacity(0.12) : Colors.transparent,
+              color: showBack
+                  ? Colors.white.withOpacity(0.12)
+                  : Colors.transparent,
               width: 0.5,
             ),
           ),
@@ -58,22 +69,41 @@ class AppBarCustom extends StatelessWidget implements PreferredSizeWidget {
   Widget _buildContent(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLeading(context),
+          Row(
+            children: [
+              _buildLeading(context),
 
-          if(title != null) ...[
-            const SizedBox(width: 4),
-            Expanded(child: _buildTitle()),
-          ],
+              if (title != null) ...[
+                const SizedBox(width: 4),
+                Expanded(child: _buildTitle()),
+              ],
 
-          if (actions != null)
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: _buildActions(),
+              if (topActions != null)
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: topActions!,
+                  ),
+                ),
+            ],
+          ),
+
+          if (bottomActions != null) ...[
+            const SizedBox(height: 8),
+
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: bottomActions!,
               ),
             ),
+          ],
         ],
       ),
     );
@@ -85,10 +115,17 @@ class AppBarCustom extends StatelessWidget implements PreferredSizeWidget {
 
     return _AppBarIconButton(
       foregroundColor: _fgColor,
-      onTap: () => onBackPressed != null
-          ? onBackPressed!()
-          : Navigator.of(context).maybePop(),
-      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+      onTap: () {
+        if (onBackPressed != null) {
+          onBackPressed!();
+        } else {
+          Navigator.of(context).maybePop();
+        }
+      },
+      child: const Icon(
+        Icons.arrow_back_ios_new_rounded,
+        size: 18,
+      ),
     );
   }
 
@@ -104,12 +141,6 @@ class AppBarCustom extends StatelessWidget implements PreferredSizeWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
-  }
-
-  List<Widget> _buildActions() {
-    return actions!
-        .map((action) => action)
-        .toList();
   }
 }
 
@@ -150,6 +181,28 @@ class AppBarAction extends StatelessWidget {
   final Color? color;
 
   const AppBarAction({
+    super.key,
+    required this.icon,
+    required this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _AppBarIconButton(
+      foregroundColor: color ?? Colors.white,
+      onTap: onTap,
+      child: Image.asset(icon!),
+    );
+  }
+}
+
+class AppBarIcon extends StatelessWidget {
+  final String? icon;
+  final VoidCallback onTap;
+  final Color? color;
+
+  const AppBarIcon({
     super.key,
     required this.icon,
     required this.onTap,

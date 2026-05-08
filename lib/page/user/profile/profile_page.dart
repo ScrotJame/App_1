@@ -13,6 +13,7 @@ import '../../../cubit/app_cubit.dart';
 import '../../../database/app_db.dart';
 import '../../../router/app_router.dart';
 import '../../../router/router.dart';
+import '../../backup/backup_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -431,7 +432,10 @@ class _ProfilePageState extends State<ProfilePage> {
               settingsItem(
                   icon: AppImages.icBackup,
                   label: S.current.save_data,
-                  onTap: () {}),
+                  onTap: () {
+                    Navigator.push(context,
+                      MaterialPageRoute(
+                          builder: (_) => const BackupPage()));}),
               divider,
               settingsItem(
                   icon: AppImages.icPrivacy,

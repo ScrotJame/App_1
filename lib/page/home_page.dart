@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/app_colors.dart';
+import 'package:test_abc/components/bager_widget.dart';
 import 'package:test_abc/components/cloud_painter.dart';
 import 'package:test_abc/generated/l10n.dart';
 import 'package:test_abc/page/streak/streak_page.dart';
 import 'package:test_abc/page/test_word/test_page.dart';
+import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/page/widgets/app_bar_custom.dart';
 import 'package:test_abc/page/widgets/avatar/xp_cubit.dart';
 import 'package:test_abc/page/widgets/bubble_button.dart';
@@ -462,7 +464,7 @@ class _HomePageState extends State<HomePage>
       extendBody: true,
       appBar: AppBarCustom(
         showBack: false,
-        actions: [
+        topActions: [
           XpBarWidget(
             avatarUrl: AppImages.imgAvatar ?? AppImages.icAvatar,
             onTap: () {
@@ -477,6 +479,21 @@ class _HomePageState extends State<HomePage>
                 MaterialPageRoute(
                   builder: (context) => StreakPage(),
                 ),
+              );
+            },
+          ),
+        ],
+        bottomActions: [
+          BlocBuilder<ProfileCubit, ProfileState>(
+            builder: (context, profileState) {
+              final gems = profileState.data?.gems ?? 0;
+              return BagerWidget(
+                avatarUrl: AppImages.imgGem,
+                backgroundColor: AppColors.kAmber,
+                barBorder: AppColors.kRed,
+                barGradient: AppColors.streakGradient,
+                avatarBackground: AppColors.white,
+                label: '$gems',
               );
             },
           ),
