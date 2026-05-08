@@ -44,7 +44,7 @@ class _HomePageState extends State<HomePage>
   ];
 
   /// Danh sách các trang có thể chuyển tới
-  static final List<IslandItem> _islandItems = [
+  final List<IslandItem> _islandItems = [
     IslandItem(
       label: (ctx) => S.of(ctx).library,
       primaryColor: const Color(0xFF5EC95C),
@@ -88,7 +88,7 @@ class _HomePageState extends State<HomePage>
     );
 
     _pageController = PageController(
-      viewportFraction: 0.78, // Cho thấy 1 phần card kế bên
+      viewportFraction: 0.78,
     );
   }
 

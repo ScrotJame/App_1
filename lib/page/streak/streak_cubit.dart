@@ -18,10 +18,6 @@ class StreakCubit extends Cubit<StreakState> {
 
   // ─── Helpers ──────────────────────────────────────────────────────
 
-  static const List<String> _dayLabels = [
-    'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',
-  ];
-
   static String _dateKey(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
@@ -42,7 +38,7 @@ class StreakCubit extends Cubit<StreakState> {
       final isFuture = day.isAfter(now);
 
       return DayStreak(
-        label: _dayLabels[i],
+        weekdayIndex: i, // 0 = Mon, 6 = Sun — UI tự resolve theo l10n
         date: day.day,
         month: day.month,
         year: day.year,
@@ -131,7 +127,9 @@ class StreakCubit extends Cubit<StreakState> {
       final int dbLongestStreak = user.longestStreak;
       var markedDates = await _loadMarkedDates();
 
-      if (markedDates.isEmpty && user.currentStreak > 0 && user.lastActiveDate != null) {
+      if (markedDates.isEmpty &&
+          user.currentStreak > 0 &&
+          user.lastActiveDate != null) {
         final end = _dateOnly(user.lastActiveDate!);
         final generated = <String>{};
         for (int i = 0; i < user.currentStreak; i++) {
@@ -143,8 +141,7 @@ class StreakCubit extends Cubit<StreakState> {
       }
 
       final currentStreak = _calcCurrentStreak(markedDates);
-      bool streakWasReset = false;
-      // Không auto-reset DB streak chỉ vì prefs trống/thiếu dữ liệu.
+      const bool streakWasReset = false;
 
       final streakStart = _calcStreakStartDate(markedDates);
       final weekDays = _buildWeekDays(0, markedDates);

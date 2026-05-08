@@ -1,7 +1,7 @@
 part of 'streak_cubit.dart';
 
 class DayStreak {
-  final String label;
+  final int weekdayIndex;
   final int date;
   final int month;
   final int year;
@@ -10,7 +10,7 @@ class DayStreak {
   final bool isFuture;
 
   const DayStreak({
-    required this.label,
+    required this.weekdayIndex,
     required this.date,
     required this.month,
     required this.year,

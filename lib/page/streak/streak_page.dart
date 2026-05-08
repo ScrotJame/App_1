@@ -67,26 +67,63 @@ class _StreakPageState extends State<StreakPage>
     super.dispose();
   }
 
-  String _weekTitle(List<DayStreak> days, int weekOffset) {
+  String _dayLabel(int index) {
+    switch (index) {
+      case 0: return S.of(context).mon;
+      case 1: return S.of(context).tue;
+      case 2: return S.of(context).wed;
+      case 3: return S.of(context).thu;
+      case 4: return S.of(context).fri;
+      case 5: return S.of(context).sat;
+      case 6: return S.of(context).sun;
+      default: return '';
+    }
+  }
+
+  String _weekTitle(
+      BuildContext context,
+      List<DayStreak> days,
+      int weekOffset,
+      ) {
     if (days.isEmpty) return '';
-    if (weekOffset == 0) return 'This Week';
-    if (weekOffset == -1) return 'Last Week';
+
+    if (weekOffset == 0) {
+      return S.of(context).this_week.capitalizeWords();
+    }
+
+    if (weekOffset == -1) {
+      return S.of(context).last_week.capitalizeWords();
+    }
+
     final first = days.first;
     final last = days.last;
-    final firstMonth = _monthAbbr(first.month);
-    final lastMonth = _monthAbbr(last.month);
+
+    final firstMonth = _monthAbbr(context, first.month);
+    final lastMonth = _monthAbbr(context, last.month);
+
     if (first.month == last.month) {
       return '$firstMonth ${first.date}–${last.date}, ${first.year}';
     }
+
     return '$firstMonth ${first.date} – $lastMonth ${last.date}';
   }
 
-  String _monthAbbr(int month) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return months[month - 1];
+  String _monthAbbr(BuildContext context, int month) {
+    switch (month) {
+      case 1:  return S.of(context).jan.capitalizeWords();
+      case 2:  return S.of(context).feb.capitalizeWords();
+      case 3:  return S.of(context).mar.capitalizeWords();
+      case 4:  return S.of(context).apr.capitalizeWords();
+      case 5:  return S.of(context).may.capitalizeWords();
+      case 6:  return S.of(context).jun.capitalizeWords();
+      case 7:  return S.of(context).jul.capitalizeWords();
+      case 8:  return S.of(context).aug.capitalizeWords();
+      case 9:  return S.of(context).sep.capitalizeWords();
+      case 10: return S.of(context).oct.capitalizeWords();
+      case 11: return S.of(context).nov.capitalizeWords();
+      case 12: return S.of(context).dec.capitalizeWords();
+      default: return '';
+    }
   }
 
   @override
@@ -146,7 +183,7 @@ class _StreakPageState extends State<StreakPage>
                                     ),
                                     const SizedBox(height: 26),
                                     Text(
-                                      'Day Streak',
+                                      S.of(context).day_streak,
                                       style: GoogleFonts.balooBhai2(
                                         fontSize: 26,
                                         fontWeight: FontWeight.w800,
@@ -169,25 +206,29 @@ class _StreakPageState extends State<StreakPage>
 
                           if (state.streakWasReset) _buildResetBanner(),
 
-                          if(state.longestStreak > 0)
-                          _buildStreakInfoRow(state),
+                          if (state.longestStreak > 0)
+                            _buildStreakInfoRow(state),
 
                           const SizedBox(height: 8),
 
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            padding:
+                            const EdgeInsets.symmetric(horizontal: 24),
                             child: _buildWeekSection(state),
                           ),
                           const SizedBox(height: 20),
 
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            padding:
+                            const EdgeInsets.symmetric(horizontal: 24),
                             child: _buildMarkTodayButton(state),
                           ),
+
                           const SizedBox(height: 20),
 
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            padding:
+                            const EdgeInsets.symmetric(horizontal: 24),
                             child: _buildStatsCard(state),
                           ),
                           const SizedBox(height: 32),
@@ -215,7 +256,8 @@ class _StreakPageState extends State<StreakPage>
                         children: [
                           const Icon(Icons.home),
                           const SizedBox(width: 8),
-                          Text('Home', style: GoogleFonts.balooBhai2()),
+                          Text(S.of(context).home.capitalizeWords(),
+                              style: GoogleFonts.balooBhai2()),
                         ],
                       ),
                     ),
@@ -265,13 +307,10 @@ class _StreakPageState extends State<StreakPage>
   Widget _buildStreakInfoRow(StreakState state) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-      child: Container(
-        child:
-            _buildInfoChip(
-              icon: Icons.emoji_events_rounded,
-              label: 'Best: ${state.longestStreak} days',
-              color: const Color(0xFFFFC107),
-            ),
+      child: _buildInfoChip(
+        icon: Icons.emoji_events_rounded,
+        label: 'Best: ${state.longestStreak} days',
+        color: const Color(0xFFFFC107),
       ),
     );
   }
@@ -331,31 +370,43 @@ class _StreakPageState extends State<StreakPage>
 
   // ─── Week section ─────────────────────────────────────────────────
   Widget _buildWeekSection(StreakState state) {
-    final title = _weekTitle(state.weekDays, state.weekOffset);
+    final title = _weekTitle(
+      context,
+      state.weekDays,
+      state.weekOffset,
+    );
+
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildNavButton(
-                icon: Icons.chevron_left_rounded, onTap: _cubit.previousWeek),
+              icon: Icons.chevron_left_rounded,
+              onTap: _cubit.previousWeek,
+            ),
             GestureDetector(
               onTap: state.weekOffset != 0 ? _cubit.goToCurrentWeek : null,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(title,
-                      style: GoogleFonts.balooBhai2(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: state.weekOffset == 0
-                            ? const Color(0xFF1A1A1A)
-                            : const Color(0xFFFF6B35),
-                      )),
+                  Text(
+                    title,
+                    style: GoogleFonts.balooBhai2(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: state.weekOffset == 0
+                          ? const Color(0xFF1A1A1A)
+                          : const Color(0xFFFF6B35),
+                    ),
+                  ),
                   if (state.weekOffset != 0) ...[
                     const SizedBox(width: 4),
-                    const Icon(Icons.refresh_rounded,
-                        size: 14, color: Color(0xFFFF6B35)),
+                    const Icon(
+                      Icons.refresh_rounded,
+                      size: 14,
+                      color: Color(0xFFFF6B35),
+                    ),
                   ],
                 ],
               ),
@@ -424,15 +475,17 @@ class _StreakPageState extends State<StreakPage>
   Widget _buildDayItem(DayStreak day) {
     return Column(
       children: [
-        Text(day.label,
-            style: GoogleFonts.balooBhai2(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: day.isToday
-                  ? const Color(0xFF1A1A1A)
-                  : const Color(0xFFAAAAAA),
-              letterSpacing: 0.5,
-            )),
+        Text(
+          _dayLabel(day.weekdayIndex), // ✅ resolve tại đây, luôn đúng ngôn ngữ
+          style: GoogleFonts.balooBhai2(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: day.isToday
+                ? const Color(0xFF1A1A1A)
+                : const Color(0xFFAAAAAA),
+            letterSpacing: 0.5,
+          ),
+        ),
         const SizedBox(height: 6),
         Text('${day.date}',
             style: GoogleFonts.balooBhai2(
@@ -601,7 +654,8 @@ class _StreakPageState extends State<StreakPage>
                           icon: Icons.emoji_events_rounded,
                           iconColor: const Color(0xFFFFC107)),
                       _buildDivider(),
-                      _buildStatItem('Word Learn', '${state.data?.totalLearned}'),
+                      _buildStatItem(
+                          'Word Learn', '${state.data?.totalLearned}'),
                       _buildDivider(),
                       _buildStatItem('Minutes', '${state.stats.minutes}'),
                     ],
@@ -626,7 +680,8 @@ class _StreakPageState extends State<StreakPage>
                           const Icon(Icons.auto_awesome_rounded,
                               size: 15, color: Color(0xFFFF6B35)),
                           const SizedBox(width: 6),
-                          Text('${state.stats.insightsAvailable} Insights Available',
+                          Text(
+                              '${state.stats.insightsAvailable} Insights Available',
                               style: GoogleFonts.balooBhai2(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
