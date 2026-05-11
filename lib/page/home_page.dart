@@ -12,6 +12,7 @@ import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/page/widgets/app_bar_custom.dart';
 import 'package:test_abc/page/widgets/avatar/xp_cubit.dart';
 import 'package:test_abc/page/widgets/bubble_button.dart';
+import 'package:test_abc/ultis/extension/label_extension.dart';
 import '../commons/app_images.dart';
 import '../components/popup_dialog.dart';
 import '../models/land_model.dart';
@@ -51,25 +52,25 @@ class _HomePageState extends State<HomePage>
   /// Danh sách các trang có thể chuyển tới
   final List<IslandItem> _islandItems = [
     IslandItem(
-      label: (ctx) => S.of(ctx).library,
+      label: (ctx) => S.of(ctx).library.capitalizeWords(),
       primaryColor: const Color(0xFF5EC95C),
       secondaryColor: const Color(0xFF3A7D34),
       pageBuilder: (_) => ListWordPage(),
     ),
     IslandItem(
-      label: (ctx) => S.of(ctx).flash_card,
+      label: (ctx) => S.of(ctx).flash_card.capitalizeWords(),
       primaryColor: const Color(0xFF5B9EF5),
       secondaryColor: const Color(0xFF2A62C0),
       pageBuilder: (_) => FlashCardPage(),
     ),
     IslandItem(
-      label: (ctx) => S.of(ctx).add_word,
+      label: (ctx) => S.of(ctx).add_word.capitalizeWords(),
       primaryColor: const Color(0xFFF5A623),
       secondaryColor: const Color(0xFFC47A0A),
       pageBuilder: (_) => AddWordPage(),
     ),
     IslandItem(
-      label: (ctx) => S.of(ctx).test,
+      label: (ctx) => S.of(ctx).test.capitalizeWords(),
       primaryColor: const Color(0xFFF52323),
       secondaryColor: const Color(0xFFC40A0A),
       pageBuilder: (_) => TestPage(),

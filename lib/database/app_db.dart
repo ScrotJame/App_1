@@ -10,6 +10,8 @@ import 'package:test_abc/database/table/user.dart';
 import 'package:test_abc/database/table/vocabulary_entity.dart';
 import 'table/tag_entity.dart';
 
+import 'package:uuid/uuid.dart';
+
 part 'app_db.g.dart';
 
 @DriftDatabase(tables: [
@@ -58,16 +60,22 @@ class AppDatabase extends _$AppDatabase {
         name: 'Streak Freeze',
         description: Value('Giữ cho chuỗi của bạn không bị mất nếu quên học 1 ngày.'),
         price: 500,
+        icon:'IC_FREEZE',
+        stock: Value(30)
       ),
       ItemsEntrieCompanion.insert(
         name: 'Double Gems',
         description: Value('Nhận gấp đôi đá quý trong 30 phút tiếp theo.'),
         price: 1000,
+        icon:'IC_GET_GEMS',
+        stock: Value(30)
       ),
       ItemsEntrieCompanion.insert(
         name: 'Save Streal',
         description: Value('Cứu lại streak đã mất'),
         price: 2000,
+        icon:'SAVE_STREAK',
+        stock: Value(30)
       ),
     ];
     await batch((b) => b.insertAll(itemsEntrie, items));

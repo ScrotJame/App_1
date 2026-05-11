@@ -221,14 +221,14 @@ class BackupVocabularyTag {
 
 @JsonSerializable()
 class BackupUserItem {
-  final String userId;
-  final int itemId;
-  final int quantity;
+  final String? userId;
+  final String? itemId;
+  final int? quantity;
 
   const BackupUserItem({
-    required this.userId,
-    required this.itemId,
-    required this.quantity,
+    this.userId,
+    this.itemId,
+    this.quantity,
   });
 
   factory BackupUserItem.fromJson(Map<String, dynamic> json) =>

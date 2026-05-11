@@ -624,26 +624,26 @@ class BackupRepository implements IBackupRepository {
       for (final item in backup.userItems) {
         final existing = await (_db.select(_db.userItemsEntrie)
           ..where((t) =>
-          t.userId.equals(targetUserKey) & t.itemId.equals(item.itemId)))
+          t.userId.equals(targetUserKey) & t.itemId.equals(item.itemId ?? '')))
             .getSingleOrNull();
 
         if (existing == null) {
           await _db.into(_db.userItemsEntrie).insert(
             UserItemsEntrieCompanion.insert(
               userId: targetUserKey,
-              itemId: item.itemId,
-              quantity: Value(item.quantity),
+              itemId: item.itemId ?? '',
+              quantity: Value(item.quantity ?? 0),
             ),
             mode: InsertMode.insertOrIgnore,
           );
           userItemsMerged++;
-        } else if (item.quantity > existing.quantity) {
+        } else if (item.quantity! > existing.quantity) {
           await (_db.update(_db.userItemsEntrie)
             ..where((t) =>
             t.userId.equals(targetUserKey) &
-            t.itemId.equals(item.itemId)))
+            t.itemId.equals(item.itemId ?? '')))
               .write(
-              UserItemsEntrieCompanion(quantity: Value(item.quantity)));
+              UserItemsEntrieCompanion(quantity: Value(item.quantity ?? 0)));
           userItemsMerged++;
         }
       }
