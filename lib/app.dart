@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:test_abc/page/list_unit/list_unit_cubit.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/repository/backup_data_repository.dart';
+import 'package:test_abc/repository/shop_repository.dart';
 import 'package:test_abc/repository/tag_repository.dart';
 import 'package:test_abc/repository/unit_repository.dart';
 import 'package:test_abc/repository/user_repository.dart';
@@ -58,6 +59,8 @@ class _MyAppState extends State<MyApp> {
             create: (_) => UnitRepository(_db)),
         RepositoryProvider<BackupRepository>(
             create: (_) => BackupRepository(_db)),
+        RepositoryProvider<ShopRepository>(
+            create:(_) => ShopRepository(_db)),
       ],
       child: MultiBlocProvider(
         providers: [
