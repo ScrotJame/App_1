@@ -44,9 +44,9 @@ class _FlashCardPageState extends State<FlashCardPage> {
           listenWhen: (prev, cur) =>
           prev.status != cur.status &&
               cur.status == FlashcardArenaStatus.completed,
-          listener: (context, state) {
-            context.read<XpCubit>().addXp(_kXpSessionBonus);
-            _showResultDialog(context, state);
+          listener: (context, state) async {
+            await context.read<XpCubit>().addXp(_kXpSessionBonus);
+            if (context.mounted) _showResultDialog(context, state);
           },
 
           builder: (context, state) {

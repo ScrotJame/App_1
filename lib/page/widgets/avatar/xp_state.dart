@@ -32,7 +32,7 @@ class XpState extends Equatable {
       currentXp: currentXp ?? this.currentXp,
       requiredXp: requiredXp ?? this.requiredXp,
       progress: progress ?? this.progress,
-      justLeveledUp: justLeveledUp ?? false,
+      justLeveledUp: justLeveledUp ?? this.justLeveledUp,
       tab: tab ?? this.tab
     );
   }

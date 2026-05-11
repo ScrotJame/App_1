@@ -42,9 +42,9 @@ class _TestView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<TestCubit, TestState>(
       listenWhen: (p, c) => p.phase != c.phase && c.phase == TestPhase.result,
-      listener: (context, state) {
+      listener: (context, state) async {
         final double xpTest = state.score / 2;
-        context.read<XpCubit>().addXp(xpTest.toInt());
+        await context.read<XpCubit>().addXp(xpTest.toInt());
       },
       buildWhen: (p, c) => p.phase != c.phase,
       builder: (_, s) => switch (s.phase) {

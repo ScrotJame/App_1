@@ -1,3 +1,5 @@
+import 'package:delightful_toast/delight_toast.dart';
+import 'package:delightful_toast/toast/components/toast_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/app_colors.dart';
@@ -11,6 +13,7 @@ import 'package:test_abc/page/widgets/app_bar_custom.dart';
 import 'package:test_abc/page/widgets/avatar/xp_cubit.dart';
 import 'package:test_abc/page/widgets/bubble_button.dart';
 import '../commons/app_images.dart';
+import '../components/popup_dialog.dart';
 import '../models/land_model.dart';
 import '../router/app_router.dart';
 import '../router/router.dart';
@@ -348,7 +351,6 @@ class _HomePageState extends State<HomePage>
             Navigator.push(
               context,
               MaterialPageRoute(
-                // Mở đúng trang tương ứng với card đang chọn
                 builder: currentItem.pageBuilder,
               ),
             );
@@ -439,24 +441,42 @@ class _HomePageState extends State<HomePage>
           bottom: 90,
           child: BubbleButton(
             onTap: () async {
-              await context.read<XpCubit>().addXp(2);
-
-              final state = context.read<XpCubit>().state;
-              if (state.justLeveledUp && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('🎉 Lên Level ${state.level}!'),
-                    duration: const Duration(seconds: 2),
-                    backgroundColor: const Color(0xFF50C040),
-                  ),
-                );
-              }
+              // _showResultDialog(context);
+              await context.read<XpCubit>().addXp(200);
+              // await context.read<XpCubit>().addXp(2);
+              //
+              // final state = context.read<XpCubit>().state;
+              // if (state.justLeveledUp && context.mounted) {
+              //   ScaffoldMessenger.of(context).showSnackBar(
+              //     SnackBar(
+              //       content: Text('🎉 Lên Level ${state.level}!'),
+              //       duration: const Duration(seconds: 2),
+              //       backgroundColor: const Color(0xFF50C040),
+              //     ),
+              //   );
+              // }
             },
           ),
         ),
       ],
     );
   }
+
+  void _showResultDialog(
+      BuildContext context, {
+        String? message,
+        String? icon
+      }) {
+    showDialog(
+      context: context,
+      //barrierDismissible: false,
+      builder: (context) => PopUpDialog(
+        icon: AppImages.icAvatar,
+        message: 'Test pop up',
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {

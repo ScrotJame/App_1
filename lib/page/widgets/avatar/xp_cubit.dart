@@ -15,7 +15,6 @@ class XpCubit extends Cubit<XpState> {
 
   XpCubit(this._userRepository) : super(const XpState());
 
-  // ── Load XP từ DB khi khởi động ───────────────────────────
   Future<void> loadXp() async {
     _userSub ??= _userRepository.watchCurrentUser().listen((user) {
       if (user == null) return;
@@ -40,7 +39,6 @@ class XpCubit extends Cubit<XpState> {
     ));
   }
 
-  // ── Cộng XP (gọi từ BubbleButton) ────────────────────────
   Future<void> addXp(int gain) async {
     final user = await _userRepository.getCurrentUser();
     if (user == null) return;
@@ -69,13 +67,9 @@ class XpCubit extends Cubit<XpState> {
     ));
   }
 
-  // Tính tổng xp tích lũy từ level + xp hiện tại
-  int _calcTotalXp(int level, int currentXp) {
-    int total = 0;
-    for (int i = 1; i < level; i++) {
-      total += LevelHelper.xpRequired(i);
-    }
-    return total + currentXp;
+  void acknowledgeLevelUp() {
+    if (!state.justLeveledUp) return;
+    emit(state.copyWith(justLeveledUp: false));
   }
 
   void changeLabel(Xp type) {
