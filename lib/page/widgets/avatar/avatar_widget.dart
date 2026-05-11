@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/generated/l10n.dart';
+import '../../../commons/app_images.dart';
 import 'xp_cubit.dart';
 
 class XpBarWidget extends StatelessWidget {
@@ -139,6 +142,19 @@ class XpBarWidget extends StatelessWidget {
   }
 
   Widget _buildAvatarImage() {
-    return Image.asset(avatarUrl!);
+    if (avatarUrl == null) {
+      return Image.asset(AppImages.icAvatar, fit: BoxFit.cover);
+    }
+
+    if (avatarUrl!.startsWith('/')) {
+      return Image.file(
+        File(avatarUrl!),
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            Image.asset(AppImages.icAvatar, fit: BoxFit.cover),
+      );
+    }
+
+    return Image.asset(avatarUrl!, fit: BoxFit.cover);
   }
 }

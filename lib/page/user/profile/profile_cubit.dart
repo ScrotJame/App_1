@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -24,24 +25,28 @@ class ProfileCubit extends Cubit<ProfileState> {
     emit(state.copyWith(status: ProfileStatus.loading));
     try {
       final user = await _userRepository.getCurrentUser();
+
       if (user == null) {
         emit(state.copyWith(
           status: ProfileStatus.error,
           errorMessage: 'Không tìm thấy user',
+          isSaving: false,
         ));
         return;
       }
 
-      final savedPath = user.avatar;
       emit(state.copyWith(
         status: ProfileStatus.loaded,
         data: user,
-        avatarPath: savedPath,
+        avatarPath: user.avatar,
+        isSaving: false,
       ));
+
     } catch (e) {
       emit(state.copyWith(
         status: ProfileStatus.error,
         errorMessage: e.toString(),
+        isSaving: false,
       ));
     }
   }
@@ -64,16 +69,14 @@ class ProfileCubit extends Cubit<ProfileState> {
   Future<bool> updateUsername(String newName) async {
     final trimmed = newName.trim();
     if (trimmed.isEmpty) return false;
-    if (trimmed == state.data?.username) return true; // không đổi
+    if (trimmed == state.data?.username) return true;
 
     emit(state.copyWith(isSaving: true));
     try {
       final success = await _userRepository.updateUser(
         UsersEntrieCompanion(username: Value(trimmed)),
       );
-
       if (success) {
-        // Cập nhật data local ngay, không cần reload từ DB
         final updated = state.data?.copyWith(username: trimmed);
         emit(state.copyWith(isSaving: false, data: updated));
       } else {
@@ -96,23 +99,25 @@ class ProfileCubit extends Cubit<ProfileState> {
       maxWidth: 512,
       maxHeight: 512,
     );
-    if (picked == null) return; // user huỷ
+    if (picked == null) return;
 
     emit(state.copyWith(isSaving: true));
     try {
-      // Copy ảnh vào thư mục persistent của app
       final appDir = await getApplicationDocumentsDirectory();
       final fileName = 'avatar_${DateTime.now().millisecondsSinceEpoch}${p.extension(picked.path)}';
       final destPath = p.join(appDir.path, fileName);
+
       await File(picked.path).copy(destPath);
 
-      // Lưu path vào DB
-      await _userRepository.updateUser(
+      final success = await _userRepository.updateUser(
         UsersEntrieCompanion(avatar: Value(destPath)),
       );
 
-      emit(state.copyWith(isSaving: false, avatarPath: destPath));
-    } catch (_) {
+      final check = await _userRepository.getCurrentUser();
+
+      await loadProfile();
+    } catch (e, stack) {
+      debugPrint('$stack');
       emit(state.copyWith(isSaving: false));
     }
   }

@@ -52,7 +52,7 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          S.current.base_name, // thêm key này vào l10n nếu chưa có
+          S.current.base_name,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         content: TextField(
@@ -102,8 +102,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => _cubit,
+    return BlocProvider.value(
+      value: _cubit,
       child: Scaffold(
         backgroundColor: const Color(0xFFF2F3F7),
         body: BlocBuilder<ProfileCubit, ProfileState>(
@@ -264,9 +264,10 @@ class _ProfilePageState extends State<ProfilePage> {
                             : state.avatarPath != null
                             ? Image.file(
                           File(state.avatarPath!),
+                          key: ValueKey(state.avatarPath),
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) =>
-                              Image.asset(AppImages.imgAvatar,
+                              Image.asset(AppImages.imgAvatar2,
                                   fit: BoxFit.cover),
                         )
                             : Image.asset(AppImages.imgAvatar,

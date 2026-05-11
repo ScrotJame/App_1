@@ -8,7 +8,7 @@ class UsersEntrie extends Table {
   Set<Column> get primaryKey => {keyOpen};
 
   TextColumn get username => text().withLength(min: 3, max: 50)();
-  TextColumn get avatar => text().withLength(min: 3, max: 50).nullable()();
+  TextColumn get avatar => text().nullable()();
 
   IntColumn get currentStreak => integer().withDefault(const Constant(0))();
   IntColumn get longestStreak => integer().withDefault(const Constant(0))();

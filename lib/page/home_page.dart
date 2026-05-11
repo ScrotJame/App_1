@@ -483,10 +483,14 @@ class _HomePageState extends State<HomePage>
       appBar: AppBarCustom(
         showBack: false,
         topActions: [
-          XpBarWidget(
-            avatarUrl: AppImages.imgAvatar ?? AppImages.icAvatar,
-            onTap: () {
-              AppRouter.router.navigateTo(context, Routes.profile);
+          BlocBuilder<ProfileCubit, ProfileState>(
+            builder: (context, profileState) {
+              return XpBarWidget(
+                avatarUrl: profileState.avatarPath ?? AppImages.icAvatar,
+                onTap: () {
+                  AppRouter.router.navigateTo(context, Routes.profile);
+                },
+              );
             },
           ),
           AppBarAction(
