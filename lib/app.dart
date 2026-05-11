@@ -9,6 +9,7 @@ import 'package:test_abc/repository/unit_repository.dart';
 import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/router/router.dart';
+import 'components/side_bar.dart';
 import 'cubit/app_cubit.dart';
 import 'database/app_db.dart';
 import 'generated/l10n.dart';
@@ -25,6 +26,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
 
   final _db = AppDatabase();
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -78,27 +80,48 @@ class _MyAppState extends State<MyApp> {
   Widget _buildMaterialApp() {
     return BlocBuilder<AppCubit, AppState>(
       builder: (context, state) {
-        return MaterialApp(
-          localizationsDelegates: const [
-            S.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: S.delegate.supportedLocales,
-          locale: state.locale,
-          title: 'Floating Island',
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(useMaterial3: true),
-          onGenerateRoute: AppRouter.router.generator,
-          initialRoute: Routes.splash,
-          builder: (context, child) {
-            return MediaQuery(
-              data: MediaQuery.of(context)
-                  .copyWith(textScaler: TextScaler.linear(1.0)),
-              child: child!,
-            );
+        return BlocListener<XpCubit, XpState>(
+          listenWhen: (previous, current) =>
+              current.justLeveledUp && !previous.justLeveledUp,
+          listener: (context, xpState) {
+            final xp = context.read<XpCubit>();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              final overlay = _navigatorKey.currentState?.overlay;
+              if (overlay != null && overlay.mounted) {
+                SideBar.showOnOverlay(
+                  overlay,
+                  isRight: true,
+                  color: const Color(0xFF00D4C8),
+                  topFraction: 0.15,
+                  label: '${xpState.level}',
+                );
+              }
+              xp.acknowledgeLevelUp();
+            });
           },
+          child: MaterialApp(
+            navigatorKey: _navigatorKey,
+            localizationsDelegates: const [
+              S.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: S.delegate.supportedLocales,
+            locale: state.locale,
+            title: 'Floating Island',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(useMaterial3: true),
+            onGenerateRoute: AppRouter.router.generator,
+            initialRoute: Routes.splash,
+            builder: (context, child) {
+              return MediaQuery(
+                data: MediaQuery.of(context)
+                    .copyWith(textScaler: TextScaler.linear(1.0)),
+                child: child!,
+              );
+            },
+          ),
         );
       },
     );
