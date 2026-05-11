@@ -441,20 +441,18 @@ class _HomePageState extends State<HomePage>
           bottom: 90,
           child: BubbleButton(
             onTap: () async {
-              // _showResultDialog(context);
-              await context.read<XpCubit>().addXp(200);
-              // await context.read<XpCubit>().addXp(2);
-              //
-              // final state = context.read<XpCubit>().state;
-              // if (state.justLeveledUp && context.mounted) {
-              //   ScaffoldMessenger.of(context).showSnackBar(
-              //     SnackBar(
-              //       content: Text('🎉 Lên Level ${state.level}!'),
-              //       duration: const Duration(seconds: 2),
-              //       backgroundColor: const Color(0xFF50C040),
-              //     ),
-              //   );
-              // }
+              //await context.read<XpCubit>().addXp(200);
+              context.read<ProfileCubit>().addGems(200);
+              final state = context.read<ProfileCubit>().state;
+              if ( context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('🎉 Lên Level ${state.gems}!'),
+                    duration: const Duration(seconds: 2),
+                    backgroundColor: const Color(0xFF50C040),
+                  ),
+                );
+              }
             },
           ),
         ),

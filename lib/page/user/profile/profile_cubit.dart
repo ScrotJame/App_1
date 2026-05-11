@@ -32,8 +32,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         return;
       }
 
-      // Khôi phục avatarPath đã lưu (nếu có trong DB hoặc local)
-      final savedPath = user.avatar; // thêm field này vào DB nếu chưa có
+      final savedPath = user.avatar;
       emit(state.copyWith(
         status: ProfileStatus.loaded,
         data: user,
@@ -45,6 +44,17 @@ class ProfileCubit extends Cubit<ProfileState> {
         errorMessage: e.toString(),
       ));
     }
+  }
+
+
+  Future<void> addGems(int gain) async {
+    final user = await _userRepository.getCurrentUser();
+    if (user == null) return;
+    final totalGemsNew = user.gems + gain;
+    await _userRepository.updateUser(UsersEntrieCompanion(
+      gems: Value(totalGemsNew),
+    ));
+    await loadProfile();
   }
 
   void refresh() => loadProfile();

@@ -66,7 +66,7 @@ class _MyAppState extends State<MyApp> {
             create: (ctx) => XpCubit(ctx.read<UserRepository>())..loadXp(),
           ),
           BlocProvider(
-            create: (ctx) => ProfileCubit(ctx.read<UserRepository>()),
+            create: (ctx) => ProfileCubit(ctx.read<UserRepository>())..loadProfile(),
           ),
           BlocProvider<ListUnitCubit>(
             create: (ctx) => ListUnitCubit(ctx.read<UnitRepository>())
