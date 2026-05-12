@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:test_abc/page/list_unit/list_unit_cubit.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/repository/backup_data_repository.dart';
@@ -117,7 +118,18 @@ class _MyAppState extends State<MyApp> {
             locale: state.locale,
             title: 'Floating Island',
             debugShowCheckedModeBanner: false,
-            theme: ThemeData(useMaterial3: true),
+            theme: ThemeData(
+              useMaterial3: true,
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+
+              textTheme: GoogleFonts.balooBhai2TextTheme(
+                Theme.of(context).textTheme,
+              ),
+
+              primaryTextTheme: GoogleFonts.balooBhai2TextTheme(
+                Theme.of(context).primaryTextTheme,
+              ),
+            ),
             onGenerateRoute: AppRouter.router.generator,
             initialRoute: Routes.splash,
             builder: (context, child) {

@@ -68,5 +68,9 @@
   "fri": "Fri",
   "sat": "Sat",
   "sun": "Sun",
-  "shop": "shop"
+  "shop": "shop",
+  "my_space": "my space",
+  "my_inventory": "inventory",
+  "rewards": "rewards",
+  "learning_history": "learning history"
 }

@@ -3,11 +3,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:test_abc/commons/app_colors.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/generated/l10n.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/repository/user_repository.dart';
+import 'package:test_abc/ultis/extension/label_extension.dart';
 
 import '../../../cubit/app_cubit.dart';
 import '../../../database/app_db.dart';
@@ -145,6 +147,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: _buildHeader(data, state)),
                   SliverToBoxAdapter(
                     child: SizedBox(height: overlap + 8),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildAccountProgress(),
+                    ),
                   ),
                   SliverToBoxAdapter(
                     child: Padding(
@@ -408,6 +416,50 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget _buildAccountProgress() {
+    const divider = Divider(
+        height: 1, indent: 54, endIndent: 16, color: Color(0xFFEEEEEE));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          S.of(context).my_space.capitalize(),
+          style: GoogleFonts.balooBhai2(
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1A1A2E),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _card(
+          child: Column(
+            children: [
+              settingsItem(
+                  icon: AppImages.icBackup,
+                  label: S.current.my_inventory.capitalize(),
+                  onTap: () {
+                    // Navigator.push(context,
+                    //     MaterialPageRoute(
+                    //         builder: (_) => const BackupPage()));
+                  }
+              ),
+              divider,
+              settingsItem(
+                  icon: AppImages.icPrivacy,
+                  label: S.current.learning_history.capitalize(),
+                  onTap: () {}),
+              divider,
+              settingsItem(
+                  icon: AppImages.icPrivacy,
+                  label: S.current.rewards.capitalize(),
+                  onTap: () {}),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
   // ─────────────────────────────────────────────────────────────
   // ACCOUNT SETTINGS
   // ─────────────────────────────────────────────────────────────
@@ -419,8 +471,8 @@ class _ProfilePageState extends State<ProfilePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          S.of(context).setting,
-          style: const TextStyle(
+          S.of(context).setting.capitalize(),
+          style: GoogleFonts.balooBhai2(
             fontSize: 17,
             fontWeight: FontWeight.bold,
             color: Color(0xFF1A1A2E),
@@ -632,7 +684,7 @@ Widget settingsItem({
             Expanded(
               child: Text(
                 label,
-                style: TextStyle(
+                style: GoogleFonts.balooBhai2(
                   fontSize: 15,
                   color: labelColor,
                   fontWeight: FontWeight.w500,

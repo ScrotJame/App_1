@@ -68,5 +68,9 @@
   "fri": "Thứ 6",
   "sat": "Thứ 7",
   "sun": "chủ nhật",
-  "shop": "cửa hàng"
+  "shop": "cửa hàng",
+  "my_space": "không gian của tôi",
+  "my_inventory": "túi đồ",
+  "rewards": "thành tựu",
+  "learning_history": "quá trình học"
 }
