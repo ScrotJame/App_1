@@ -1,25 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/generated/l10n.dart';
+import 'package:test_abc/helper/format_helper.dart';
 import 'package:test_abc/ultis/extension/label_extension.dart';
+import '../../extentions/icon_extension.dart';
 import '../../models/items_entity.dart';
 import '../../repository/shop_repository.dart';
 import 'shop_cubit.dart';
 
-// ─── Helper format giá ───────────────────────────────────────────────────────
-
-String _formatPrice(num price) {
-  final str = price.toInt().toString();
-  if (str.length <= 3) return str;
-  final buf = StringBuffer();
-  for (int i = 0; i < str.length; i++) {
-    if (i > 0 && (str.length - i) % 3 == 0) buf.write(',');
-    buf.write(str[i]);
-  }
-  return buf.toString();
-}
-
-// ─── ShopPage ────────────────────────────────────────────────────────────────
 
 class ShopPage extends StatefulWidget {
   const ShopPage({super.key});
@@ -231,8 +220,8 @@ class _ItemCard extends StatelessWidget {
           child: Column(
             children: [
               _buildCardBody(context, isLoading, outOfStock),
-              if (item.description != null && item.description!.isNotEmpty)
-                _buildDescriptionBar(),
+              if (item.stock != null)
+                _buildDescriptionBar(outOfStock),
             ],
           ),
         );
@@ -261,17 +250,14 @@ class _ItemCard extends StatelessWidget {
                     color: Color(0xFF2E2E2E),
                   ),
                 ),
-                if (item.stock != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    outOfStock ? 'Hết hàng' : 'Còn ${item.stock} sản phẩm',
+                    item.description ?? '',
                     style: TextStyle(
                       fontSize: 12,
-                      color: outOfStock ? Colors.redAccent : const Color(0xFF43A047),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                ],
               ],
             ),
           ),
@@ -290,29 +276,41 @@ class _ItemCard extends StatelessWidget {
   Widget _buildItemIcon() {
     final icon = item.icon;
 
-    // Nếu icon là URL hoặc asset path
     if (icon != null && icon.isNotEmpty) {
       if (icon.startsWith('http')) {
         return ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: Image.network(
             icon,
-            width: 56,
-            height: 56,
+            width: 56, height: 56,
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => _defaultIcon(),
           ),
         );
       }
-      // Asset path
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+
+      if (icon.startsWith('assets/')) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.asset(
+            icon,
+            width: 56, height: 56,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _defaultIcon(),
+          ),
+        );
+      }
+
+      return Container(
+        width: 56, height: 56,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0F0F0),
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Image.asset(
-          icon,
-          width: 56,
-          height: 56,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _defaultIcon(),
+          icon.toIconData(),
+          width: 28,
+          height: 28,
         ),
       );
     }
@@ -332,7 +330,7 @@ class _ItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDescriptionBar() {
+  Widget _buildDescriptionBar( bool outOfStock) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -344,8 +342,12 @@ class _ItemCard extends StatelessWidget {
         ),
       ),
       child: Text(
-        item.description!,
-        style: const TextStyle(fontSize: 12, color: Color(0xFF757575)),
+        outOfStock ? 'Hết hàng' : 'Còn ${item.stock} sản phẩm',
+        style: TextStyle(
+          fontSize: 12,
+          color: outOfStock ? Colors.redAccent : const Color(0xFF43A047),
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -389,14 +391,20 @@ class _BuyButton extends StatelessWidget {
           height: 18,
           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
         )
-            : Text(
-          disabled ? 'Hết hàng' : 'đ ${_formatPrice(price)}',
-          style: TextStyle(
-            color: disabled ? Colors.grey[600] : Colors.white,
-            fontWeight: FontWeight.w900,
-            fontSize: 14,
-          ),
-        ),
+            : Row(
+              children: [
+                Image.asset(AppImages.imgGem, width: 12, height: 12,),
+                const SizedBox(width: 4,),
+                Text(
+                          disabled ? 'Hết hàng' : FormatHelper.formatPrice(price),
+                          style: TextStyle(
+                color: disabled ? Colors.grey[600] : Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 14,
+                          ),
+                        ),
+              ],
+            ),
       ),
     );
   }

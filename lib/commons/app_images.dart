@@ -16,7 +16,7 @@ class AppImages {
 
   static final imgLabelGem = 'assets/images/ic_gems_label.png';
   static final imgGem = 'assets/images/ic_diamond.png';
-
+  static final imgFreezeStreak ='assets/images/ic_freeze_streak.png';
   ///svg
   static final icScanFile ='assets/vector/ic_scan_file.svg';
   static final icAccount ='assets/vector/ic_account.svg';
@@ -25,6 +25,10 @@ class AppImages {
   static final icLogOut ='assets/vector/ic_log_out.svg';
   static final icPrivacy ='assets/vector/ic_privacy.svg';
   static final icEdit ='assets/vector/ic_edit_pencil.svg';
+  static final icBag ='assets/vector/ic_bag.svg';
+  static final icBadge ='assets/vector/ic_badge.svg';
+  static final icLearnHistory ='assets/vector/ic_learn_history.svg';
+
 }
 
 class AppLogoImages {

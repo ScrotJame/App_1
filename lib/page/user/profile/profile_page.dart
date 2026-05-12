@@ -437,7 +437,7 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             children: [
               settingsItem(
-                  icon: AppImages.icBackup,
+                  icon: AppImages.icBag,
                   label: S.current.my_inventory.capitalize(),
                   onTap: () {
                     // Navigator.push(context,
@@ -447,12 +447,12 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               divider,
               settingsItem(
-                  icon: AppImages.icPrivacy,
+                  icon:  AppImages.icLearnHistory,
                   label: S.current.learning_history.capitalize(),
                   onTap: () {}),
               divider,
               settingsItem(
-                  icon: AppImages.icPrivacy,
+                  icon: AppImages.icBadge,
                   label: S.current.rewards.capitalize(),
                   onTap: () {}),
             ],
