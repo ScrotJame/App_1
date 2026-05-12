@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import '../commons/status_comon.dart';
 import '../database/app_db.dart';
 import '../models/tag_vocab.dart';
 
@@ -30,6 +31,8 @@ abstract class IVocabularyRepository {
   Future<void> detachAllTags({required int wordId});
   Future<List<int>> getTagIdsByWordId(int wordId);
   Future<VocabularyEntry?> incrementWordLevel(int id);
+  Future<void> changeWordState(int wordId, int newLevel, String? userId);
+  Future<void> countWordLearn( String userId);
 }
 
 class VocabularyRepository implements IVocabularyRepository {
@@ -152,5 +155,33 @@ class VocabularyRepository implements IVocabularyRepository {
     return (_db.select(_db.vocabularyEntries)
       ..where((t) => t.id.equals(id)))
         .getSingleOrNull();
+  }
+
+  Future<void> changeWordState(int wordId, int newLevel, String? userId) async {
+    final newStatus = _resolveStatus(newLevel);
+
+    final companion = UserWordProgressEntrieCompanion(
+      userId: Value(userId ?? ''),
+      wordId: Value(wordId),
+      status: Value(newStatus),
+      lastPracticed: Value(DateTime.now()),
+      updatedAt: Value(DateTime.now()),
+    );
+
+    await _db.into(_db.userWordProgressEntrie).insertOnConflictUpdate(companion);
+  }
+
+  @override
+  Future<void> countWordLearn(String userId) async {
+    await (_db.update(_db.usersEntrie)
+      ..where((t) => t.keyOpen.equals(userId)))
+        .write(UsersEntrieCompanion.custom(
+      totalLearned: _db.usersEntrie.totalLearned + const Constant(1),
+    ));
+  }
+  int _resolveStatus(int level) {
+    if (level > 5) return WordStatus.mastered;
+    if (level >= 1) return WordStatus.learning;
+    return WordStatus.notStarted;
   }
 }

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import '../commons/user_sesion.dart';
 import '../database/app_db.dart';
 
 abstract class IUserRepository {
@@ -68,7 +69,9 @@ class UserRepository implements IUserRepository {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyLocal, localKey);
 
-    return (await getCurrentUser())!;
+    final row = (await getCurrentUser())!;
+    UserSession.instance.syncFromUser(row);
+    return row;
   }
 
   // ── Cập nhật thông tin user ───────────────────────────────
@@ -97,6 +100,8 @@ class UserRepository implements IUserRepository {
     await (_db.update(_db.usersEntrie)
       ..where((u) => u.keyOpen.equals(localKey)))
         .write(UsersEntrieCompanion(id: Value(serverId)));
+    final u = await getCurrentUser();
+    if (u != null) UserSession.instance.syncFromUser(u);
   }
 
   // ── Xóa user local (logout) ───────────────────────────────
@@ -111,5 +116,6 @@ class UserRepository implements IUserRepository {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyLocal);
+    UserSession.instance.clear();
   }
 }

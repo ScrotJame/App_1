@@ -10,8 +10,15 @@ import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:test_abc/database/app_db.dart';
+import 'package:test_abc/models/entity/word_progress_entity.dart';
 import '../database/backup_data.dart';
 import '../models/backup_entity.dart';
+import '../models/entity/activity_entity.dart';
+import '../models/entity/item_entity.dart';
+import '../models/entity/tag_entity.dart';
+import '../models/entity/unit_entity.dart';
+import '../models/entity/user_entity.dart';
+import '../models/entity/vocabulary_entity.dart';
 import '../service/auth_service.dart';
 import '../service/cloud_service.dart';
 import '../service/sercurity_service.dart';
@@ -283,7 +290,7 @@ class BackupRepository implements IBackupRepository {
       version: 1,
       exportedAt: DateTime.now(),
       userKey: user.keyOpen,
-      user: BackupUser(
+      user: UserEntity(
         id: user.id,
         keyOpen: user.keyOpen,
         username: user.username,
@@ -298,7 +305,7 @@ class BackupRepository implements IBackupRepository {
         updatedAt: user.updatedAt,
       ),
       activities: activities
-          .map((a) => BackupActivity(
+          .map((a) => ActivityEntity(
         userKey: a.userKey,
         activityDate: a.activityDate,
         note: a.note,
@@ -306,7 +313,7 @@ class BackupRepository implements IBackupRepository {
       ))
           .toList(),
       wordProgress: wordProgress
-          .map((w) => BackupWordProgress(
+          .map((w) => WordProgressEntity(
         userId: w.userId,
         wordId: w.wordId,
         status: w.status,
@@ -316,7 +323,7 @@ class BackupRepository implements IBackupRepository {
       ))
           .toList(),
       units: units
-          .map((u) => BackupUnit(
+          .map((u) => UnitEntity(
         id: u.id,
         title: u.title,
         createdAt: u.createdAt,
@@ -324,7 +331,7 @@ class BackupRepository implements IBackupRepository {
       ))
           .toList(),
       vocabularies: vocabularies
-          .map((v) => BackupVocabulary(
+          .map((v) => VocabularyEntity(
         id: v.id,
         word: v.word,
         meaning: v.meaning,
@@ -343,7 +350,7 @@ class BackupRepository implements IBackupRepository {
       ))
           .toList(),
       tags: tags
-          .map((t) => BackupTag(
+          .map((t) => TagEntity(
         id: t.id,
         tagName: t.tagName,
         targetLanguage: t.targetLanguage,
@@ -352,10 +359,10 @@ class BackupRepository implements IBackupRepository {
       ))
           .toList(),
       vocabularyTags: vocabularyTags
-          .map((vt) => BackupVocabularyTag(wordId: vt.wordId, tagId: vt.tagId))
+          .map((vt) => VocabularyTagEntity(wordId: vt.wordId, tagId: vt.tagId))
           .toList(),
       userItems: userItems
-          .map((i) => BackupUserItem(
+          .map((i) => UserItemEntity(
         userId: i.userId,
         itemId: i.itemId,
         quantity: i.quantity,
@@ -376,48 +383,48 @@ class BackupRepository implements IBackupRepository {
 
     final prefs = await SharedPreferences.getInstance();
     final currentLocalKey = prefs.getString(_localKeyPref);
-    final targetUserKey = currentLocalKey ?? backup.user.keyOpen;
+    final targetUserKey = currentLocalKey ?? backup.user?.keyOpen;
 
     await _db.transaction(() async {
       // ── 1. User ────────────────────────────────────────────────
       final existingUser = await (_db.select(_db.usersEntrie)
-        ..where((t) => t.keyOpen.equals(targetUserKey)))
+        ..where((t) => t.keyOpen.equals(targetUserKey ?? '')))
           .getSingleOrNull();
 
       if (existingUser == null) {
         await _db.into(_db.usersEntrie).insert(
           UsersEntrieCompanion.insert(
-            keyOpen: targetUserKey,
-            username: backup.user.username,
-            currentStreak: Value(backup.user.currentStreak),
-            longestStreak: Value(backup.user.longestStreak),
-            totalLearned: Value(backup.user.totalLearned),
-            lastActiveDate: Value(backup.user.lastActiveDate),
-            gems: Value(backup.user.gems),
-            level: Value(backup.user.level),
-            experience: Value(backup.user.experience),
-            createdAt: Value(backup.user.createdAt),
-            updatedAt: Value(backup.user.updatedAt),
+            keyOpen: targetUserKey ?? '',
+            username: backup.user?.username ?? '',
+            currentStreak: Value(backup.user?.currentStreak ?? 0),
+            longestStreak: Value(backup.user?.longestStreak ?? 0),
+            totalLearned: Value(backup.user?.totalLearned ?? 0),
+            lastActiveDate: Value(backup.user?.lastActiveDate),
+            gems: Value(backup.user?.gems ?? 0),
+            level: Value(backup.user?.level ?? 0),
+            experience: Value(backup.user?.experience ?? 0),
+            createdAt: Value(backup.user?.createdAt ?? DateTime.now() ),
+            updatedAt: Value(backup.user?.updatedAt ?? DateTime.now()),
           ).copyWith(
-            id: Value(backup.user.id),
+            id: Value(backup.user?.id),
           ),
         );
         usersUpdated++;
       } else {
         await (_db.update(_db.usersEntrie)
-          ..where((t) => t.keyOpen.equals(targetUserKey)))
+          ..where((t) => t.keyOpen.equals(targetUserKey ?? '')))
             .write(UsersEntrieCompanion(
-          id: Value(backup.user.id),
-          username: Value(backup.user.username),
-          currentStreak: Value(backup.user.currentStreak),
-          longestStreak: Value(backup.user.longestStreak),
-          totalLearned: Value(backup.user.totalLearned),
-          lastActiveDate: Value(backup.user.lastActiveDate),
-          gems: Value(backup.user.gems),
-          level: Value(backup.user.level),
-          experience: Value(backup.user.experience),
-          createdAt: Value(backup.user.createdAt),
-          updatedAt: Value(backup.user.updatedAt),
+          id: Value(backup.user?.id),
+          username: Value(backup.user?.username ?? ''),
+          currentStreak: Value(backup.user?.currentStreak ?? 0),
+          longestStreak: Value(backup.user?.longestStreak ?? 0),
+          totalLearned: Value(backup.user?.totalLearned ?? 0),
+          lastActiveDate: Value(backup.user?.lastActiveDate),
+          gems: Value(backup.user?.gems ?? 0),
+          level: Value(backup.user?.level ?? 1),
+          experience: Value(backup.user?.experience ?? 0),
+          createdAt: Value(backup.user?.createdAt ?? DateTime.now()),
+          updatedAt: Value(backup.user?.updatedAt ?? DateTime.now()),
         ));
         usersUpdated++;
       }
@@ -425,7 +432,7 @@ class BackupRepository implements IBackupRepository {
       // ── 2. Units ───────────────────────────────────────────────
       final unitIdMap = <int, int>{};
 
-      for (final unit in backup.units) {
+      for (final unit in backup.units ?? []) {
         final existing = await (_db.select(_db.unitsEntries)
           ..where((t) => t.title.equals(unit.title)))
             .getSingleOrNull();
@@ -458,7 +465,7 @@ class BackupRepository implements IBackupRepository {
       // ── 3. Vocabularies ────────────────────────────────────────
       final vocabIdMap = <int, int>{};
 
-      for (final vocab in backup.vocabularies) {
+      for (final vocab in backup.vocabularies ?? []) {
         final existing = await (_db.select(_db.vocabularyEntries)
           ..where((t) =>
           t.word.equals(vocab.word) & t.meaning.equals(vocab.meaning)))
@@ -511,7 +518,7 @@ class BackupRepository implements IBackupRepository {
       // ── 4. Tags ────────────────────────────────────────────────
       final tagIdMap = <int, int>{};
 
-      for (final tag in backup.tags) {
+      for (final tag in backup.tags ?? []) {
         final existing = await (_db.select(_db.tags)
           ..where((t) => t.tagName.equals(tag.tagName)))
             .getSingleOrNull();
@@ -543,7 +550,7 @@ class BackupRepository implements IBackupRepository {
       }
 
       // ── 5. VocabularyTags ──────────────────────────────────────
-      for (final vt in backup.vocabularyTags) {
+      for (final vt in backup.vocabularyTags ?? []) {
         final newWordId = vocabIdMap[vt.wordId];
         final newTagId = tagIdMap[vt.tagId];
         if (newWordId == null || newTagId == null) continue;
@@ -564,15 +571,15 @@ class BackupRepository implements IBackupRepository {
 
       // ── 6. Activities ──────────────────────────────────────────
       final existingCreatedAts = await (_db.select(_db.userActivitiesEntrie)
-        ..where((t) => t.userKey.equals(targetUserKey)))
+        ..where((t) => t.userKey.equals(targetUserKey ?? '')))
           .get()
           .then((list) => list.map((a) => a.createdAt).toSet());
 
-      for (final activity in backup.activities) {
+      for (final activity in backup.activities ?? []) {
         if (!existingCreatedAts.contains(activity.createdAt)) {
           await _db.into(_db.userActivitiesEntrie).insert(
             UserActivitiesEntrieCompanion.insert(
-              userKey: targetUserKey,
+              userKey: targetUserKey ?? '',
               activityDate: activity.activityDate,
               note: Value(activity.note),
               createdAt: Value(activity.createdAt),
@@ -583,19 +590,19 @@ class BackupRepository implements IBackupRepository {
       }
 
       // ── 7. WordProgress ────────────────────────────────────────
-      for (final progress in backup.wordProgress) {
+      for (final progress in backup.wordProgress ?? []) {
         final newWordId = vocabIdMap[progress.wordId] ?? progress.wordId;
 
         final existing = await (_db.select(_db.userWordProgressEntrie)
           ..where((t) =>
-          t.userId.equals(targetUserKey) &
+          t.userId.equals(targetUserKey ?? '') &
           t.wordId.equals(newWordId)))
             .getSingleOrNull();
 
         if (existing == null) {
           await _db.into(_db.userWordProgressEntrie).insert(
             UserWordProgressEntrieCompanion.insert(
-              userId: targetUserKey,
+              userId: targetUserKey ?? '',
               wordId: newWordId,
               status: Value(progress.status),
               lastPracticed: Value(progress.lastPracticed),
@@ -608,7 +615,7 @@ class BackupRepository implements IBackupRepository {
         } else if (progress.updatedAt.isAfter(existing.updatedAt)) {
           await (_db.update(_db.userWordProgressEntrie)
             ..where((t) =>
-            t.userId.equals(targetUserKey) &
+            t.userId.equals(targetUserKey ?? '') &
             t.wordId.equals(newWordId)))
               .write(UserWordProgressEntrieCompanion(
             status: Value(progress.status),
@@ -621,16 +628,16 @@ class BackupRepository implements IBackupRepository {
       }
 
       // ── 8. UserItems ───────────────────────────────────────────
-      for (final item in backup.userItems) {
+      for (final item in backup.userItems ?? []) {
         final existing = await (_db.select(_db.userItemsEntrie)
           ..where((t) =>
-          t.userId.equals(targetUserKey) & t.itemId.equals(item.itemId ?? '')))
+          t.userId.equals(targetUserKey ?? '') & t.itemId.equals(item.itemId ?? '')))
             .getSingleOrNull();
 
         if (existing == null) {
           await _db.into(_db.userItemsEntrie).insert(
             UserItemsEntrieCompanion.insert(
-              userId: targetUserKey,
+              userId: targetUserKey ?? '',
               itemId: item.itemId ?? '',
               quantity: Value(item.quantity ?? 0),
             ),
@@ -640,7 +647,7 @@ class BackupRepository implements IBackupRepository {
         } else if (item.quantity! > existing.quantity) {
           await (_db.update(_db.userItemsEntrie)
             ..where((t) =>
-            t.userId.equals(targetUserKey) &
+            t.userId.equals(targetUserKey ?? '') &
             t.itemId.equals(item.itemId ?? '')))
               .write(
               UserItemsEntrieCompanion(quantity: Value(item.quantity ?? 0)));
