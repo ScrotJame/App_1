@@ -1,238 +1,60 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:test_abc/models/entity/companion_word_log_entity.dart';
+
+import '../models/entity/active_companion_entity.dart';
+import '../models/entity/activity_entity.dart';
+import '../models/entity/companion_definition_entity.dart';
+import '../models/entity/companion_history_entity.dart';
+import '../models/entity/item_entity.dart';
+import '../models/entity/tag_entity.dart';
+import '../models/entity/unit_entity.dart';
+import '../models/entity/user_entity.dart';
+import '../models/entity/vocabulary_entity.dart';
+import '../models/entity/word_progress_entity.dart';
 
 part 'backup_data.g.dart';
 
 // ─── Root ─────────────────────────────────────────────────────
 @JsonSerializable(explicitToJson: true)
 class BackupData {
-  final int version;
-  final DateTime exportedAt;
-  final String userKey;
-  final BackupUser user;
-  final List<BackupActivity> activities;
-  final List<BackupWordProgress> wordProgress;
-  final List<BackupUnit> units;
-  final List<BackupVocabulary> vocabularies;
-  final List<BackupTag> tags;
-  final List<BackupVocabularyTag> vocabularyTags;
-  final List<BackupUserItem> userItems;
+  final int? version;
+  final DateTime? exportedAt;
+  final String? userKey;
+  final UserEntity? user;
+  final List<ActivityEntity>? activities;
+  final List<WordProgressEntity>? wordProgress;
+  final List<UnitEntity>? units;
+  final List<VocabularyEntity>? vocabularies;
+  final List<TagEntity>? tags;
+  final List<VocabularyTagEntity>? vocabularyTags;
+  final List<ItemEntity>? items;
+  final List<UserItemEntity>? userItems;
+  final List<CompanionDefinitionEntity>? companionDefinitions;
+  final ActiveCompanionEntity? activeCompanion;
+  final List<CompanionWordLogEntity>? companionWordLogs;
+  final List<CompanionHistoryEntity>? companionHistories;
 
   const BackupData({
-    required this.version,
-    required this.exportedAt,
-    required this.userKey,
-    required this.user,
-    required this.activities,
-    required this.wordProgress,
-    required this.units,
-    required this.vocabularies,
-    required this.tags,
-    required this.vocabularyTags,
-    required this.userItems,
+    this.version,
+    this.exportedAt,
+    this.userKey,
+    this.user,
+    this.activities,
+    this.wordProgress,
+    this.units,
+    this.vocabularies,
+    this.tags,
+    this.vocabularyTags,
+    this.items,
+    this.userItems,
+    this.companionDefinitions,
+    this.activeCompanion,
+    this.companionWordLogs,
+    this.companionHistories,
   });
 
-  factory BackupData.fromJson(Map<String, dynamic> json) =>
-      _$BackupDataFromJson(json);
-
+  factory BackupData.fromJson(Map<String, dynamic> json) => _$BackupDataFromJson(json);
   Map<String, dynamic> toJson() => _$BackupDataToJson(this);
 }
 
-@JsonSerializable()
-class BackupUser {
-  final String? id;
-  final String keyOpen;
-  final String username;
-  final int currentStreak;
-  final int longestStreak;
-  final int totalLearned;
-  final DateTime? lastActiveDate;
-  final int gems;
-  final int level;
-  final int experience;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  const BackupUser({
-    this.id,
-    required this.keyOpen,
-    required this.username,
-    required this.currentStreak,
-    required this.longestStreak,
-    required this.totalLearned,
-    this.lastActiveDate,
-    required this.gems,
-    required this.level,
-    required this.experience,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory BackupUser.fromJson(Map<String, dynamic> json) =>
-      _$BackupUserFromJson(json);
-
-  Map<String, dynamic> toJson() => _$BackupUserToJson(this);
-}
-
-@JsonSerializable()
-class BackupActivity {
-  final int id;
-  final String userKey;
-  final DateTime activityDate;
-  final String? note;
-  final DateTime createdAt;
-
-  const BackupActivity({
-    required this.id,
-    required this.userKey,
-    required this.activityDate,
-    this.note,
-    required this.createdAt,
-  });
-
-  factory BackupActivity.fromJson(Map<String, dynamic> json) =>
-      _$BackupActivityFromJson(json);
-
-  Map<String, dynamic> toJson() => _$BackupActivityToJson(this);
-}
-
-@JsonSerializable()
-class BackupWordProgress {
-  final String userId;
-  final int wordId;
-  final int status;
-  final DateTime? lastPracticed;
-  final DateTime? nextReview;
-  final DateTime updatedAt;
-
-  const BackupWordProgress({
-    required this.userId,
-    required this.wordId,
-    required this.status,
-    this.lastPracticed,
-    this.nextReview,
-    required this.updatedAt,
-  });
-
-  factory BackupWordProgress.fromJson(Map<String, dynamic> json) =>
-      _$BackupWordProgressFromJson(json);
-
-  Map<String, dynamic> toJson() => _$BackupWordProgressToJson(this);
-}
-
-@JsonSerializable()
-class BackupUnit {
-  final int id;
-  final String title;
-  final DateTime? createdAt;
-  final DateTime updatedAt;
-
-  const BackupUnit({
-    required this.id,
-    required this.title,
-    this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory BackupUnit.fromJson(Map<String, dynamic> json) =>
-      _$BackupUnitFromJson(json);
-
-  Map<String, dynamic> toJson() => _$BackupUnitToJson(this);
-}
-
-@JsonSerializable()
-class BackupVocabulary {
-  final int id;
-  final String word;
-  final String meaning;
-  final String? example;
-  final String? pronunciation;
-  final String? language;
-  final int level;
-  final int correctCount;
-  final int wrongCount;
-  final bool? isFavorite;
-  final DateTime? lastReviewed;
-  final DateTime? nextReview;
-  final int? unitId;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  const BackupVocabulary({
-    required this.id,
-    required this.word,
-    required this.meaning,
-    this.example,
-    this.pronunciation,
-    this.language,
-    required this.level,
-    required this.correctCount,
-    required this.wrongCount,
-    this.isFavorite,
-    this.lastReviewed,
-    this.nextReview,
-    this.unitId,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory BackupVocabulary.fromJson(Map<String, dynamic> json) =>
-      _$BackupVocabularyFromJson(json);
-
-  Map<String, dynamic> toJson() => _$BackupVocabularyToJson(this);
-}
-
-@JsonSerializable()
-class BackupTag {
-  final int id;
-  final String tagName;
-  final String? targetLanguage;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  const BackupTag({
-    required this.id,
-    required this.tagName,
-    this.targetLanguage,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory BackupTag.fromJson(Map<String, dynamic> json) =>
-      _$BackupTagFromJson(json);
-
-  Map<String, dynamic> toJson() => _$BackupTagToJson(this);
-}
-
-@JsonSerializable()
-class BackupVocabularyTag {
-  final int wordId;
-  final int tagId;
-
-  const BackupVocabularyTag({
-    required this.wordId,
-    required this.tagId,
-  });
-
-  factory BackupVocabularyTag.fromJson(Map<String, dynamic> json) =>
-      _$BackupVocabularyTagFromJson(json);
-
-  Map<String, dynamic> toJson() => _$BackupVocabularyTagToJson(this);
-}
-
-@JsonSerializable()
-class BackupUserItem {
-  final String? userId;
-  final String? itemId;
-  final int? quantity;
-
-  const BackupUserItem({
-    this.userId,
-    this.itemId,
-    this.quantity,
-  });
-
-  factory BackupUserItem.fromJson(Map<String, dynamic> json) =>
-      _$BackupUserItemFromJson(json);
-
-  Map<String, dynamic> toJson() => _$BackupUserItemToJson(this);
-}
+// ─── CompanionHistory ──────────────────────────────────────────

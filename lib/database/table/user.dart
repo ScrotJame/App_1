@@ -40,7 +40,6 @@ class UserWordProgressEntrie extends Table {
   TextColumn get userId => text().references(UsersEntrie, #keyOpen)();
   IntColumn get wordId => integer().references(VocabularyEntries, #id)();
 
-  // 0: Chưa học, 1: Đang học, 2: Đã thuộc
   IntColumn get status => integer().withDefault(const Constant(0))();
 
   DateTimeColumn get lastPracticed => dateTime().nullable()();
