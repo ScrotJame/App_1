@@ -11,6 +11,7 @@ import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/ultis/extension/label_extension.dart';
 
+import '../../../commons/user_sesion.dart';
 import '../../../cubit/app_cubit.dart';
 import '../../../database/app_db.dart';
 import '../../../router/app_router.dart';
@@ -322,7 +323,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     data.username,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 22,
+                      fontSize: 26,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.2,
                     ),
@@ -360,7 +361,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   "${(S.current.level.toUpperCase())}: ${data.level}",
                   style: const TextStyle(
                     color: Color(0xFF5D4037),
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                     fontSize: 13,
                   ),
                 ),
@@ -505,6 +506,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   icon: AppImages.icHelpAndSupport,
                   label: S.current.help_support,
                   onTap: () {}),
+              if(UserSession.instance.hasLinkedAccount) ...[
               divider,
               settingsItem(
                 icon: AppImages.icLogOut,
@@ -514,6 +516,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 showArrow: false,
                 onTap: () {},
               ),
+              ]
             ],
           ),
         ),
@@ -647,8 +650,8 @@ class _StatCard extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
+              fontSize: 33,
+              fontWeight: FontWeight.w800,
               color: Color(0xFF1A1A2E),
               height: 1,
             ),
