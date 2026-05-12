@@ -7,6 +7,7 @@ import 'package:test_abc/database/app_db.dart';
 import 'package:test_abc/helper/set_time_helper.dart';
 
 import '../../commons/enums.dart';
+import '../../commons/user_sesion.dart';
 import '../../models/tag_vocab.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../../service/alarm_service.dart';
@@ -277,26 +278,46 @@ class TestCubit extends Cubit<TestState> {
   Future<void> _finishTest() async {
     emit(state.copyWith(isLevelingUp: true));
 
+    final userKey = UserSession.instance.userKey;
+
+    if (userKey.isEmpty) {
+      emit(state.copyWith(isLevelingUp: false));
+      return;
+    }
+
     final leveledUpWords = <VocabularyEntry>[];
     final wordsToSchedule = <VocabularyEntry>[];
+
+    int correctCount = 0;
 
     for (final entry in state.answerStatuses.entries) {
       final vocabEntry = state.questions[entry.key].word.word;
 
       if (entry.value == AnswerStatus.correct) {
+        correctCount++;
         try {
           final updated = await _repo.incrementWordLevel(vocabEntry.id);
           if (updated != null) {
             leveledUpWords.add(updated);
             wordsToSchedule.add(updated);
+            await _repo.changeWordState(updated.id, updated.level, userKey);
+          } else {
+            wordsToSchedule.add(vocabEntry);
+            await _repo.changeWordState(vocabEntry.id, vocabEntry.level, userKey);
           }
         } catch (_) {
           wordsToSchedule.add(vocabEntry);
+          await _repo.changeWordState(vocabEntry.id, vocabEntry.level, userKey);
         }
       } else {
         wordsToSchedule.add(vocabEntry);
+        await _repo.changeWordState(vocabEntry.id, vocabEntry.level, userKey);
+      }
+    }
 
-        /// giảm level khi sai tính sau
+    if (correctCount > 0) {
+      for (var i = 0; i < correctCount; i++) {
+        await _repo.countWordLearn(userKey);
       }
     }
 

@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:test_abc/database/app_db.dart';
 
+import '../../../commons/user_sesion.dart';
 import '../../../repository/user_repository.dart';
 
 part 'profile_state.dart';
@@ -41,6 +42,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         avatarPath: user.avatar,
         isSaving: false,
       ));
+      UserSession.instance.syncFromUser(user);
 
     } catch (e) {
       emit(state.copyWith(

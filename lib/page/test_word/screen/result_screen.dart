@@ -259,10 +259,10 @@ class ResultScreenState extends State<ResultScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // if (s.leveledUpWords.isNotEmpty) ...[
-                //   _buildLevelUpSection(s.leveledUpWords),
-                //   const SizedBox(height: 20),
-                // ],
+                if (s.leveledUpWords.isNotEmpty) ...[
+                  _buildLevelUpSection(s.leveledUpWords),
+                  const SizedBox(height: 20),
+                ],
 
                 buildPrimaryButton(
                   label: 'Làm lại',

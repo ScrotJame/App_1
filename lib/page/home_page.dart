@@ -1,17 +1,16 @@
-import 'package:delightful_toast/delight_toast.dart';
-import 'package:delightful_toast/toast/components/toast_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/app_colors.dart';
+import 'package:test_abc/commons/user_sesion.dart';
 import 'package:test_abc/components/bager_widget.dart';
 import 'package:test_abc/components/cloud_painter.dart';
 import 'package:test_abc/generated/l10n.dart';
+import 'package:test_abc/page/companion/companion_page.dart';
 import 'package:test_abc/page/shop/shop_page.dart';
 import 'package:test_abc/page/streak/streak_page.dart';
 import 'package:test_abc/page/test_word/test_page.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/page/widgets/app_bar_custom.dart';
-import 'package:test_abc/page/widgets/avatar/xp_cubit.dart';
 import 'package:test_abc/page/widgets/bubble_button.dart';
 import 'package:test_abc/ultis/extension/label_extension.dart';
 import '../commons/app_images.dart';
@@ -449,18 +448,13 @@ class _HomePageState extends State<HomePage>
           bottom: 90,
           child: BubbleButton(
             onTap: () async {
-              //await context.read<XpCubit>().addXp(200);
-              context.read<ProfileCubit>().addGems(200);
-              final state = context.read<ProfileCubit>().state;
-              if ( context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('🎉 Lên Level ${state.gems}!'),
-                    duration: const Duration(seconds: 2),
-                    backgroundColor: const Color(0xFF50C040),
-                  ),
-                );
-              }
+              final userKey = UserSession.instance.dbUserKey;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CompanionPage(userKey: userKey),
+                ),
+              );
             },
           ),
         ),

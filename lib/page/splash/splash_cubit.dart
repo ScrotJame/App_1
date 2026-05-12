@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:test_abc/commons/user_sesion.dart';
 import 'package:test_abc/repository/user_repository.dart';
 
 part 'splash_state.dart';
@@ -28,6 +29,7 @@ class SplashCubit extends Cubit<SplashState> {
   Future<void> checkAndCreateUser() async {
     final user = await _userRepository.getCurrentUser();
     if (isClosed) return;
+    if (user != null) UserSession.instance.syncFromUser(user);
 
     if (user == null) {
       // Lần đầu mở app → tạo user local

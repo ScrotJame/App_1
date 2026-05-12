@@ -178,8 +178,6 @@ class TestState extends Equatable {
   final int hintsUsed;
   final int maxHints;
 
-  /// Các VocabularyEntry đã được tăng level (state mới nhất từ DB).
-  /// Chỉ bao gồm từ isFavorite == true và trả lời đúng trong bài.
   final List<VocabularyEntry> leveledUpWords;
   final bool isLevelingUp;
 
