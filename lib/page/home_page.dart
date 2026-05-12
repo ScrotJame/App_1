@@ -6,6 +6,7 @@ import 'package:test_abc/commons/app_colors.dart';
 import 'package:test_abc/components/bager_widget.dart';
 import 'package:test_abc/components/cloud_painter.dart';
 import 'package:test_abc/generated/l10n.dart';
+import 'package:test_abc/page/shop/shop_page.dart';
 import 'package:test_abc/page/streak/streak_page.dart';
 import 'package:test_abc/page/test_word/test_page.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
@@ -74,6 +75,12 @@ class _HomePageState extends State<HomePage>
       primaryColor: const Color(0xFFF52323),
       secondaryColor: const Color(0xFFC40A0A),
       pageBuilder: (_) => TestPage(),
+    ),
+    IslandItem(
+      label: (ctx) => S.of(ctx).shop.capitalizeWords(),
+      primaryColor: const Color(0xFF23F5BD),
+      secondaryColor: const Color(0xFF1DBF94),
+      pageBuilder: (_) => ShopPage(),
     ),
   ];
 
