@@ -332,6 +332,9 @@ class TestCubit extends Cubit<TestState> {
     ));
   }
 
+  void setRewards({required int xpEarned, required int gemsEarned}) {
+    emit(state.copyWith(xpEarned: xpEarned, gemsEarned: gemsEarned));
+  }
   // ─────────────────────────────────────────────────────────────────────────────
   // HINT
   // ─────────────────────────────────────────────────────────────────────────────

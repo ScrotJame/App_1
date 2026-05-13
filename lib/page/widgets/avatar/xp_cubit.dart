@@ -67,6 +67,16 @@ class XpCubit extends Cubit<XpState> {
     ));
   }
 
+  Future<void> addGems(int gain) async {
+    final user = await _userRepository.getCurrentUser();
+    if (user == null) return;
+    final totalGemsNew = user.gems + gain;
+    await _userRepository.updateUser(UsersEntrieCompanion(
+      gems: Value(totalGemsNew),
+    ));
+    //await loadProfile();
+  }
+
   void acknowledgeLevelUp() {
     if (!state.justLeveledUp) return;
     emit(state.copyWith(justLeveledUp: false));

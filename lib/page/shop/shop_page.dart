@@ -203,14 +203,12 @@ class _ShopPageState extends State<ShopPage> {
   Widget _buildBody() {
     return BlocBuilder<ShopCubit, ShopState>(
       builder: (context, state) {
-        // ── Loading lần đầu (chưa có items) ──
         if (state.status == ShopStatus.loading && state.filteredItems.isEmpty) {
           return const Center(
             child: CircularProgressIndicator(color: Colors.white),
           );
         }
 
-        // ── Lỗi và chưa có items ──
         if (state.status == ShopStatus.error && state.filteredItems.isEmpty) {
           return Center(
             child: Column(
@@ -233,7 +231,6 @@ class _ShopPageState extends State<ShopPage> {
           );
         }
 
-        // ── Không có items ──
         if (state.filteredItems.isEmpty) {
           return const Center(
             child: Text(
@@ -243,7 +240,6 @@ class _ShopPageState extends State<ShopPage> {
           );
         }
 
-        // ── Danh sách items ──
         return Container(
           margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: ListView.separated(
@@ -258,8 +254,6 @@ class _ShopPageState extends State<ShopPage> {
     );
   }
 }
-
-// ─── Item Card ───────────────────────────────────────────────────────────────
 
 class _ItemCard extends StatelessWidget {
   final ItemsEntity item;
@@ -303,10 +297,8 @@ class _ItemCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Row(
         children: [
-          // Icon / ảnh sản phẩm
           _buildItemIcon(),
           const SizedBox(width: 12),
-          // Thông tin
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

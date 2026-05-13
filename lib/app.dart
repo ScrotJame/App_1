@@ -6,6 +6,7 @@ import 'package:test_abc/page/list_unit/list_unit_cubit.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/repository/backup_data_repository.dart';
 import 'package:test_abc/repository/companion_repository.dart';
+import 'package:test_abc/repository/inventory_repository.dart';
 import 'package:test_abc/repository/shop_repository.dart';
 import 'package:test_abc/repository/tag_repository.dart';
 import 'package:test_abc/repository/unit_repository.dart';
@@ -65,6 +66,8 @@ class _MyAppState extends State<MyApp> {
             create:(_) => ShopRepository(_db)),
         RepositoryProvider<CompanionRepository>(
             create:(_) => CompanionRepository(_db)),
+        RepositoryProvider<InventoryRepository>(
+            create:(_) => InventoryRepository(_db)),
       ],
       child: MultiBlocProvider(
         providers: [

@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_abc/commons/app_images.dart';
+import 'package:test_abc/generated/l10n.dart';
 import 'package:test_abc/page/widgets/avatar/xp_cubit.dart';
 
 import '../../../commons/app_colors.dart';
@@ -14,7 +16,7 @@ import '../widgets/button_widget.dart';
 import '../widgets/card_widget.dart';
 
 class ResultScreen extends StatefulWidget {
-  const ResultScreen();
+  const ResultScreen({super.key});
 
   @override
   State<ResultScreen> createState() => ResultScreenState();
@@ -226,6 +228,70 @@ class ResultScreenState extends State<ResultScreen> {
     );
   }
 
+  Widget _buildGetRewards(int? xpLabel, int? gemsLabel){
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.kBorder),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFFFF),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'Phần thưởng',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: AppColors.kGreen),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Image.asset(AppImages.imgGem, width: 16,height: 16,),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$gemsLabel gem',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 38,),
+                    Row(
+                      children: [
+                        Image.asset(AppImages.icStarXp, width: 16,height: 16,),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$xpLabel xp',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -257,6 +323,9 @@ class ResultScreenState extends State<ResultScreen> {
                   incorrect: s.incorrectCount,
                   score: s.score,
                 ),
+                const SizedBox(height: 20),
+
+                _buildGetRewards(s.xpEarned, s.gemsEarned),
                 const SizedBox(height: 20),
 
                 if (s.leveledUpWords.isNotEmpty) ...[

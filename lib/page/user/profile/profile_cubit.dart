@@ -63,16 +63,6 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
 
-  Future<void> addGems(int gain) async {
-    final user = await _userRepository.getCurrentUser();
-    if (user == null) return;
-    final totalGemsNew = user.gems + gain;
-    await _userRepository.updateUser(UsersEntrieCompanion(
-      gems: Value(totalGemsNew),
-    ));
-    await loadProfile();
-  }
-
   void refresh() => loadProfile();
 
   // ─── Update username ───────────────────────────────────────────────

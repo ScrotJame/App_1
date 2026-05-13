@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_abc/commons/app_images.dart';
+import 'package:test_abc/components/popup_dialog.dart';
 import '../../../commons/enums.dart';
 import '../../../repository/vocabulary_repository.dart';
 import '../../../router/app_router.dart';
@@ -45,7 +47,9 @@ class _FlashCardPageState extends State<FlashCardPage> {
           prev.status != cur.status &&
               cur.status == FlashcardArenaStatus.completed,
           listener: (context, state) async {
-            await context.read<XpCubit>().addXp(_kXpSessionBonus);
+            final count =state.totalCards *10;
+            await context.read<XpCubit>().addXp(_kXpSessionBonus * count);
+            await context.read<XpCubit>().addGems(count);
             if (context.mounted) _showResultDialog(context, state);
           },
 
@@ -244,13 +248,24 @@ class _FlashCardPageState extends State<FlashCardPage> {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => _ResultDialog(
-        state: state,
+      builder: (_) => PopUpDialog(
+        icon: AppImages.imgLogo,
+        message: "tesst",
+        child: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text("tesst"),
+              const SizedBox(width: 8),
+              Text("tesst2"),
+            ],
+          ),
+        ],
         onRestart: () {
           Navigator.of(context).pop();
           context.read<FlashCardCubit>().restart();
         },
-        onClose: () => AppRouter.router.navigateTo(context, Routes.home),
+        //onClose: () => AppRouter.router.navigateTo(context, Routes.home),
       ),
     );
   }

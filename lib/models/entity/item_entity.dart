@@ -32,11 +32,13 @@ class UserItemEntity {
   final String? userId;
   final String? itemId;
   final int? quantity;
+  final ItemEntity? item;
 
   const UserItemEntity({
     this.userId,
     this.itemId,
     this.quantity,
+    this.item,
   });
 
   factory UserItemEntity.fromJson(Map<String, dynamic> json) => _$UserItemEntityFromJson(json);

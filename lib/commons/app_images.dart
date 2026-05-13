@@ -17,6 +17,7 @@ class AppImages {
   static final imgLabelGem = 'assets/images/ic_gems_label.png';
   static final imgGem = 'assets/images/ic_diamond.png';
   static final imgFreezeStreak ='assets/images/ic_freeze_streak.png';
+  static final icStarXp ='assets/images/ic_star_xp.png';
   ///svg
   static final icScanFile ='assets/vector/ic_scan_file.svg';
   static final icAccount ='assets/vector/ic_account.svg';

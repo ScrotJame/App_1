@@ -122,9 +122,6 @@ class TestQuestion extends Equatable {
   List<Object?> get props => [word, questionType, choices, correctIndex];
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// TEST STATE
-// ═════════════════════════════════════════════════════════════════════════════
 
 class TestState extends Equatable {
   const TestState({
@@ -155,6 +152,10 @@ class TestState extends Equatable {
     this.leveledUpWords = const [],
     this.isLevelingUp = false,
 
+    // Rewards — tính khi chuyển sang phase result
+    this.xpEarned = 0,
+    this.gemsEarned = 0,
+
     // Loading
     this.loadStatus = LOADSTATUS.INITAL,
     this.errorMessage,
@@ -181,6 +182,9 @@ class TestState extends Equatable {
   final List<VocabularyEntry> leveledUpWords;
   final bool isLevelingUp;
 
+  final int xpEarned;
+  final int gemsEarned;
+
   final LOADSTATUS loadStatus;
   final String? errorMessage;
 
@@ -205,6 +209,17 @@ class TestState extends Equatable {
 
   double get progressPercent =>
       totalQuestions == 0 ? 0 : (currentIndex + 1) / totalQuestions;
+
+  int gemsForLevel(int level) {
+    return switch (level) {
+      0 => 5,
+      1 => 10,
+      2 => 20,
+      3 => 35,
+      4 => 50,
+      _ => 75,
+    };
+  }
 
   String get formattedTime {
     final m = remainingSeconds ~/ 60;
@@ -235,6 +250,8 @@ class TestState extends Equatable {
     int? maxHints,
     List<VocabularyEntry>? leveledUpWords,
     bool? isLevelingUp,
+    int? xpEarned,
+    int? gemsEarned,
     LOADSTATUS? loadStatus,
     Object? errorMessage = _sentinel,
   }) {
@@ -256,6 +273,8 @@ class TestState extends Equatable {
       maxHints: maxHints ?? this.maxHints,
       leveledUpWords: leveledUpWords ?? this.leveledUpWords,
       isLevelingUp: isLevelingUp ?? this.isLevelingUp,
+      xpEarned: xpEarned ?? this.xpEarned,
+      gemsEarned: gemsEarned ?? this.gemsEarned,
       loadStatus: loadStatus ?? this.loadStatus,
       errorMessage: errorMessage == _sentinel
           ? this.errorMessage
@@ -269,6 +288,7 @@ class TestState extends Equatable {
     questions, currentIndex, selectedAnswerIndex, answerStatuses,
     score, remainingSeconds, eliminatedIndexes, hintsUsed, maxHints,
     leveledUpWords, isLevelingUp, loadStatus, errorMessage,
+    xpEarned, gemsEarned,
   ];
 }
 

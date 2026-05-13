@@ -1,78 +1,43 @@
 part of 'inventory_cubit.dart';
 
-enum InventoryStatus { initial, loading, loaded, error }
-
-enum ItemCategory { all, weapon, armor, potion, food, quest, companion }
-
-class InventoryItem extends Equatable {
-  final String id;
-  final String name;
-  final ItemCategory category;
-  final String? imagePath;   // asset path hoặc network url
-  final String action;       // label nút hành động: Equip, Use, Eat, Inspect, Hatch...
-
-  const InventoryItem({
-    required this.id,
-    required this.name,
-    required this.category,
-    this.imagePath,
-    required this.action,
-  });
-
-  @override
-  List<Object?> get props => [id, name, category, imagePath, action];
-}
-
 class InventoryState extends Equatable {
-  final InventoryStatus status;
-  final List<InventoryItem> allItems;
-  final ItemCategory selectedCategory;
+  final LOADSTATUS status;
+  final List<UserItemEntity> allItems;
   final String searchQuery;
   final String? errorMessage;
 
   const InventoryState({
-    this.status = InventoryStatus.initial,
-    this.allItems = const [],
-    this.selectedCategory = ItemCategory.all,
+    this.status      = LOADSTATUS.INITAL,
+    this.allItems    = const [],
     this.searchQuery = '',
     this.errorMessage,
   });
 
-  /// Items sau khi lọc theo category + search
-  List<InventoryItem> get filteredItems {
-    var items = allItems;
-    if (selectedCategory != ItemCategory.all) {
-      items = items.where((i) => i.category == selectedCategory).toList();
-    }
-    if (searchQuery.trim().isNotEmpty) {
-      final q = searchQuery.trim().toLowerCase();
-      items = items.where((i) => i.name.toLowerCase().contains(q)).toList();
-    }
-    return items;
+  // ─── Derived ──────────────────────────────────────────────────────
+
+  List<UserItemEntity> get filteredItems {
+    if (searchQuery.trim().isEmpty) return allItems;
+    final q = searchQuery.trim().toLowerCase();
+    return allItems
+        .where((e) => (e.item?.name ?? '').toLowerCase().contains(q))
+        .toList();
   }
+
+  // ─── copyWith ─────────────────────────────────────────────────────
 
   InventoryState copyWith({
-    InventoryStatus? status,
-    List<InventoryItem>? allItems,
-    ItemCategory? selectedCategory,
+    LOADSTATUS? status,
+    List<UserItemEntity>? allItems,
     String? searchQuery,
     String? errorMessage,
-  }) {
-    return InventoryState(
-      status: status ?? this.status,
-      allItems: allItems ?? this.allItems,
-      selectedCategory: selectedCategory ?? this.selectedCategory,
-      searchQuery: searchQuery ?? this.searchQuery,
-      errorMessage: errorMessage ?? this.errorMessage,
-    );
-  }
+  }) =>
+      InventoryState(
+        status:       status       ?? this.status,
+        allItems:     allItems     ?? this.allItems,
+        searchQuery:  searchQuery  ?? this.searchQuery,
+        errorMessage: errorMessage ?? this.errorMessage,
+      );
 
   @override
-  List<Object?> get props => [
-    status,
-    allItems,
-    selectedCategory,
-    searchQuery,
-    errorMessage,
-  ];
+  List<Object?> get props => [status, allItems, searchQuery, errorMessage];
 }

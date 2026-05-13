@@ -2,17 +2,24 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../router/app_router.dart';
+import '../router/router.dart';
+
 class PopUpDialog extends StatefulWidget {
 
   final String? icon;
   final String? message;
-  final bool? isButton;
+  final bool onClose;
+  final List<Widget>? child;
+  final VoidCallback? onRestart;
 
   const PopUpDialog({
     super.key,
     this.icon,
     this.message,
-    this.isButton= false});
+    this.onClose = true,
+    this.child,
+    this.onRestart});
 
   @override
   State<PopUpDialog> createState() => _PopUpDialogState();
@@ -59,65 +66,106 @@ class _PopUpDialogState extends State<PopUpDialog>
 
   @override
   Widget build(BuildContext context) {
+    final buttonStyle = ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF2196F3),
+      foregroundColor: Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      textStyle: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.1,
+      ),
+    );
+
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Dialog(
         backgroundColor: Colors.transparent,
-        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 40),
         child: ScaleTransition(
           scale: _scaleAnimation,
           child: Container(
-            width: 280,
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            constraints: const BoxConstraints(maxWidth: 320),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Image.asset(widget.icon?? '', width: 34, height: 34,),
-                const SizedBox(height: 20),
+                if (widget.icon != null)
+                  Image.asset(widget.icon!, width: 48, height: 48)
+                else
+                  const Icon(Icons.info_outline, size: 48, color: Colors.blue),
+
+                const SizedBox(height: 16),
+
                 Text(
                   widget.message ?? '',
                   style: GoogleFonts.balooBhai2(
-                    fontSize: 14, fontWeight: FontWeight(800)
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
                   ),
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: 24),
-                if(widget.isButton == true)...
-                [SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2196F3),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'THOÁT',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
+                if (widget.child != null) ...[
+                  const SizedBox(height: 16),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: widget.child!,
                       ),
                     ),
                   ),
-                ),]
+                ],
+
+                const SizedBox(height: 24),
+
+                Row(
+                  children: [
+                    if (widget.onClose)
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: () => AppRouter.router.navigateTo(context, Routes.home),
+                            style: buttonStyle.copyWith(
+                              backgroundColor: WidgetStateProperty.all(Colors.grey[200]),
+                              foregroundColor: WidgetStateProperty.all(Colors.black87),
+                            ),
+                            child: const Text('THOÁT'),
+                          ),
+                        ),
+                      ),
+
+                    if (widget.onClose && widget.onRestart != null)
+                      const SizedBox(width: 12),
+
+                    if (widget.onRestart != null)
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: widget.onRestart,
+                            style: buttonStyle,
+                            child: const Text('HỌC LẠI'),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
           ),

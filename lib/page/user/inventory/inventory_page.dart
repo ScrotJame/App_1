@@ -1,58 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:test_abc/commons/enums.dart';
 
 import '../../../commons/app_images.dart';
+import '../../../extentions/icon_extension.dart';
 import '../../../helper/format_helper.dart';
+import '../../../models/entity/item_entity.dart';
+import '../../../models/items_entity.dart';
+import '../../../repository/inventory_repository.dart';
 import '../../widgets/app_gradient_header.dart';
 import '../profile/profile_cubit.dart';
 import 'inventory_cubit.dart';
 
-// ─── Palette ─────────────────────────────────────────────────────────────────
-const _kBg = Color(0xFFF2F3F7);
-const _kCard = Colors.white;
+const _kBg       = Color(0xFFF2F3F7);
+const _kCard     = Colors.white;
 const _kGemColor = Color(0xFFFFB300);
-const _kAccent = Color(0xFF42C8F5);
-const _kDark = Color(0xFF1A1A2E);
-const _kGrey = Color(0xFF9E9E9E);
-
-// Màu accent cho từng category
-const _kCategoryColors = <ItemCategory, Color>{
-  ItemCategory.all: Color(0xFF42C8F5),
-  ItemCategory.weapon: Color(0xFFE53935),
-  ItemCategory.armor: Color(0xFF1E88E5),
-  ItemCategory.potion: Color(0xFF8E24AA),
-  ItemCategory.food: Color(0xFF43A047),
-  ItemCategory.quest: Color(0xFFFFB300),
-  ItemCategory.companion: Color(0xFFFF7043),
-};
-
-// Icon cho từng category
-const _kCategoryIcons = <ItemCategory, IconData>{
-  ItemCategory.all: Icons.apps_rounded,
-  ItemCategory.weapon: Icons.sports_martial_arts_rounded,
-  ItemCategory.armor: Icons.shield_rounded,
-  ItemCategory.potion: Icons.local_drink_rounded,
-  ItemCategory.food: Icons.restaurant_rounded,
-  ItemCategory.quest: Icons.key_rounded,
-  ItemCategory.companion: Icons.egg_alt_rounded,
-};
-
-// Label cho từng category
-const _kCategoryLabels = <ItemCategory, String>{
-  ItemCategory.all: 'All',
-  ItemCategory.weapon: 'Weapon',
-  ItemCategory.armor: 'Armor',
-  ItemCategory.potion: 'Potion',
-  ItemCategory.food: 'Food',
-  ItemCategory.quest: 'Quest',
-  ItemCategory.companion: 'Companion',
-};
+const _kAccent   = Color(0xFF42C8F5);
+const _kDark     = Color(0xFF1A1A2E);
+const _kGrey     = Color(0xFF9E9E9E);
 
 class InventoryPage extends StatefulWidget {
-  final int gems;
-
-  const InventoryPage({super.key, this.gems = 0});
+  const InventoryPage({super.key});
 
   @override
   State<InventoryPage> createState() => _InventoryPageState();
@@ -65,7 +34,7 @@ class _InventoryPageState extends State<InventoryPage> {
   @override
   void initState() {
     super.initState();
-    _cubit = InventoryCubit();
+    _cubit = InventoryCubit(context.read<InventoryRepository>());
     _searchCtrl = TextEditingController();
     _cubit.loadInventory();
   }
@@ -87,10 +56,8 @@ class _InventoryPageState extends State<InventoryPage> {
           builder: (context, state) {
             return Column(
               children: [
-                _buildHeader(state),
+                _buildHeader(),
                 const SizedBox(height: 8),
-                _buildCategoryFilter(state),
-                const SizedBox(height: 4),
                 Expanded(child: _buildBody(state)),
               ],
             );
@@ -100,16 +67,16 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
-  // ─── Top bar ──────────────────────────────────────────────────────
+  // ─── Header ───────────────────────────────────────────────────────
 
-  Widget _buildHeader(InventoryState state){
+  Widget _buildHeader() {
     return AppGradientHeader(
       height: 160,
       child: Padding(
         padding: const EdgeInsets.only(top: 18),
         child: Column(
           children: [
-            _buildTopBar(context, state),
+            _buildTopBar(),
             _buildSearchBar(),
           ],
         ),
@@ -117,19 +84,16 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
-  Widget _buildTopBar(BuildContext context, InventoryState state) {
+  Widget _buildTopBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 12, 16, 0),
       child: Row(
         children: [
-          // Back button
           IconButton(
             onPressed: () => Navigator.maybePop(context),
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: _kDark, size: 20),
           ),
-
-          // Title
           Expanded(
             child: Text(
               'My Backpack',
@@ -141,11 +105,8 @@ class _InventoryPageState extends State<InventoryPage> {
               ),
             ),
           ),
-
-          // Gem badge
           Container(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: _kGemColor, width: 1.5),
@@ -183,7 +144,7 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
-  // ─── Search bar ────────────────────────────────────────────────────
+  // ─── Search bar ───────────────────────────────────────────────────
 
   Widget _buildSearchBar() {
     return Padding(
@@ -203,18 +164,15 @@ class _InventoryPageState extends State<InventoryPage> {
         child: TextField(
           controller: _searchCtrl,
           onChanged: _cubit.onSearchChanged,
-          style: GoogleFonts.balooBhai2(
-              fontSize: 14, color: _kDark),
+          style: GoogleFonts.balooBhai2(fontSize: 14, color: _kDark),
           decoration: InputDecoration(
             hintText: 'Search items...',
-            hintStyle: GoogleFonts.balooBhai2(
-                fontSize: 14, color: _kGrey),
+            hintStyle: GoogleFonts.balooBhai2(fontSize: 14, color: _kGrey),
             prefixIcon:
             const Icon(Icons.search_rounded, color: _kGrey, size: 20),
             suffixIcon: ListenableBuilder(
               listenable: _searchCtrl,
-              builder: (_, __) =>
-              _searchCtrl.text.isNotEmpty
+              builder: (_, __) => _searchCtrl.text.isNotEmpty
                   ? IconButton(
                 icon: const Icon(Icons.close_rounded,
                     color: _kGrey, size: 18),
@@ -234,76 +192,17 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
-  // ─── Category filter chips ──────────────────────────────────────────
-
-  Widget _buildCategoryFilter(InventoryState state) {
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        scrollDirection: Axis.horizontal,
-        itemCount: ItemCategory.values.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final cat = ItemCategory.values[i];
-          final isSelected = state.selectedCategory == cat;
-          final color = _kCategoryColors[cat]!;
-          return GestureDetector(
-            onTap: () => _cubit.selectCategory(cat),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected ? color : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: isSelected
-                        ? color.withOpacity(0.35)
-                        : Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _kCategoryIcons[cat],
-                    size: 14,
-                    color: isSelected ? Colors.white : _kGrey,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    _kCategoryLabels[cat]!,
-                    style: GoogleFonts.balooBhai2(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : _kGrey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  // ─── Body ──────────────────────────────────────────────────────────
+  // ─── Body ─────────────────────────────────────────────────────────
 
   Widget _buildBody(InventoryState state) {
-    if (state.status == InventoryStatus.loading ||
-        state.status == InventoryStatus.initial) {
+    if (state.status == LOADSTATUS.LOADING ||
+        state.status == LOADSTATUS.INITAL) {
       return const Center(
         child: CircularProgressIndicator(color: _kAccent),
       );
     }
 
-    if (state.status == InventoryStatus.error) {
+    if (state.status == LOADSTATUS.FAILED) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -328,13 +227,12 @@ class _InventoryPageState extends State<InventoryPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inventory_2_outlined, size: 56,
-                color: _kGrey.withOpacity(0.5)),
+            Icon(Icons.inventory_2_outlined,
+                size: 56, color: _kGrey.withOpacity(0.5)),
             const SizedBox(height: 12),
             Text(
               'No items found',
-              style: GoogleFonts.balooBhai2(
-                  fontSize: 16, color: _kGrey),
+              style: GoogleFonts.balooBhai2(fontSize: 16, color: _kGrey),
             ),
           ],
         ),
@@ -353,133 +251,134 @@ class _InventoryPageState extends State<InventoryPage> {
           childAspectRatio: 0.85,
         ),
         itemCount: items.length,
-        itemBuilder: (_, i) =>
-            _InventoryItemCard(
-              item: items[i],
-              onAction: () => _cubit.performAction(items[i]),
-            ),
+        itemBuilder: (_, i) => InventoryItemCard(
+          userItem: items[i],
+          onTap: (){
+
+          },),
       ),
     );
   }
-
-  // ─── Helper ────────────────────────────────────────────────────────
-
-
 }
 
 // ─── Item Card ────────────────────────────────────────────────────────────────
 
-class _InventoryItemCard extends StatelessWidget {
-  final InventoryItem item;
-  final VoidCallback onAction;
+class InventoryItemCard extends StatelessWidget {
+  final UserItemEntity userItem;
+  final VoidCallback? onTap;
 
-  const _InventoryItemCard({
-    required this.item,
-    required this.onAction,
+  const InventoryItemCard({
+    super.key,
+    required this.userItem,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = _kCategoryColors[item.category] ?? _kAccent;
+    final item = userItem.item;
+    final isPressed = ValueNotifier<bool>(false);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: _kCard,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
+    return GestureDetector(
+      onTapDown: (_) => isPressed.value = true,
+      onTapUp: (_) => isPressed.value = false,
+      onTapCancel: () => isPressed.value = false,
+      onTap: onTap,
+      child: ValueListenableBuilder<bool>(
+        valueListenable: isPressed,
+        builder: (context, pressed, child) {
+          return AnimatedScale(
+            scale: pressed ? 0.85 : 1.0,
+            duration: const Duration(milliseconds: 100),
+            child: child,
+          );
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: _kCard,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // ── Item image / placeholder ──
-            _buildItemImage(accentColor),
-            const SizedBox(height: 10),
-
-            // ── Item name ──
-            Text(
-              item.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.balooBhai2(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: _kDark,
-              ),
-            ),
-
-            // ── Category label ──
-            Text(
-              _kCategoryLabels[item.category] ?? '',
-              style: GoogleFonts.balooBhai2(
-                fontSize: 12,
-                color: _kGrey,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // ── Action button ──
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: onAction,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: _kDark,
-                  side: BorderSide(color: Colors.grey.shade300),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  textStyle: GoogleFonts.balooBhai2(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // Tối ưu không gian
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _ItemImage(assetPath: item?.icon.toIconData()),
+                const SizedBox(height: 10),
+                Text(
+                  item?.name ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.balooBhai2(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: _kDark,
                   ),
                 ),
-                child: Text(item.action),
-              ),
+                const SizedBox(height: 4),
+                Text(
+                  'x${userItem.quantity ?? 0}',
+                  style: GoogleFonts.balooBhai2(
+                      fontSize: 12,
+                      color: _kGrey,
+                      fontWeight: FontWeight.w800
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildItemImage(Color accentColor) {
+// Tách riêng Widget Image để Flutter không phải rebuild lại logic ảnh khi nhấn Card
+class _ItemImage extends StatelessWidget {
+  final String? assetPath;
+  const _ItemImage({this.assetPath});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: 72,
       height: 72,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: accentColor.withOpacity(0.15),
-        border: Border.all(color: accentColor.withOpacity(0.4), width: 2),
+        color: _kAccent.withOpacity(0.15),
+        border: Border.all(color: _kAccent.withOpacity(0.4), width: 2),
       ),
-      child: item.imagePath != null
-          ? ClipOval(
-        child: Image.asset(
-          item.imagePath!,
+      child: ClipOval(
+        child: assetPath != null
+            ? Image.asset(
+          assetPath!,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _fallbackIcon(accentColor),
-        ),
-      )
-          : _fallbackIcon(accentColor),
+          // Tối ưu bộ nhớ: Flutter tự động cache Image.asset
+          // nhưng bạn có thể giới hạn kích thước cache nếu ảnh gốc quá lớn
+          cacheWidth: 150,
+          cacheHeight: 150,
+          errorBuilder: (_, __, ___) => const _FallbackIcon(),
+        )
+            : const _FallbackIcon(),
+      ),
     );
   }
+}
 
-  Widget _fallbackIcon(Color color) {
-    return Center(
-      child: Icon(
-        _kCategoryIcons[item.category] ?? Icons.inventory_2_rounded,
-        color: color,
-        size: 32,
-      ),
+class _FallbackIcon extends StatelessWidget {
+  const _FallbackIcon();
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Icon(Icons.inventory_2_rounded, color: _kAccent, size: 32),
     );
   }
 }
