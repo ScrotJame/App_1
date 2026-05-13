@@ -16,6 +16,12 @@ class FormatHelper {
     if (n >= 1000) {
       return '${(n / 1000).toStringAsFixed(n % 1000 == 0 ? 0 : 1)}k';
     }
+    if (n >= 10000) {
+      return '${(n / 10000).toStringAsFixed(n % 10000 == 0 ? 0 : 1)}m';
+    }
+    if (n >= 100000) {
+      return '${(n / 100000).toStringAsFixed(n % 100000 == 0 ? 0 : 1)}b';
+    }
     return n.toString();
   }
 

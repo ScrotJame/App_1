@@ -15,6 +15,7 @@ import 'package:test_abc/page/widgets/bubble_button.dart';
 import 'package:test_abc/ultis/extension/label_extension.dart';
 import '../commons/app_images.dart';
 import '../components/popup_dialog.dart';
+import '../helper/format_helper.dart';
 import '../models/land_model.dart';
 import '../router/app_router.dart';
 import '../router/router.dart';
@@ -517,7 +518,7 @@ class _HomePageState extends State<HomePage>
                 barBorder: AppColors.kRed,
                 barGradient: AppColors.streakGradient,
                 avatarBackground: AppColors.white,
-                label: '$gems',
+                label: FormatHelper.formatNumberPrice(gems),
               );
             },
           ),
