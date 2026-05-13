@@ -12,6 +12,9 @@ class ItemsEntrie extends Table {
 
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
   DateTimeColumn get lastUpdated => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 class UserItemsEntrie extends Table {

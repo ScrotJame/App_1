@@ -37,56 +37,92 @@ class ShopRepository implements IShopRepository {
     }
 
     await _db.transaction(() async {
-      final row = await (_db.select(_db.itemsEntrie)
-        ..where((t) => t.id.equals(itemId)))
-          .getSingleOrNull();
+      final row = await _getItemOrThrow(itemId);
+      _validateStock(row);
 
-      if (row == null) {
-        throw StateError('Không tìm thấy sản phẩm id=$itemId');
-      }
-      if (row.stock <= 0) {
-        throw StateError('Sản phẩm "${row.name}" đã hết hàng');
-      }
+      final user = await _getUserOrThrow(userId);
+      _validateGems(user, row.price);
 
-      debugPrint('[ShopRepo] buyProduct: item=$itemId stock=${row.stock} → ${row.stock - 1}');
-
-      // ── 2. Trừ stock ─────────────────────────────────────────
-      await (_db.update(_db.itemsEntrie)
-        ..where((t) => t.id.equals(itemId)))
-          .write(ItemsEntrieCompanion(
-        stock: Value(row.stock - 1),
-        isSynced: const Value(false), // cần sync lại sau
-        lastUpdated: Value(DateTime.now()),
-      ));
-
-      // ── 3. Cộng quantity vào UserItemsEntrie ─────────────────
-      // insertOnConflictUpdate: nếu (userId, itemId) đã tồn tại thì cộng thêm
-      final existing = await (_db.select(_db.userItemsEntrie)
-        ..where((t) => t.userId.equals(userId) & t.itemId.equals(itemId)))
-          .getSingleOrNull();
-
-      if (existing == null) {
-        await _db.into(_db.userItemsEntrie).insert(
-          UserItemsEntrieCompanion.insert(
-            userId: userId,
-            itemId: itemId,
-            quantity: const Value(1),
-          ),
-        );
-        debugPrint('[ShopRepo] buyProduct: created UserItems userId=$userId itemId=$itemId qty=1');
-      } else {
-        await (_db.update(_db.userItemsEntrie)
-          ..where((t) => t.userId.equals(userId) & t.itemId.equals(itemId)))
-            .write(UserItemsEntrieCompanion(
-          quantity: Value(existing.quantity + 1),
-        ));
-        debugPrint('[ShopRepo] buyProduct: updated UserItems userId=$userId itemId=$itemId qty=${existing.quantity + 1}');
-      }
+      await _deductGems(userId, user.gems, row.price);
+      await _deductStock(itemId, row.stock);
+      await _addToInventory(userId, itemId);
     });
 
-    try {
-      await syncWithServer();
-    } catch (e) {
+    try { await syncWithServer(); } catch (_) {}
+  }
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+  Future<ItemsEntrieData> _getItemOrThrow(String itemId) async {
+    final row = await (_db.select(_db.itemsEntrie)
+      ..where((t) => t.id.equals(itemId)))
+        .getSingleOrNull();
+    if (row == null) throw StateError('Không tìm thấy sản phẩm id=$itemId');
+    return row;
+  }
+
+  void _validateStock(ItemsEntrieData row) {
+    if (row.stock <= 0) {
+      throw StateError('Sản phẩm "${row.name}" đã hết hàng');
+    }
+  }
+
+  Future<UsersEntrieData> _getUserOrThrow(String userId) async {
+    final user = await (_db.select(_db.usersEntrie)
+      ..where((t) => t.keyOpen.equals(userId)))
+        .getSingleOrNull();
+    if (user == null) throw StateError('Không tìm thấy user id=$userId');
+    return user;
+  }
+
+  void _validateGems(UsersEntrieData user, double price) {
+    if (user.gems < price) {
+      throw StateError('Không đủ gem (cần ${price.toInt()}, có ${user.gems})');
+    }
+  }
+
+  Future<void> _deductGems(String userId, int currentGems, double price) async {
+    final newGems = currentGems - price.toInt();
+    await (_db.update(_db.usersEntrie)
+      ..where((t) => t.keyOpen.equals(userId)))
+        .write(UsersEntrieCompanion(
+      gems: Value(newGems),
+      updatedAt: Value(DateTime.now()),
+    ));
+    debugPrint('[ShopRepo] _deductGems: userId=$userId gems=$currentGems → $newGems');
+  }
+
+  Future<void> _deductStock(String itemId, int currentStock) async {
+    await (_db.update(_db.itemsEntrie)
+      ..where((t) => t.id.equals(itemId)))
+        .write(ItemsEntrieCompanion(
+      stock: Value(currentStock - 1),
+      isSynced: const Value(false),
+      lastUpdated: Value(DateTime.now()),
+    ));
+    debugPrint('[ShopRepo] _deductStock: itemId=$itemId stock=$currentStock → ${currentStock - 1}');
+  }
+
+  Future<void> _addToInventory(String userId, String itemId) async {
+    final existing = await (_db.select(_db.userItemsEntrie)
+      ..where((t) => t.userId.equals(userId) & t.itemId.equals(itemId)))
+        .getSingleOrNull();
+
+    if (existing == null) {
+      await _db.into(_db.userItemsEntrie).insert(
+        UserItemsEntrieCompanion.insert(
+          userId: userId,
+          itemId: itemId,
+          quantity: const Value(1),
+        ),
+      );
+      debugPrint('[ShopRepo] _addToInventory: created userId=$userId itemId=$itemId qty=1');
+    } else {
+      final newQty = existing.quantity + 1;
+      await (_db.update(_db.userItemsEntrie)
+        ..where((t) => t.userId.equals(userId) & t.itemId.equals(itemId)))
+          .write(UserItemsEntrieCompanion(quantity: Value(newQty)));
+      debugPrint('[ShopRepo] _addToInventory: updated userId=$userId itemId=$itemId qty=$newQty');
     }
   }
 

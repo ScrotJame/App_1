@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../commons/user_sesion.dart';
 import '../database/app_db.dart';
+import '../models/entity/user_entity.dart';
 
 abstract class IUserRepository {
   Future<UsersEntrieData?> getCurrentUser();
@@ -26,6 +27,11 @@ class UserRepository implements IUserRepository {
     return prefs.getString(_keyLocal);
   }
 
+  Stream<UsersEntrieData> watchUser(String userKey) {
+    return (_db.select(_db.usersEntrie)
+      ..where((t) => t.keyOpen.equals(userKey)))
+        .watchSingle();
+  }
   @override
   Future<String?> getLocalKey() => _getLocalKey();
 

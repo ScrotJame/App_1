@@ -60,21 +60,28 @@ class AppDatabase extends _$AppDatabase {
       ItemsEntrieCompanion.insert(
         name: 'Streak Freeze',
         description: Value('Giữ cho chuỗi của bạn không bị mất nếu quên học 1 ngày.'),
-        price: 500,
+        price: 100,
         icon:'IC_FREEZE',
         stock: Value(30)
       ),
       ItemsEntrieCompanion.insert(
+          name: 'Test Item',
+          description: Value('test'),
+          price: 1,
+          icon:'IC_FREEZE',
+          stock: Value(30)
+      ),
+      ItemsEntrieCompanion.insert(
         name: 'Double Gems',
         description: Value('Nhận gấp đôi đá quý trong 30 phút tiếp theo.'),
-        price: 1000,
+        price: 500,
         icon:'IC_GET_GEMS',
         stock: Value(30)
       ),
       ItemsEntrieCompanion.insert(
         name: 'Save Streal',
         description: Value('Cứu lại streak đã mất'),
-        price: 2000,
+        price: 1000,
         icon:'SAVE_STREAK',
         stock: Value(30)
       ),

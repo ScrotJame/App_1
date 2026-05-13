@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import '../../commons/user_sesion.dart';
 import '../../models/items_entity.dart';
 import '../../repository/shop_repository.dart';
 import '../user/inventory/inventory_cubit.dart';
@@ -46,7 +47,10 @@ class ShopCubit extends Cubit<ShopState> {
     ));
 
     try {
-      await Future.delayed(const Duration(milliseconds: 600));
+      final userId = UserSession.instance.dbUserKey;
+
+      await _repository.buyProduct(item, userId);
+
       emit(state.copyWith(
         status: ShopStatus.success,
         purchasedItemId: item.id,
@@ -54,7 +58,7 @@ class ShopCubit extends Cubit<ShopState> {
     } catch (e) {
       emit(state.copyWith(
         status: ShopStatus.error,
-        errorMessage: e.toString(),
+        errorMessage: e.toString(), // lỗi từ repo (hết hàng, không tìm thấy,…)
       ));
     }
   }

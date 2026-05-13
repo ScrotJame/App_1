@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
@@ -17,11 +18,19 @@ part 'profile_state.dart';
 class ProfileCubit extends Cubit<ProfileState> {
   final UserRepository _userRepository;
   final _picker = ImagePicker();
-
-  ProfileCubit(this._userRepository) : super(const ProfileState());
-
+  StreamSubscription<UsersEntrieData>? _userSub;
+  
+  ProfileCubit(this._userRepository) : super(const ProfileState()) {
+    _watchUser();
+  }
   // ─── Load ─────────────────────────────────────────────────────────
 
+  void _watchUser() {
+    final userKey = UserSession.instance.dbUserKey;
+    _userSub = _userRepository.watchUser(userKey).listen(
+          (row) => emit(state.copyWith(data: row)),
+    );
+  }
   Future<void> loadProfile() async {
     emit(state.copyWith(status: ProfileStatus.loading));
     try {
@@ -122,5 +131,11 @@ class ProfileCubit extends Cubit<ProfileState> {
       debugPrint('$stack');
       emit(state.copyWith(isSaving: false));
     }
+  }
+
+  @override
+  Future<void> close() {
+    _userSub?.cancel();
+    return super.close();
   }
 }
