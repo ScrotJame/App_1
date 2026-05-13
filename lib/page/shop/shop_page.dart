@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/generated/l10n.dart';
 import 'package:test_abc/helper/format_helper.dart';
@@ -7,8 +8,15 @@ import 'package:test_abc/ultis/extension/label_extension.dart';
 import '../../extentions/icon_extension.dart';
 import '../../models/items_entity.dart';
 import '../../repository/shop_repository.dart';
+import '../widgets/app_gradient_header.dart';
 import 'shop_cubit.dart';
 
+const _kBg = Color(0xFFF2F3F7);
+const _kCard = Colors.white;
+const _kGemColor = Color(0xFFFFB300);
+const _kAccent = Color(0xFF42C8F5);
+const _kDark = Color(0xFF1A1A2E);
+const _kGrey = Color(0xFF9E9E9E);
 
 class ShopPage extends StatefulWidget {
   const ShopPage({super.key});
@@ -19,23 +27,26 @@ class ShopPage extends StatefulWidget {
 
 class _ShopPageState extends State<ShopPage> {
   late ShopCubit _cubit;
+  late final TextEditingController _searchCtrl;
 
   @override
   void initState() {
     super.initState();
     _cubit = ShopCubit(context.read<ShopRepository>());
+    _searchCtrl = TextEditingController();
   }
 
   @override
   void dispose() {
     _cubit.close();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
   // ── Handlers ─────────────────────────────────────────────────
 
   void _handleSuccess(String? itemId) {
-    final item = _cubit.state.items.firstWhere(
+    final item = _cubit.state.filteredItems.firstWhere(
           (e) => e.id == itemId,
       orElse: () => ItemsEntity(name: itemId),
     );
@@ -67,7 +78,6 @@ class _ShopPageState extends State<ShopPage> {
     return BlocProvider.value(
       value: _cubit,
       child: Scaffold(
-        backgroundColor: const Color(0xFF5BB75B),
         body: BlocListener<ShopCubit, ShopState>(
           listener: (context, state) {
             if (state.status == ShopStatus.success) {
@@ -76,13 +86,11 @@ class _ShopPageState extends State<ShopPage> {
               _handleError(state.errorMessage);
             }
           },
-          child: SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(),
-                Expanded(child: _buildBody()),
-              ],
-            ),
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(child: _buildBody()),
+            ],
           ),
         ),
       ),
@@ -90,28 +98,89 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          _buildBackButton(),
-          Expanded(
-            child: Text(
-              S.of(context).shop.capitalizeWords(),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 4,
-                shadows: [
-                  Shadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))
-                ],
-              ),
+    return AppGradientHeader(
+      height: 145,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 28),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  child: _buildBackButton(),
+                ),
+                Expanded(
+                  child: Text(
+                    S.of(context).shop.capitalizeWords(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 4,
+                      shadows: [
+                        Shadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 36),
+              ],
             ),
+            const SizedBox(height: 8),
+            _buildSearchBar(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: TextField(
+          controller: _searchCtrl,
+          onChanged: _cubit.onSearchChanged,
+          style: GoogleFonts.balooBhai2(
+              fontSize: 14, color: _kDark),
+          decoration: InputDecoration(
+            hintText: 'Search items...',
+            hintStyle: GoogleFonts.balooBhai2(
+                fontSize: 14, color: _kGrey),
+            prefixIcon:
+            const Icon(Icons.search_rounded, color: _kGrey, size: 20),
+            suffixIcon: ListenableBuilder(
+              listenable: _searchCtrl,
+              builder: (_, __) =>
+              _searchCtrl.text.isNotEmpty
+                  ? IconButton(
+                icon: const Icon(Icons.close_rounded,
+                    color: _kGrey, size: 18),
+                onPressed: () {
+                  _searchCtrl.clear();
+                  _cubit.clearSearch();
+                },
+              )
+                  : const SizedBox.shrink(),
+            ),
+            border: InputBorder.none,
+            contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
-          const SizedBox(width: 36),
-        ],
+        ),
       ),
     );
   }
@@ -135,14 +204,14 @@ class _ShopPageState extends State<ShopPage> {
     return BlocBuilder<ShopCubit, ShopState>(
       builder: (context, state) {
         // ── Loading lần đầu (chưa có items) ──
-        if (state.status == ShopStatus.loading && state.items.isEmpty) {
+        if (state.status == ShopStatus.loading && state.filteredItems.isEmpty) {
           return const Center(
             child: CircularProgressIndicator(color: Colors.white),
           );
         }
 
         // ── Lỗi và chưa có items ──
-        if (state.status == ShopStatus.error && state.items.isEmpty) {
+        if (state.status == ShopStatus.error && state.filteredItems.isEmpty) {
           return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -165,7 +234,7 @@ class _ShopPageState extends State<ShopPage> {
         }
 
         // ── Không có items ──
-        if (state.items.isEmpty) {
+        if (state.filteredItems.isEmpty) {
           return const Center(
             child: Text(
               'Chưa có sản phẩm nào',
@@ -179,10 +248,10 @@ class _ShopPageState extends State<ShopPage> {
           margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: ListView.separated(
             physics: const BouncingScrollPhysics(),
-            itemCount: state.items.length,
+            itemCount: state.filteredItems.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) =>
-                _ItemCard(item: state.items[index]),
+                _ItemCard(item: state.filteredItems[index]),
           ),
         );
       },

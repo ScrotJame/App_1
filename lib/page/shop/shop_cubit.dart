@@ -3,6 +3,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../models/items_entity.dart';
 import '../../repository/shop_repository.dart';
+import '../user/inventory/inventory_cubit.dart';
 
 part 'shop_state.dart';
 
@@ -58,6 +59,13 @@ class ShopCubit extends Cubit<ShopState> {
     }
   }
 
+  void onSearchChanged(String query) {
+    emit(state.copyWith(searchQuery: query));
+  }
+
+  void clearSearch() {
+    emit(state.copyWith(searchQuery: ''));
+  }
   void reset() => emit(state.copyWith(
     status: ShopStatus.initial,
     purchasedItemId: null,

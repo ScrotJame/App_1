@@ -5,7 +5,8 @@ enum ShopStatus { initial, loading, success, error }
 class ShopState extends Equatable {
   final ShopStatus status;
   final List<ItemsEntity> items;
-  final String? purchasedItemId;   // id của item vừa mua (thay DealTier)
+  final String? purchasedItemId;
+  final String searchQuery;
   final String? errorMessage;
 
   const ShopState({
@@ -13,6 +14,7 @@ class ShopState extends Equatable {
     this.items = const [],
     this.purchasedItemId,
     this.errorMessage,
+    this.searchQuery = '',
   });
 
   ShopState copyWith({
@@ -20,15 +22,32 @@ class ShopState extends Equatable {
     List<ItemsEntity>? items,
     String? purchasedItemId,
     String? errorMessage,
+    String? searchQuery,
   }) {
     return ShopState(
       status: status ?? this.status,
       items: items ?? this.items,
       purchasedItemId: purchasedItemId ?? this.purchasedItemId,
       errorMessage: errorMessage ?? this.errorMessage,
+      searchQuery: searchQuery ?? this.searchQuery
     );
   }
 
+  List<ItemsEntity> get filteredItems {
+    if (searchQuery.trim().isEmpty) return items;
+    final q = searchQuery.trim().toLowerCase();
+    return items.where((i) {
+      final name = i.name?.toLowerCase() ?? '';
+      final desc = i.description?.toLowerCase() ?? '';
+      return name.contains(q) || desc.contains(q);
+    }).toList();
+  }
+
   @override
-  List<Object?> get props => [status, items, purchasedItemId, errorMessage];
+  List<Object?> get props => [
+    status,
+    items,
+    purchasedItemId,
+    errorMessage,
+    searchQuery];
 }
