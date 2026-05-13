@@ -124,4 +124,10 @@ class UserRepository implements IUserRepository {
     await prefs.remove(_keyLocal);
     UserSession.instance.clear();
   }
+
+  Future<void> updateDB() async {
+    final localKey = await _getLocalKey();
+    if (localKey == null) return;
+    await (_db.update(_db.usersEntrie)..where((t) => t.keyOpen.equals(localKey))).write(UsersEntrieCompanion(totalLearned: Value(4)));
+  }
 }

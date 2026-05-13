@@ -6,7 +6,8 @@
 *.g.dart
 lib/generated/intl/*.dart
 lib/generated/*.dart
-lib/test_app/*.dart
+lib/page/test_app/*.dart
+script_run
 .DS_Store
 .atom/
 .build/

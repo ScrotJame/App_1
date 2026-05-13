@@ -62,7 +62,6 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
   }
 
-
   void refresh() => loadProfile();
 
   // ─── Update username ───────────────────────────────────────────────
