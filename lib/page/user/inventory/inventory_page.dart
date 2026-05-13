@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../commons/app_images.dart';
 import '../../../helper/format_helper.dart';
+import '../../widgets/app_gradient_header.dart';
 import '../profile/profile_cubit.dart';
 import 'inventory_cubit.dart';
 
@@ -82,27 +83,39 @@ class _InventoryPageState extends State<InventoryPage> {
       value: _cubit,
       child: Scaffold(
         backgroundColor: _kBg,
-        body: SafeArea(
-          child: BlocBuilder<InventoryCubit, InventoryState>(
-            builder: (context, state) {
-              return Column(
-                children: [
-                  _buildTopBar(context, state),
-                  _buildSearchBar(),
-                  const SizedBox(height: 8),
-                  _buildCategoryFilter(state),
-                  const SizedBox(height: 4),
-                  Expanded(child: _buildBody(state)),
-                ],
-              );
-            },
-          ),
+        body: BlocBuilder<InventoryCubit, InventoryState>(
+          builder: (context, state) {
+            return Column(
+              children: [
+                _buildHeader(state),
+                const SizedBox(height: 8),
+                _buildCategoryFilter(state),
+                const SizedBox(height: 4),
+                Expanded(child: _buildBody(state)),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
   // ─── Top bar ──────────────────────────────────────────────────────
+
+  Widget _buildHeader(InventoryState state){
+    return AppGradientHeader(
+      height: 160,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 18),
+        child: Column(
+          children: [
+            _buildTopBar(context, state),
+            _buildSearchBar(),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildTopBar(BuildContext context, InventoryState state) {
     return Padding(
@@ -134,7 +147,6 @@ class _InventoryPageState extends State<InventoryPage> {
             padding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: _kGemColor.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: _kGemColor, width: 1.5),
               boxShadow: [
