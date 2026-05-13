@@ -28,6 +28,7 @@ class AppImages {
   static final icBag ='assets/vector/ic_bag.svg';
   static final icBadge ='assets/vector/ic_badge.svg';
   static final icLearnHistory ='assets/vector/ic_learn_history.svg';
+  static final icLanguage ='assets/vector/ic_language.svg';
 
 }
 

@@ -17,6 +17,7 @@ import '../../../database/app_db.dart';
 import '../../../router/app_router.dart';
 import '../../../router/router.dart';
 import '../../backup/backup_page.dart';
+import '../inventory/inventory_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -440,9 +441,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   icon: AppImages.icBag,
                   label: S.current.my_inventory.capitalize(),
                   onTap: () {
-                    // Navigator.push(context,
-                    //     MaterialPageRoute(
-                    //         builder: (_) => const BackupPage()));
+                    Navigator.push(context,
+                        MaterialPageRoute(
+                            builder: (_) => const InventoryPage()));
                   }
               ),
               divider,
@@ -497,7 +498,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   onTap: () {}),
               divider,
               settingsItem(
-                icon: AppImages.icHelpAndSupport,
+                icon: AppImages.icLanguage,
                 label: S.current.language,
                 onTap: () => _showLanguagePicker(context),
               ),
