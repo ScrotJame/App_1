@@ -43,13 +43,15 @@ class _TestView extends StatelessWidget {
     return BlocConsumer<TestCubit, TestState>(
       listenWhen: (p, c) => p.phase != c.phase && c.phase == TestPhase.result,
       listener: (context, state) async {
-        final int xpEarned = (state.score / 2).toInt();
         final int totalGems = state.leveledUpWords.fold(0, (sum, entry) {
           return sum + state.gemsForLevel(entry.level);
         });
-        final int gemsEarned = totalGems > 0 ? totalGems : state.score * 10;
+        final int totalXp = state.leveledUpWords.fold(0, (sum, entry) {
+          return sum + state.gemsForLevel(entry.level);
+        });
 
-        // Lưu vào state để ResultScreen đọc được
+        final int gemsEarned = totalGems > 0 ? totalGems : state.score * 10;
+        final int xpEarned = totalXp > 0 ? (totalXp / 2).toInt() : (state.score / 2).toInt();
         context.read<TestCubit>().setRewards(xpEarned: xpEarned, gemsEarned: gemsEarned);
 
         await context.read<XpCubit>().addXp(xpEarned);

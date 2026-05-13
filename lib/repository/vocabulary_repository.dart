@@ -33,6 +33,7 @@ abstract class IVocabularyRepository {
   Future<VocabularyEntry?> incrementWordLevel(int id);
   Future<void> changeWordState(int wordId, int newLevel, String? userId);
   Future<void> countWordLearn( String userId);
+  Future<bool> isWordAlreadyMastered(int wordId, String userId);
 }
 
 class VocabularyRepository implements IVocabularyRepository {
@@ -179,8 +180,18 @@ class VocabularyRepository implements IVocabularyRepository {
       totalLearned: _db.usersEntrie.totalLearned + const Constant(1),
     ));
   }
+
+  @override
+  Future<bool> isWordAlreadyMastered(int wordId, String userId) async {
+    final row = await (_db.select(_db.userWordProgressEntrie)
+      ..where((t) => t.wordId.equals(wordId) & t.userId.equals(userId)))
+        .getSingleOrNull();
+
+    return row?.status == WordStatus.mastered;
+  }
+
   int _resolveStatus(int level) {
-    if (level > 5) return WordStatus.mastered;
+    if (level >= 5) return WordStatus.mastered;
     if (level >= 1) return WordStatus.learning;
     return WordStatus.notStarted;
   }

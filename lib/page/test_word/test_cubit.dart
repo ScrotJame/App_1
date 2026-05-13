@@ -289,18 +289,26 @@ class TestCubit extends Cubit<TestState> {
     final wordsToSchedule = <VocabularyEntry>[];
 
     int correctCount = 0;
-
+    int masteredCount = 0;
     for (final entry in state.answerStatuses.entries) {
       final vocabEntry = state.questions[entry.key].word.word;
 
       if (entry.value == AnswerStatus.correct) {
         correctCount++;
         try {
+          final alreadyMastered = await _repo.isWordAlreadyMastered(
+            vocabEntry.id,
+            userKey,
+          );
+
           final updated = await _repo.incrementWordLevel(vocabEntry.id);
           if (updated != null) {
             leveledUpWords.add(updated);
             wordsToSchedule.add(updated);
             await _repo.changeWordState(updated.id, updated.level, userKey);
+            if (updated.level >= 5 && !alreadyMastered) {
+              masteredCount++;
+            }
           } else {
             wordsToSchedule.add(vocabEntry);
             await _repo.changeWordState(vocabEntry.id, vocabEntry.level, userKey);
@@ -316,7 +324,7 @@ class TestCubit extends Cubit<TestState> {
     }
 
     if (correctCount > 0) {
-      for (var i = 0; i < correctCount; i++) {
+      for (var i = 0; i < masteredCount; i++) {
         await _repo.countWordLearn(userKey);
       }
     }
