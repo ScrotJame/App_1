@@ -309,30 +309,99 @@ class _AddWordPageState extends State<AddWordPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildFormField(
-          label: 'Từ vựng',
-          hint: 'Nhập từ vựng',
-          controller: _vocabularyController,
-          onChanged: _cubit.onVocabularyChanged,
-          accentColor: const Color(0xFF6B7FD4),
+        // Label row + chip ngôn ngữ cùng hàng
+        Row(
+          children: [
+            Container(
+              width: 3, height: 16,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B7FD4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Từ vựng',
+              style: TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w600,
+                color: Colors.black87, letterSpacing: 0.2,
+              ),
+            ),
+            const SizedBox(width: 8),
+            // ── CHIP NGÔN NGỮ ──
+            BlocBuilder<AddWordCubit, AddWordState>(
+              buildWhen: (p, c) =>
+              p.detectedLanguage != c.detectedLanguage ||
+                  p.languageDetectStatus != c.languageDetectStatus,
+              builder: (context, state) {
+                if (state.languageDetectStatus == LOADSTATUS.LOADING) {
+                  return const SizedBox(
+                    width: 14, height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF6B7FD4)),
+                  );
+                }
+                if (state.detectedLanguage == null) return const SizedBox.shrink();
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6B7FD4).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF6B7FD4).withOpacity(0.4)),
+                  ),
+                  child: Text(
+                    state.detectedLanguageLabel,
+                    style: const TextStyle(
+                      fontSize: 11, color: Color(0xFF6B7FD4),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
-        _buildFormField(
-          label: 'Phát âm',
-          hint: 'Nhập cách phát âm',
-          controller: _furiganaController,
-          onChanged: _cubit.onFuriganaChanged,
-          accentColor: const Color(0xFF5B8DEF),
+        const SizedBox(height: 8),
+        // TextField giữ nguyên
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+          ),
+          child: TextField(
+            controller: _vocabularyController,
+            onChanged: _cubit.onVocabularyChanged,
+            minLines: 1, maxLines: 1,
+            style: const TextStyle(fontSize: 15, color: Colors.black87),
+            decoration: InputDecoration(
+              hintText: 'Nhập từ vựng',
+              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF6B7FD4), width: 1.5),
+              ),
+              filled: true, fillColor: Colors.white,
+            ),
+          ),
         ),
-        const SizedBox(height: 16),
-        _buildFormField(
-          label: 'Nghĩa',
-          hint: 'Nhập nghĩa từ',
-          controller: _meaningController,
-          onChanged: _cubit.onMeaningChanged,
-          accentColor: const Color(0xFFF4A261),
-          minLines: 2,
-        ),
+    const SizedBox(height: 16),
+    _buildFormField(
+    label: 'Phát âm',
+    hint: 'Nhập cách phát âm',
+    controller: _furiganaController,
+    onChanged: _cubit.onFuriganaChanged,
+    accentColor: const Color(0xFF5B8DEF),
+    ),
+    const SizedBox(height: 16),
+    _buildFormField(
+    label: 'Nghĩa',
+    hint: 'Nhập nghĩa từ',
+    controller: _meaningController,
+    onChanged: _cubit.onMeaningChanged,
+    accentColor: const Color(0xFFF4A261),
+    minLines: 2,)
       ],
     );
   }

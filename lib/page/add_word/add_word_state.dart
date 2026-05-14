@@ -13,6 +13,8 @@ class AddWordState extends Equatable {
     this.errorMessage,
     this.tags,
     this.selectedTagIds = const [],
+    this.detectedLanguage,
+    this.languageDetectStatus = LOADSTATUS.INITAL,
   });
 
   final String vocabulary;
@@ -28,6 +30,8 @@ class AddWordState extends Equatable {
 
   /// Các tag đang được chọn (theo id)
   final List<int> selectedTagIds;
+  final String? detectedLanguage;
+  final LOADSTATUS languageDetectStatus;
 
   // ─── Helper ───────────────────────────────────────────────
   bool isTagSelected(int tagId) => selectedTagIds.contains(tagId);
@@ -42,6 +46,8 @@ class AddWordState extends Equatable {
     String? errorMessage,
     List<Tag>? tags,
     List<int>? selectedTagIds,
+    String? detectedLanguage,
+    LOADSTATUS? languageDetectStatus,
   }) {
     return AddWordState(
       vocabulary: vocabulary ?? this.vocabulary,
@@ -53,11 +59,24 @@ class AddWordState extends Equatable {
       errorMessage: errorMessage ?? this.errorMessage,
       tags: tags ?? this.tags,
       selectedTagIds: selectedTagIds ?? this.selectedTagIds,
+      detectedLanguage: detectedLanguage ?? this.detectedLanguage,
+      languageDetectStatus: languageDetectStatus ?? this.languageDetectStatus,
     );
   }
 
   bool get isPreviewReady =>
       vocabulary.isNotEmpty || furigana.isNotEmpty || meaning.isNotEmpty;
+
+  String get detectedLanguageLabel {
+    switch (detectedLanguage) {
+      case 'ja': return '🇯🇵 Tiếng Nhật';
+      case 'en': return '🇬🇧 Tiếng Anh';
+      case 'zh': return '🇨🇳 Tiếng Trung';
+      case 'ko': return '🇰🇷 Tiếng Hàn';
+      case 'vi': return '🇻🇳 Tiếng Việt';
+      default:   return detectedLanguage ?? '';
+    }
+  }
 
   @override
   List<Object?> get props => [
@@ -70,5 +89,7 @@ class AddWordState extends Equatable {
     errorMessage,
     tags,
     selectedTagIds,
+    detectedLanguage,
+    languageDetectStatus,
   ];
 }

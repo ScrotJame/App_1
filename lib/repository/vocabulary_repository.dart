@@ -8,6 +8,7 @@ abstract class IVocabularyRepository {
     required String word,
     required String meaning,
     String? pronunciation,
+    String? language,
   });
 
   Future<List<VocabularyEntry>> getAllWords();
@@ -23,6 +24,7 @@ abstract class IVocabularyRepository {
     required String word,
     required String meaning,
     String? pronunciation,
+    String? language,
   });
 
   // tag
@@ -45,6 +47,7 @@ class VocabularyRepository implements IVocabularyRepository {
     required String word,
     required String meaning,
     String? pronunciation,
+    String? language,
   }) =>
       _db.into(_db.vocabularyEntries).insert(
         VocabularyEntriesCompanion.insert(
@@ -53,6 +56,7 @@ class VocabularyRepository implements IVocabularyRepository {
           pronunciation: pronunciation != null
               ? Value(pronunciation)
               : const Value.absent(),
+          language: Value(language),
         ),
       );
 
@@ -97,6 +101,7 @@ class VocabularyRepository implements IVocabularyRepository {
     required String word,
     required String meaning,
     String? pronunciation,
+    String? language,
   }) =>
       _db.update(_db.vocabularyEntries).replace(
         VocabularyEntriesCompanion(
@@ -106,6 +111,7 @@ class VocabularyRepository implements IVocabularyRepository {
           pronunciation: pronunciation != null
               ? Value(pronunciation)
               : const Value.absent(),
+          language: Value(language),
         ),
       );
 

@@ -5,7 +5,7 @@ import 'package:test_abc/repository/tag_repository.dart';
 
 import '../../commons/enums.dart';
 import '../../repository/vocabulary_repository.dart';
-
+import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 part 'add_word_state.dart';
 
 class AddWordCubit extends Cubit<AddWordState> {
@@ -15,7 +15,6 @@ class AddWordCubit extends Cubit<AddWordState> {
   AddWordCubit(this._repo, this._tagRepository) : super(AddWordState());
 
   // ─── Khởi tạo dữ liệu khi ở mode Put ─────────────────────
-  // FIX: async + load selectedTagIds từ DB
   Future<void> initForEdit(VocabularyEntry entry) async {
     emit(state.copyWith(
       vocabulary: entry.word,
@@ -23,7 +22,6 @@ class AddWordCubit extends Cubit<AddWordState> {
       meaning: entry.meaning,
       loadstatus: LOADSTATUS.INITAL,
     ));
-    // Load tag ids đã gắn với từ này để hiển thị đúng trạng thái selected
     final tagIds = await _repo.getTagIdsByWordId(entry.id);
     emit(state.copyWith(selectedTagIds: tagIds));
   }
@@ -52,9 +50,33 @@ class AddWordCubit extends Cubit<AddWordState> {
     emit(state.copyWith(selectedTagIds: current));
   }
 
+  Future<void> detectLanguage(String text) async {
+    if (text.trim().length < 2) {
+      emit(state.copyWith(detectedLanguage: null));
+      return;
+    }
+
+    emit(state.copyWith(languageDetectStatus: LOADSTATUS.LOADING));
+
+    try {
+      final identifier = LanguageIdentifier(confidenceThreshold: 0.5);
+      final lang = await identifier.identifyLanguage(text.trim());
+      await identifier.close();
+
+      emit(state.copyWith(
+        detectedLanguage: lang == 'und' ? null : lang,
+        languageDetectStatus: LOADSTATUS.SUCCESS,
+      ));
+    } catch (e) {
+      emit(state.copyWith(languageDetectStatus: LOADSTATUS.FAILED));
+    }
+  }
+
   // ─── Field changes ────────────────────────────────────────
-  void onVocabularyChanged(String value) =>
-      emit(state.copyWith(vocabulary: value));
+  void onVocabularyChanged(String value) {
+    emit(state.copyWith(vocabulary: value));
+    detectLanguage(value); // gọi luôn
+  }
 
   void onFuriganaChanged(String value) =>
       emit(state.copyWith(furigana: value));
@@ -80,6 +102,7 @@ class AddWordCubit extends Cubit<AddWordState> {
         meaning: state.meaning.trim(),
         pronunciation:
         state.furigana.trim().isNotEmpty ? state.furigana.trim() : null,
+        language: state.detectedLanguage?.trim()
       );
       for (final tagId in state.selectedTagIds) {
         await _repo.attachTag(wordId: wordId, tagId: tagId);
@@ -106,6 +129,7 @@ class AddWordCubit extends Cubit<AddWordState> {
         meaning: state.meaning.trim(),
         pronunciation:
         state.furigana.trim().isNotEmpty ? state.furigana.trim() : null,
+        language: state.detectedLanguage?.trim()
       );
       await _repo.detachAllTags(wordId: id);
       for (final tagId in state.selectedTagIds) {
