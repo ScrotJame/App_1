@@ -36,6 +36,9 @@ abstract class IVocabularyRepository {
   Future<void> changeWordState(int wordId, int newLevel, String? userId);
   Future<void> countWordLearn( String userId);
   Future<bool> isWordAlreadyMastered(int wordId, String userId);
+
+  Future<void> getLanguageTags();
+  Future<List<VocabularyEntry>> getWordsByLanguageTags(String? tags);
 }
 
 class VocabularyRepository implements IVocabularyRepository {
@@ -200,5 +203,33 @@ class VocabularyRepository implements IVocabularyRepository {
     if (level >= 5) return WordStatus.mastered;
     if (level >= 1) return WordStatus.learning;
     return WordStatus.notStarted;
+  }
+
+  @override
+  Future<List<String>> getLanguageTags() async {
+    final query = _db.selectOnly(_db.vocabularyEntries, distinct: true)
+      ..addColumns([
+        _db.vocabularyEntries.language,
+      ]);
+
+    final rows = await query.get();
+
+    return rows
+        .map((row) => row.read(_db.vocabularyEntries.language))
+        .whereType<String>()
+        .toList();
+  }
+
+  @override
+  Future<List<VocabularyEntry>> getWordsByLanguageTags(String? tags) async {
+    final query = _db.select(_db.vocabularyEntries);
+
+    if (tags != null && tags.isNotEmpty) {
+      query.where((t) => t.language.equals(tags));
+    }
+
+    final rows = await query.get();
+
+    return rows;
   }
 }

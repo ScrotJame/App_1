@@ -285,6 +285,7 @@ class BackupRepository implements IBackupRepository {
     final tags = await _db.select(_db.tags).get();
     final vocabularyTags = await _db.select(_db.vocabularyTags).get();
     final userItems = await _db.select(_db.userItemsEntrie).get();
+    final items = await _db.select(_db.itemsEntrie).get();
 
     return BackupData(
       version: 1,
@@ -366,6 +367,18 @@ class BackupRepository implements IBackupRepository {
         userId: i.userId,
         itemId: i.itemId,
         quantity: i.quantity,
+      ))
+          .toList(),
+      items: items                                          // ← thêm
+          .map((i) => ItemEntity(
+        id: i.id,
+        name: i.name,
+        icon: i.icon,
+        price: i.price,
+        stock: i.stock,
+        description: i.description,
+        isSynced: i.isSynced,
+        lastUpdated: i.lastUpdated,
       ))
           .toList(),
     );
@@ -628,30 +641,40 @@ class BackupRepository implements IBackupRepository {
       }
 
       // ── 8. UserItems ───────────────────────────────────────────
-      for (final item in backup.userItems ?? []) {
-        final existing = await (_db.select(_db.userItemsEntrie)
-          ..where((t) =>
-          t.userId.equals(targetUserKey ?? '') & t.itemId.equals(item.itemId ?? '')))
+      for (final item in backup.items ?? []) {
+        final resolvedId = item.id;
+        if (resolvedId == null) continue;
+
+        final existing = await (_db.select(_db.itemsEntrie)
+          ..where((t) => t.id.equals(resolvedId)))
             .getSingleOrNull();
 
         if (existing == null) {
-          await _db.into(_db.userItemsEntrie).insert(
-            UserItemsEntrieCompanion.insert(
-              userId: targetUserKey ?? '',
-              itemId: item.itemId ?? '',
-              quantity: Value(item.quantity ?? 0),
+          await _db.into(_db.itemsEntrie).insert(
+            ItemsEntrieCompanion.insert(
+              id: Value(resolvedId),
+              name: item.name ?? '',
+              icon: item.icon ?? '',
+              price: item.price ?? 0,
+              stock: Value(item.stock ?? 0),
+              description: Value(item.description),
+              isSynced: Value(item.isSynced ?? false),
+              lastUpdated: Value(item.lastUpdated ?? DateTime.now()),
             ),
             mode: InsertMode.insertOrIgnore,
           );
-          userItemsMerged++;
-        } else if (item.quantity! > existing.quantity) {
-          await (_db.update(_db.userItemsEntrie)
-            ..where((t) =>
-            t.userId.equals(targetUserKey ?? '') &
-            t.itemId.equals(item.itemId ?? '')))
-              .write(
-              UserItemsEntrieCompanion(quantity: Value(item.quantity ?? 0)));
-          userItemsMerged++;
+        } else if ((item.lastUpdated ?? DateTime(0)).isAfter(existing.lastUpdated)) {
+          await (_db.update(_db.itemsEntrie)
+            ..where((t) => t.id.equals(resolvedId)))
+              .write(ItemsEntrieCompanion(
+            name: Value(item.name ?? ''),
+            icon: Value(item.icon ?? ''),
+            price: Value(item.price ?? 0),
+            stock: Value(item.stock ?? 0),
+            description: Value(item.description),
+            isSynced: Value(item.isSynced ?? false),
+            lastUpdated: Value(item.lastUpdated ?? DateTime.now()),
+          ));
         }
       }
     });

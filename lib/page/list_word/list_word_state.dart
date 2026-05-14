@@ -1,38 +1,34 @@
 part of 'list_word_cubit.dart';
 
-enum FilterTab { all, learned, newWord }
-
 class ListWordState extends Equatable {
+  final List<VocabularyWithTags> allWords;
+  final List<VocabularyWithTags> filteredWords;
+  final List<String> languageTags;
+  final String? activeLanguage;
+  final String searchQuery;
+  final bool isSearching;
+  final LOADSTATUS loadstatus;
+  final String? errorMessage;
+
   const ListWordState({
     this.allWords = const [],
     this.filteredWords = const [],
-    this.activeTab = FilterTab.all,
+    this.languageTags = const [],
+    this.activeLanguage,
     this.searchQuery = '',
     this.isSearching = false,
     this.loadstatus = LOADSTATUS.INITAL,
     this.errorMessage,
   });
 
-  /// Toàn bộ từ lấy từ DB (kèm tags)
-  final List<VocabularyWithTags> allWords;
-
-  /// Danh sách hiển thị sau khi filter + search
-  final List<VocabularyWithTags> filteredWords;
-
-  final FilterTab activeTab;
-  final String searchQuery;
-  final bool isSearching;
-  final LOADSTATUS loadstatus;
-  final String? errorMessage;
-
-  // ─── Computed ─────────────────────────────────────────────
   int get totalCount => allWords.length;
 
-  // ─── CopyWith ─────────────────────────────────────────────
   ListWordState copyWith({
     List<VocabularyWithTags>? allWords,
     List<VocabularyWithTags>? filteredWords,
-    FilterTab? activeTab,
+    List<String>? languageTags,
+    String? activeLanguage,
+    bool clearActiveLanguage = false,
     String? searchQuery,
     bool? isSearching,
     LOADSTATUS? loadstatus,
@@ -41,7 +37,8 @@ class ListWordState extends Equatable {
     return ListWordState(
       allWords: allWords ?? this.allWords,
       filteredWords: filteredWords ?? this.filteredWords,
-      activeTab: activeTab ?? this.activeTab,
+      languageTags: languageTags ?? this.languageTags,
+      activeLanguage: clearActiveLanguage ? null : (activeLanguage ?? this.activeLanguage),
       searchQuery: searchQuery ?? this.searchQuery,
       isSearching: isSearching ?? this.isSearching,
       loadstatus: loadstatus ?? this.loadstatus,
@@ -53,7 +50,8 @@ class ListWordState extends Equatable {
   List<Object?> get props => [
     allWords,
     filteredWords,
-    activeTab,
+    languageTags,
+    activeLanguage,
     searchQuery,
     isSearching,
     loadstatus,

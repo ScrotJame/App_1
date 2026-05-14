@@ -30,13 +30,15 @@ class SecurityService {
         final cipherBase64 = clean.substring(colonIndex + 1);
         final iv = enc.IV.fromBase64(ivBase64);
         return _encrypter.decrypt64(cipherBase64, iv: iv);
-      } catch (_) {
+      } catch (e) {
+        print('❌ CBC decrypt failed: $e'); // <-- thêm dòng này
       }
     }
 
     try {
       return _encrypter.decrypt64(clean, iv: _legacyIv);
     } catch (e) {
+      print('❌ Legacy decrypt failed: $e'); // <-- thêm dòng này
       return null;
     }
   }

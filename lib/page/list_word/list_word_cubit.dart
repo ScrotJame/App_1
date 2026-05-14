@@ -19,7 +19,7 @@ class ListWordCubit extends Cubit<ListWordState> {
       final words = await _repo.watchAllWordsWithTags().first;
       emit(state.copyWith(
         allWords: words,
-        filteredWords: _applyFilter(words, state.activeTab, state.searchQuery),
+        filteredWords: _applyFilter(words, state.activeLanguage, state.searchQuery),
         loadstatus: LOADSTATUS.SUCCESS,
       ));
     } catch (e) {
@@ -30,14 +30,43 @@ class ListWordCubit extends Cubit<ListWordState> {
     }
   }
 
-  void onTabChanged(FilterTab tab) {
-    final filtered = _applyFilter(state.allWords, tab, state.searchQuery);
-    emit(state.copyWith(activeTab: tab, filteredWords: filtered));
+  Future<void> getLanguageTags() async {
+    try {
+      final tags = await _repo.getLanguageTags();
+      emit(state.copyWith(languageTags: tags));
+    } catch (e) {
+      emit(state.copyWith(
+        loadstatus: LOADSTATUS.FAILED,
+        errorMessage: 'Tải tag thất bại: $e',
+      ));
+    }
+  }
+
+  void onLanguageChanged(String? language) async {
+    if (language == null) {
+      final filtered = _applyFilter(state.allWords, null, state.searchQuery);
+      emit(state.copyWith(clearActiveLanguage: true, filteredWords: filtered));
+    } else {
+      try {
+        final res = await _repo.getWordsByLanguageTags(language);
+        final wordsWithTags = res
+            .map((e) => VocabularyWithTags(word: e, languageTags: e.language))
+            .toList();
+
+        final filtered = _applyFilter(wordsWithTags, null, state.searchQuery);
+        emit(state.copyWith(activeLanguage: language, filteredWords: filtered));
+      } catch (e) {
+        emit(state.copyWith(
+          loadstatus: LOADSTATUS.FAILED,
+          errorMessage: 'Tải dữ liệu thất bại: $e',
+        ));
+      }
+    }
   }
 
   void toggleSearch() {
     if (state.isSearching) {
-      final filtered = _applyFilter(state.allWords, state.activeTab, '');
+      final filtered = _applyFilter(state.allWords, state.activeLanguage, '');
       emit(state.copyWith(
         isSearching: false,
         searchQuery: '',
@@ -49,13 +78,12 @@ class ListWordCubit extends Cubit<ListWordState> {
   }
 
   void onSearchChanged(String query) {
-    final filtered = _applyFilter(state.allWords, state.activeTab, query);
+    final filtered = _applyFilter(state.allWords, state.activeLanguage, query);
     emit(state.copyWith(searchQuery: query, filteredWords: filtered));
   }
 
   Future<void> toggleLearned(int id) async {
     try {
-      // await _repo.updateLearnedStatus(id, newValue);
       await loadWords();
     } catch (e) {
       emit(state.copyWith(
@@ -79,20 +107,15 @@ class ListWordCubit extends Cubit<ListWordState> {
 
   List<VocabularyWithTags> _applyFilter(
       List<VocabularyWithTags> words,
-      FilterTab tab,
+      String? language,
       String query,
       ) {
     List<VocabularyWithTags> result = words;
 
-    switch (tab) {
-      case FilterTab.learned:
-        result = result.where((w) => w.word.isFavorite == true).toList();
-        break;
-      case FilterTab.newWord:
-        result = result.where((w) => w.word.isFavorite != true).toList();
-        break;
-      case FilterTab.all:
-        break;
+    if (language != null) {
+      result = result
+          .where((w) => w.word.language?.toLowerCase() == language.toLowerCase())
+          .toList();
     }
 
     if (query.trim().isNotEmpty) {
@@ -101,23 +124,10 @@ class ListWordCubit extends Cubit<ListWordState> {
         return w.word.word.toLowerCase().contains(q) ||
             w.word.meaning.toLowerCase().contains(q) ||
             (w.word.pronunciation?.toLowerCase().contains(q) ?? false) ||
-            w.tags.any((t) => t.tagName.toLowerCase().contains(q));
+            (w.tags?.any((t) => t.tagName.toLowerCase().contains(q)) ?? false);
       }).toList();
     }
 
     return result;
   }
-
-  // Future<void> moveToUnit(int wordId, int? unitId) async {
-  //   try {
-  //     await _repo.updateWordUnit(wordId, unitId);
-  //     await loadWords();
-  //   } catch (e) {
-  //     emit(state.copyWith(
-  //       loadstatus: LOADSTATUS.FAILED,
-  //       errorMessage: 'Di chuyển thất bại: $e',
-  //     ));
-  //   }
-  // }
-
 }

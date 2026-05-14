@@ -35,7 +35,7 @@ class TestCubit extends Cubit<TestState> {
 
       final tagMap = <int, Tag>{};
       for (final wt in allWords) {
-        for (final t in wt.tags) {
+        for (final t in wt.tags ?? []) {
           tagMap[t.id] = t;
         }
       }
@@ -169,7 +169,7 @@ class TestCubit extends Cubit<TestState> {
 
     if (cfg.selectedTagIds.isNotEmpty) {
       result = result.where((w) {
-        return w.tags.any((t) => cfg.selectedTagIds.contains(t.id));
+        return w.tags?.any((t) => cfg.selectedTagIds.contains(t.id) ) ?? false;
       }).toList();
     }
 

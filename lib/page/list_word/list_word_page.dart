@@ -31,6 +31,7 @@ class _ListWordPageState extends State<ListWordPage> {
     super.initState();
     _cubit = ListWordCubit(context.read<VocabularyRepository>());
     _cubit.loadWords();
+    _cubit.getLanguageTags();
   }
 
   @override
@@ -102,14 +103,14 @@ class _ListWordPageState extends State<ListWordPage> {
                 if(
                 !state.isSearching)...[
                   IconButton(
-                  icon: Icon( Icons.arrow_back_ios,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                ),],
+                    icon: Icon( Icons.arrow_back_ios,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),],
                 Expanded(
                   child: state.isSearching
                       ? _buildSearchField()
@@ -179,41 +180,27 @@ class _ListWordPageState extends State<ListWordPage> {
   // ─── Filter bar ───────────────────────────────────────────
   Widget _buildFilterBar() {
     return BlocBuilder<ListWordCubit, ListWordState>(
-      buildWhen: (prev, curr) => prev.activeTab != curr.activeTab,
+      buildWhen: (prev, curr) =>
+      prev.languageTags != curr.languageTags ||
+          prev.activeLanguage != curr.activeLanguage, // ← fix buildWhen
       builder: (context, state) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  _buildFilterChip(
-                      label: 'All',
-                      tab: FilterTab.all,
-                      activeTab: state.activeTab),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(
-                      label: 'Learned',
-                      tab: FilterTab.learned,
-                      activeTab: state.activeTab),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(
-                      label: 'New',
-                      tab: FilterTab.newWord,
-                      activeTab: state.activeTab),
-                ],
-              ),
-              const SizedBox(height: 4,),
-              Text(
-                '${state.totalCount} từ vựng',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.black,
-                  fontWeight: FontWeight.w400,
+        final tabs = [null, ...?state.languageTags];
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: tabs
+                .map(
+                  (tag) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _buildFilterChip(
+                  label: tag ?? 'Tất cả',
+                  tag: tag,
+                  activeLanguage: state.activeLanguage,
                 ),
               ),
-            ],
+            )
+                .toList(),
           ),
         );
       },
@@ -222,12 +209,12 @@ class _ListWordPageState extends State<ListWordPage> {
 
   Widget _buildFilterChip({
     required String label,
-    required FilterTab tab,
-    required FilterTab activeTab,
+    String? tag,
+    String? activeLanguage,
   }) {
-    final isActive = tab == activeTab;
+    final isActive = tag == activeLanguage; // ← so sánh đúng
     return GestureDetector(
-      onTap: () => _cubit.onTabChanged(tab),
+      onTap: () => _cubit.onLanguageChanged(tag), // ← đổi method
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -241,9 +228,10 @@ class _ListWordPageState extends State<ListWordPage> {
         child: Text(
           label,
           style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: isActive ? Colors.white : Colors.grey.shade500),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isActive ? Colors.white : Colors.grey.shade500,
+          ),
         ),
       ),
     );
@@ -318,7 +306,7 @@ class _ListWordPageState extends State<ListWordPage> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildWordContent(word, tags)),
+              Expanded(child: _buildWordContent(word, tags ??[])),
               const SizedBox(width: 8),
               _buildCardActions(word),
             ],

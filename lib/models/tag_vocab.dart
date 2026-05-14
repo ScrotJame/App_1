@@ -3,12 +3,14 @@ import '../database/app_db.dart';
 
 class VocabularyWithTags {
   final VocabularyEntry word;
-  final List<Tag> tags;
+  final String? languageTags;
+  final List<Tag>? tags;
 
   const VocabularyWithTags({
     required this.word,
-    required this.tags,
+    this.languageTags,
+    this.tags,
   });
 
-  bool get hasTags => tags.isNotEmpty;
+  bool? get hasTags => tags?.isNotEmpty;
 }

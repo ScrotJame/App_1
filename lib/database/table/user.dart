@@ -38,7 +38,7 @@ class UserActivitiesEntrie extends Table {
 
 class UserWordProgressEntrie extends Table {
   TextColumn get userId => text().references(UsersEntrie, #keyOpen)();
-  IntColumn get wordId => integer().references(VocabularyEntries, #id)();
+  IntColumn get wordId => integer().references(VocabularyEntries, #id, onDelete: KeyAction.cascade)();
 
   IntColumn get status => integer().withDefault(const Constant(0))();
 
