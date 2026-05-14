@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../models/model_local/support_language_local.dart';
 import '../batch_add_word/batch_add_word_page.dart';
 import 'scan_vocab_cubit.dart';
 
@@ -149,31 +150,35 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
                 ),
               ),
               const Divider(color: Colors.white12, height: 1),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: kSupportedLanguages.length,
-                itemBuilder: (_, i) {
-                  final lang = kSupportedLanguages[i];
-                  final isSelected = state.detectedLanguage == lang.code;
-                  return ListTile(
-                    leading: Text(lang.flag, style: const TextStyle(fontSize: 24)),
-                    title: Text(
-                      lang.label,
-                      style: TextStyle(
-                        color: isSelected ? const Color(0xFF9B8FE4) : Colors.white,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                      ),
-                    ),
-                    trailing: isSelected
-                        ? const Icon(Icons.check_rounded, color: Color(0xFF9B8FE4), size: 20)
-                        : null,
-                    onTap: () {
-                      context.read<ScanVocabCubit>().setLanguageManually(lang.code);
-                      Navigator.pop(context);
+              Flexible(
+                child: SingleChildScrollView(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: kSupportedLanguages.length,
+                    itemBuilder: (_, i) {
+                      final lang = kSupportedLanguages[i];
+                      final isSelected = state.detectedLanguage == lang.code;
+                      return ListTile(
+                        leading: Text(lang.flag, style: const TextStyle(fontSize: 24)),
+                        title: Text(
+                          lang.label,
+                          style: TextStyle(
+                            color: isSelected ? const Color(0xFF9B8FE4) : Colors.white,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_rounded, color: Color(0xFF9B8FE4), size: 20)
+                            : null,
+                        onTap: () {
+                          context.read<ScanVocabCubit>().setLanguageManually(lang.code);
+                          Navigator.pop(context);
+                        },
+                      );
                     },
-                  );
-                },
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
             ],

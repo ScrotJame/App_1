@@ -5,8 +5,11 @@ import 'package:test_abc/repository/tag_repository.dart';
 
 import '../../commons/enums.dart';
 import '../../helper/language_helper.dart';
+import '../../models/model_local/support_language_local.dart';
 import '../../repository/vocabulary_repository.dart';
 import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
+
+import '../scan_vocab/scan_vocab_cubit.dart';
 part 'add_word_state.dart';
 
 class AddWordCubit extends Cubit<AddWordState> {
@@ -73,10 +76,32 @@ class AddWordCubit extends Cubit<AddWordState> {
     }
   }
 
+  void setLanguageManually(String lang) {
+    emit(state.copyWith(
+      detectedLanguage: lang,
+      isLanguageManuallySet: true,
+      languageDetectStatus: LOADSTATUS.SUCCESS,
+    ));
+  }
+
+  void clearManualLanguage() {
+    final vocab = state.vocabulary;
+    emit(state.copyWith(clearLanguage: true));
+    if (vocab.trim().isNotEmpty) {
+      detectLanguage(vocab);
+    }
+  }
+
   // ─── Field changes ────────────────────────────────────────
   void onVocabularyChanged(String value) {
+    if (value.trim().isEmpty) {
+      emit(state.copyWith(vocabulary: value, clearLanguage: true));
+      return;
+    }
     emit(state.copyWith(vocabulary: value));
-    detectLanguage(value); // gọi luôn
+    if (!state.isLanguageManuallySet) {
+      detectLanguage(value);
+    }
   }
 
   void onFuriganaChanged(String value) =>
@@ -99,11 +124,11 @@ class AddWordCubit extends Cubit<AddWordState> {
 
     try {
       final wordId = await _repo.insertWord(
-        word: state.vocabulary.trim(),
-        meaning: state.meaning.trim(),
-        pronunciation:
-        state.furigana.trim().isNotEmpty ? state.furigana.trim() : null,
-        language: state.detectedLanguage?.trim()
+          word: state.vocabulary.trim(),
+          meaning: state.meaning.trim(),
+          pronunciation:
+          state.furigana.trim().isNotEmpty ? state.furigana.trim() : null,
+          language: state.detectedLanguage?.trim()
       );
       for (final tagId in state.selectedTagIds) {
         await _repo.attachTag(wordId: wordId, tagId: tagId);
@@ -125,12 +150,12 @@ class AddWordCubit extends Cubit<AddWordState> {
 
     try {
       await _repo.updateWord(
-        id: id,
-        word: state.vocabulary.trim(),
-        meaning: state.meaning.trim(),
-        pronunciation:
-        state.furigana.trim().isNotEmpty ? state.furigana.trim() : null,
-        language: state.detectedLanguage?.trim()
+          id: id,
+          word: state.vocabulary.trim(),
+          meaning: state.meaning.trim(),
+          pronunciation:
+          state.furigana.trim().isNotEmpty ? state.furigana.trim() : null,
+          language: state.detectedLanguage?.trim()
       );
       await _repo.detachAllTags(wordId: id);
       for (final tagId in state.selectedTagIds) {
@@ -143,6 +168,13 @@ class AddWordCubit extends Cubit<AddWordState> {
         errorMessage: 'Cập nhật thất bại: $e',
       ));
     }
+  }
+
+  void clearWord() {
+    emit(state.copyWith(
+      vocabulary: '',
+      clearLanguage: true,
+    ));
   }
 
   // ─── Validate dùng chung ──────────────────────────────────

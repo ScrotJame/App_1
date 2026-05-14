@@ -8,6 +8,8 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'package:test_abc/helper/language_helper.dart';
 import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 
+import '../../models/model_local/support_language_local.dart';
+
 part 'scan_vocab_state.dart';
 
 class ScanVocabCubit extends Cubit<ScanVocabState> {

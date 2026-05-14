@@ -15,6 +15,7 @@ class AddWordState extends Equatable {
     this.selectedTagIds = const [],
     this.detectedLanguage,
     this.languageDetectStatus = LOADSTATUS.INITAL,
+    this.isLanguageManuallySet = false,
   });
 
   final String vocabulary;
@@ -32,7 +33,7 @@ class AddWordState extends Equatable {
   final List<int> selectedTagIds;
   final String? detectedLanguage;
   final LOADSTATUS languageDetectStatus;
-
+  final bool isLanguageManuallySet;
   // ─── Helper ───────────────────────────────────────────────
   bool isTagSelected(int tagId) => selectedTagIds.contains(tagId);
 
@@ -48,6 +49,8 @@ class AddWordState extends Equatable {
     List<int>? selectedTagIds,
     String? detectedLanguage,
     LOADSTATUS? languageDetectStatus,
+    bool clearLanguage = false,
+    bool? isLanguageManuallySet,
   }) {
     return AddWordState(
       vocabulary: vocabulary ?? this.vocabulary,
@@ -59,8 +62,9 @@ class AddWordState extends Equatable {
       errorMessage: errorMessage ?? this.errorMessage,
       tags: tags ?? this.tags,
       selectedTagIds: selectedTagIds ?? this.selectedTagIds,
-      detectedLanguage: detectedLanguage ?? this.detectedLanguage,
+      detectedLanguage: clearLanguage ? null : (detectedLanguage ?? this.detectedLanguage),
       languageDetectStatus: languageDetectStatus ?? this.languageDetectStatus,
+      isLanguageManuallySet: clearLanguage ? false : (isLanguageManuallySet ?? this.isLanguageManuallySet),
     );
   }
 
@@ -69,6 +73,13 @@ class AddWordState extends Equatable {
 
   String get detectedLanguageLabel => LanguageHelper.getDetectedLanguageLabel(detectedLanguage);
 
+  String get languageBadgeLabel {
+    if (detectedLanguage == null) return '';
+    final found = kSupportedLanguages
+        .where((l) => l.code == detectedLanguage)
+        .firstOrNull;
+    return found != null ? '${found.flag} ${found.label}' : detectedLanguageLabel;
+  }
   @override
   List<Object?> get props => [
     vocabulary,
@@ -82,5 +93,6 @@ class AddWordState extends Equatable {
     selectedTagIds,
     detectedLanguage,
     languageDetectStatus,
+    isLanguageManuallySet
   ];
 }

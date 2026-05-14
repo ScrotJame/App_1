@@ -8,7 +8,10 @@ import 'package:test_abc/repository/tag_repository.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../commons/app_colors.dart';
+import '../../helper/language_helper.dart';
+import '../../models/model_local/support_language_local.dart';
 import '../../repository/vocabulary_repository.dart';
+import '../scan_vocab/scan_vocab_cubit.dart';
 import '../scan_vocab/scan_vocab_page.dart';
 import 'add_word_cubit.dart';
 
@@ -175,7 +178,7 @@ class _AddWordPageState extends State<AddWordPage>
                     builder: (_) => const ScanVocabPage()));
           },
           child: SvgPicture.asset(AppImages.icScanFile,
-              color: Color(0xFF6B7FD4),
+            color: Color(0xFF6B7FD4),
           ),
         ),
         const SizedBox(width: 16,)
@@ -332,7 +335,9 @@ class _AddWordPageState extends State<AddWordPage>
             BlocBuilder<AddWordCubit, AddWordState>(
               buildWhen: (p, c) =>
               p.detectedLanguage != c.detectedLanguage ||
-                  p.languageDetectStatus != c.languageDetectStatus,
+                  p.languageDetectStatus != c.languageDetectStatus ||
+                  p.isLanguageManuallySet != c.isLanguageManuallySet ||
+                  p.vocabulary != c.vocabulary,
               builder: (context, state) {
                 if (state.languageDetectStatus == LOADSTATUS.LOADING) {
                   return const SizedBox(
@@ -340,19 +345,49 @@ class _AddWordPageState extends State<AddWordPage>
                     child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF6B7FD4)),
                   );
                 }
-                if (state.detectedLanguage == null) return const SizedBox.shrink();
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6B7FD4).withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF6B7FD4).withOpacity(0.4)),
-                  ),
-                  child: Text(
-                    state.detectedLanguageLabel,
-                    style: const TextStyle(
-                      fontSize: 11, color: Color(0xFF6B7FD4),
-                      fontWeight: FontWeight.w600,
+                // Luôn hiển thị chip nếu có từ vựng (để user có thể chọn)
+                if (state.vocabulary.trim().isEmpty) return const SizedBox.shrink();
+
+                final isManual = state.isLanguageManuallySet;
+                final label = state.detectedLanguage != null
+                    ? state.detectedLanguageLabel
+                    : 'Ngôn ngữ';
+
+                return GestureDetector(
+                  onTap: () => _showLanguagePicker(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: isManual
+                          ? const Color(0xFF6B7FD4).withOpacity(0.18)
+                          : const Color(0xFF6B7FD4).withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isManual
+                            ? const Color(0xFF6B7FD4).withOpacity(0.7)
+                            : const Color(0xFF6B7FD4).withOpacity(0.35),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isManual ? Icons.lock_rounded : Icons.language_rounded,
+                          size: 10,
+                          color: const Color(0xFF6B7FD4),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          label,
+                          style: const TextStyle(
+                            fontSize: 11, color: Color(0xFF6B7FD4),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 3),
+                        const Icon(Icons.arrow_drop_down_rounded,
+                            size: 14, color: Color(0xFF6B7FD4)),
+                      ],
                     ),
                   ),
                 );
@@ -368,40 +403,53 @@ class _AddWordPageState extends State<AddWordPage>
             borderRadius: BorderRadius.circular(12),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
           ),
-          child: TextField(
-            controller: _vocabularyController,
-            onChanged: _cubit.onVocabularyChanged,
-            minLines: 1, maxLines: 1,
-            style: const TextStyle(fontSize: 15, color: Colors.black87),
-            decoration: InputDecoration(
-              hintText: 'Nhập từ vựng',
-              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF6B7FD4), width: 1.5),
+          child: BlocBuilder<AddWordCubit, AddWordState>(
+            buildWhen: (p, c) => p.vocabulary != c.vocabulary,
+            builder: (context, state) => TextField(
+              controller: _vocabularyController,
+              onChanged: _cubit.onVocabularyChanged,
+              minLines: 1, maxLines: 1,
+              style: const TextStyle(fontSize: 15, color: Colors.black87),
+              decoration: InputDecoration(
+                hintText: 'Nhập từ vựng',
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF6B7FD4), width: 1.5),
+                ),
+                filled: true, fillColor: Colors.white,
+                suffixIcon: state.vocabulary.isNotEmpty
+                    ? GestureDetector(
+                  onTap: () {
+                    _vocabularyController.clear();
+                    _cubit.clearWord();
+                  },
+                  child: const Icon(Icons.cancel_rounded,
+                      size: 18, color: Color(0xFFB0B8D1)),
+                )
+                    : null,
               ),
-              filled: true, fillColor: Colors.white,
             ),
           ),
         ),
-    const SizedBox(height: 16),
-    _buildFormField(
-    label: 'Phát âm',
-    hint: 'Nhập cách phát âm',
-    controller: _furiganaController,
-    onChanged: _cubit.onFuriganaChanged,
-    accentColor: const Color(0xFF5B8DEF),
-    ),
-    const SizedBox(height: 16),
-    _buildFormField(
-    label: 'Nghĩa',
-    hint: 'Nhập nghĩa từ',
-    controller: _meaningController,
-    onChanged: _cubit.onMeaningChanged,
-    accentColor: const Color(0xFFF4A261),
-    minLines: 2,)
+        const SizedBox(height: 16),
+        _buildFormField(
+          label: 'Phát âm',
+          hint: 'Nhập cách phát âm',
+          controller: _furiganaController,
+          onChanged: _cubit.onFuriganaChanged,
+          accentColor: const Color(0xFF5B8DEF),
+        ),
+        const SizedBox(height: 16),
+        _buildFormField(
+          label: 'Nghĩa',
+          hint: 'Nhập nghĩa từ',
+          controller: _meaningController,
+          onChanged: _cubit.onMeaningChanged,
+          accentColor: const Color(0xFFF4A261),
+          minLines: 2,)
       ],
     );
   }
@@ -698,6 +746,105 @@ class _AddWordPageState extends State<AddWordPage>
         shape:
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
+    );
+  }
+
+  // ─── Language picker ──────────────────────────────────────
+  void _showLanguagePicker(BuildContext context) {
+
+    final currentLang = _cubit.state.detectedLanguage;
+    final isManual = _cubit.state.isLanguageManuallySet;
+
+    showModalBottomSheet(
+
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 10, bottom: 4),
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Row(
+                children: [
+                  const Text(
+                    'Chọn ngôn ngữ',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.black87),
+                  ),
+                  const Spacer(),
+                  // Nút reset về auto-detect
+                  if (isManual)
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _cubit.clearManualLanguage();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.autorenew_rounded, size: 13, color: Colors.grey),
+                            SizedBox(width: 4),
+                            Text('Tự động', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...kSupportedLanguages.map((l) {
+                      final isSelected = currentLang == l.code;
+                      return ListTile(
+                        dense: true,
+                        title: Text(
+                          '${l.flag} ${l.label}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected ? const Color(0xFF6B7FD4) : Colors.black87,
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_rounded, size: 18, color: Color(0xFF6B7FD4))
+                            : null,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _cubit.setLanguageManually(l.code);
+                        },
+                      );
+                    }),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
