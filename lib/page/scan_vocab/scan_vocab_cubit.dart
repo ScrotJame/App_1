@@ -5,6 +5,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:test_abc/helper/language_helper.dart';import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 
 part 'scan_vocab_state.dart';
 
@@ -16,7 +17,6 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
     emit(state.copyWith(status: SCANSTATUS.scanning, blocks: [], clearError: true));
 
     try {
-      // Lấy kích thước ảnh gốc để tính tỉ lệ scale
       final bytes = await imageFile.readAsBytes();
       final codec = await ui.instantiateImageCodec(bytes);
       final frame = await codec.getNextFrame();
@@ -31,14 +31,13 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
       final result = await recognizer.processImage(inputImage);
       await recognizer.close();
 
-      // Chuyển từng element thành OcrBlock có bounding box
       final blocks = <OcrBlock>[];
       for (final block in result.blocks) {
         for (final line in block.lines) {
           for (final element in line.elements) {
             final text = element.text.trim();
             final bb = element.boundingBox;
-            if (text.isNotEmpty && bb != null) {
+            if (text.isNotEmpty) {
               blocks.add(OcrBlock(text: text, boundingBox: bb));
             }
           }
@@ -92,6 +91,7 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
     }).toList();
 
     emit(state.copyWith(blocks: updated, clearDragRect: true));
+    _detectLanguageFromWordBlocks();
   }
 
   // ─── Tap đơn vào block ────────────────────────────────────────────────────
@@ -104,21 +104,49 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
       updated[index] = block.copyWith(isSelected: true, role: state.activeRole);
     }
     emit(state.copyWith(blocks: updated));
+    _detectLanguageFromWordBlocks();
   }
 
   // ─── Thêm từ hiện tại vào danh sách ─────────────────────────────────────
   bool addCurrentItem() {
-    final preview = state.currentPreview;
+    var preview = state.currentPreview;
     if (preview.word.trim().isEmpty && preview.meaning.trim().isEmpty) return false;
 
+    if (preview.language.trim().isEmpty) {
+      preview = preview.copyWith(language: state.detectedLanguage ?? '');
+    }
+
     final newItems = List<ScannedVocabItem>.from(state.vocabItems)..add(preview);
-    // Clear selection
     final cleared = state.blocks
         .map((b) => b.copyWith(isSelected: false, role: TokenRole.none))
         .toList();
-
     emit(state.copyWith(vocabItems: newItems, blocks: cleared));
     return true;
+  }
+
+  Future<void> _detectLanguageFromWordBlocks() async {
+    final wordText = state.blocks
+        .where((b) => b.role == TokenRole.word)
+        .map((b) => b.text)
+        .join(' ');
+    await detectLanguage(wordText);
+  }
+
+  Future<void> detectLanguage(String text) async {
+    if (text.trim().length < 2) {
+      emit(state.copyWith(clearLanguage: true));
+      return;
+    }
+    try {
+      final identifier = LanguageIdentifier(confidenceThreshold: 0.5);
+      final lang = await identifier.identifyLanguage(text.trim());
+      await identifier.close();
+      emit(state.copyWith(
+        detectedLanguage: lang == 'und' ? null : lang,
+      ));
+    } catch (_) {
+      emit(state.copyWith(clearLanguage: true));
+    }
   }
 
   // ─── Reset ────────────────────────────────────────────────────────────────
@@ -127,5 +155,6 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
     status: SCANSTATUS.idle,
     clearDragRect: true,
     clearError: true,
+    clearLanguage: true,
   ));
 }

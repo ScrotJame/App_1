@@ -9,6 +9,7 @@ class BatchAddWordState extends Equatable {
   final LOADSTATUS status;
   final String? errorMessage;
   final int savedCount;
+  final String? detectedLanguage;
 
   const BatchAddWordState({
     required this.items,
@@ -17,6 +18,7 @@ class BatchAddWordState extends Equatable {
     this.status = LOADSTATUS.INITAL,
     this.errorMessage,
     this.savedCount = 0,
+    this.detectedLanguage,
   });
 
   List<int> tagsForItem(int index) => selectedTagIds[index] ?? const [];
@@ -31,6 +33,7 @@ class BatchAddWordState extends Equatable {
     LOADSTATUS? status,
     String? errorMessage,
     int? savedCount,
+    String? detectedLanguage,
   }) {
     return BatchAddWordState(
       items: items ?? this.items,
@@ -39,9 +42,10 @@ class BatchAddWordState extends Equatable {
       status: status ?? this.status,
       errorMessage: errorMessage ?? this.errorMessage,
       savedCount: savedCount ?? this.savedCount,
+      detectedLanguage: detectedLanguage ?? this.detectedLanguage, // 👈 thêm
     );
   }
 
   @override
-  List<Object?> get props => [items, tags, selectedTagIds, status, errorMessage, savedCount];
+  List<Object?> get props => [items, tags, selectedTagIds, status, errorMessage, savedCount, detectedLanguage];
 }

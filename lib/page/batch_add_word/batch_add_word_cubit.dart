@@ -17,7 +17,8 @@ class BatchAddWordCubit extends Cubit<BatchAddWordState> {
       this._repo,
       this._tagRepository,
       List<ScannedVocabItem> items,
-      ) : super(BatchAddWordState(items: List.unmodifiable(items)));
+      String? detectedLanguage,
+      ) : super(BatchAddWordState(items: List.unmodifiable(items), detectedLanguage: detectedLanguage));
 
   // ─── Load tags ─────────────────────────────────────────────────────────────
   Future<void> loadTags() async {
@@ -83,6 +84,7 @@ class BatchAddWordCubit extends Cubit<BatchAddWordState> {
           word: item.word.trim(),
           meaning: item.meaning.trim(),
           pronunciation: item.pronunciation.trim().isNotEmpty ? item.pronunciation.trim() : null,
+          language: item.language.trim(),
         );
         for (final tagId in state.tagsForItem(i)) {
           await _repo.attachTag(wordId: wordId, tagId: tagId);

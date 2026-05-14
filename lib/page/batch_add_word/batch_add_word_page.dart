@@ -4,13 +4,15 @@ import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/repository/tag_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 
+import '../../helper/language_helper.dart';
 import '../scan_vocab/scan_vocab_cubit.dart';
 import 'batch_add_word_cubit.dart';
 
 class BatchAddWordPage extends StatelessWidget {
   final List<ScannedVocabItem> items;
+  final String? detectedLanguage;
 
-  const BatchAddWordPage({super.key, required this.items});
+  const BatchAddWordPage({super.key, required this.items, this.detectedLanguage});
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +21,7 @@ class BatchAddWordPage extends StatelessWidget {
         context.read<VocabularyRepository>(),
         context.read<TagRepository>(),
         items,
+        detectedLanguage,
       )..loadTags(),
       child: const _BatchAddWordView(),
     );
@@ -78,8 +81,46 @@ class _BatchAddWordView extends StatelessWidget {
       centerTitle: true,
       title: Column(
         children: [
-          const Text('Danh sách từ quét được', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black87)),
-          Text('${state.items.length} từ', style: const TextStyle(fontSize: 12, color: Colors.black45, fontWeight: FontWeight.normal)),
+          const Text(
+            'Danh sách từ quét được',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black87),
+          ),
+          const SizedBox(height: 2),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${state.items.length} từ',
+                style: const TextStyle(fontSize: 12, color: Colors.black45, fontWeight: FontWeight.normal),
+              ),
+              // 👇 thêm: hiện chip ngôn ngữ nếu có
+              if (state.detectedLanguage != null) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7B6FD4).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.translate_rounded, size: 11, color: Color(0xFF7B6FD4)),
+                      const SizedBox(width: 4),
+                      Text(
+                        LanguageHelper.getDetectedLanguageLabel(state.detectedLanguage),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF7B6FD4),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
@@ -243,6 +284,7 @@ class _BatchAddWordView extends StatelessWidget {
     final wordCtrl = TextEditingController(text: item.word);
     final pronCtrl = TextEditingController(text: item.pronunciation);
     final meaningCtrl = TextEditingController(text: item.meaning);
+    final langCtrl = TextEditingController(text: item.language);
 
     showDialog(
       context: context,
@@ -267,7 +309,12 @@ class _BatchAddWordView extends StatelessWidget {
             onPressed: () {
               context.read<BatchAddWordCubit>().updateItem(
                 index,
-                ScannedVocabItem(word: wordCtrl.text, pronunciation: pronCtrl.text, meaning: meaningCtrl.text),
+                ScannedVocabItem(
+                  word: wordCtrl.text,
+                  pronunciation: pronCtrl.text,
+                  meaning: meaningCtrl.text,
+                  language: langCtrl.text
+                ),
               );
               Navigator.pop(context);
             },

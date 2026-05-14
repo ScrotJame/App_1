@@ -1,6 +1,6 @@
 part of 'scan_vocab_cubit.dart';
 
-enum TokenRole { none, word, pronunciation, meaning }
+enum TokenRole { none, word, pronunciation, meaning, language }
 
 enum SCANSTATUS { idle, scanning, scanned, error }
 
@@ -31,45 +31,49 @@ class OcrBlock extends Equatable {
   List<Object?> get props => [text, boundingBox, role, isSelected];
 }
 
-// ─── Từ vựng đã cấu hình xong ────────────────────────────────────────────────
 class ScannedVocabItem extends Equatable {
   final String word;
   final String pronunciation;
   final String meaning;
+  final String language;
 
   const ScannedVocabItem({
     this.word = '',
     this.pronunciation = '',
     this.meaning = '',
+    required this.language,
   });
 
-  ScannedVocabItem copyWith({String? word, String? pronunciation, String? meaning}) {
+  ScannedVocabItem copyWith({
+    String? word,
+    String? pronunciation,
+    String? meaning,
+    String? language
+  }) {
     return ScannedVocabItem(
       word: word ?? this.word,
       pronunciation: pronunciation ?? this.pronunciation,
       meaning: meaning ?? this.meaning,
+      language: language ?? this.language,
     );
   }
 
   bool get hasError => word.trim().isEmpty || meaning.trim().isEmpty;
 
   @override
-  List<Object?> get props => [word, pronunciation, meaning];
+  List<Object?> get props => [word, pronunciation, meaning, language];
 }
 
 // ─── State chính ─────────────────────────────────────────────────────────────
 class ScanVocabState extends Equatable {
-  /// Kích thước ảnh gốc (pixel) — dùng để scale bounding box lên widget
   final Size? imageSize;
-
   final List<OcrBlock> blocks;
   final TokenRole activeRole;
   final List<ScannedVocabItem> vocabItems;
   final SCANSTATUS status;
   final String? errorMessage;
-
-  /// Vùng đang drag (toạ độ trên widget, chưa scale)
   final Rect? dragRect;
+  final String? detectedLanguage;
 
   const ScanVocabState({
     this.imageSize,
@@ -79,16 +83,26 @@ class ScanVocabState extends Equatable {
     this.status = SCANSTATUS.idle,
     this.errorMessage,
     this.dragRect,
+    this.detectedLanguage,
   });
 
   // ─── Preview từ đang được chọn ────────────────────────────────────────────
-  ScannedVocabItem get currentPreview => ScannedVocabItem(
-    word: blocks.where((b) => b.role == TokenRole.word).map((b) => b.text).join(' '),
-    pronunciation: blocks.where((b) => b.role == TokenRole.pronunciation).map((b) => b.text).join(' '),
-    meaning: blocks.where((b) => b.role == TokenRole.meaning).map((b) => b.text).join(' '),
-  );
+  ScannedVocabItem get currentPreview {
+    final languageFromBlocks = blocks
+        .where((b) => b.role == TokenRole.language)
+        .map((b) => b.text)
+        .join(' ');
+    return ScannedVocabItem(
+      word: blocks.where((b) => b.role == TokenRole.word).map((b) => b.text).join(' '),
+      pronunciation: blocks.where((b) => b.role == TokenRole.pronunciation).map((b) => b.text).join(' '),
+      meaning: blocks.where((b) => b.role == TokenRole.meaning).map((b) => b.text).join(' '),
+      // Chỉ lấy từ block được chọn thủ công, KHÔNG fallback về detectedLanguage
+      language: languageFromBlocks,
+    );
+  }
 
   bool get hasAnySelection => blocks.any((b) => b.isSelected);
+  String get detectedLanguageLabel => LanguageHelper.getDetectedLanguageLabel(detectedLanguage);
 
   ScanVocabState copyWith({
     Size? imageSize,
@@ -100,6 +114,8 @@ class ScanVocabState extends Equatable {
     Rect? dragRect,
     bool clearDragRect = false,
     bool clearError = false,
+    String? detectedLanguage,
+    bool clearLanguage = false,
   }) {
     return ScanVocabState(
       imageSize: imageSize ?? this.imageSize,
@@ -109,9 +125,16 @@ class ScanVocabState extends Equatable {
       status: status ?? this.status,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       dragRect: clearDragRect ? null : (dragRect ?? this.dragRect),
+      detectedLanguage: clearLanguage
+          ? null
+          : (detectedLanguage ?? this.detectedLanguage),
     );
   }
 
   @override
-  List<Object?> get props => [imageSize, blocks, activeRole, vocabItems, status, errorMessage, dragRect];
+  List<Object?> get props => [
+    imageSize, blocks, activeRole, vocabItems,
+    status, errorMessage, dragRect,
+    detectedLanguage,
+  ];
 }

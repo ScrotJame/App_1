@@ -39,12 +39,14 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
     TokenRole.pronunciation: Color(0xFF5B8DEF),
     TokenRole.meaning: Color(0xFFF4A261),
     TokenRole.none: Colors.transparent,
+    TokenRole.language: Color(0xFF92F461),
   };
 
   static const _roleLabels = {
     TokenRole.word: 'Từ vựng',
     TokenRole.pronunciation: 'Phát âm',
     TokenRole.meaning: 'Nghĩa',
+    TokenRole.language: 'Ngôn ngữ',
   };
 
   Future<void> _pickImage(ImageSource source) async {
@@ -80,7 +82,10 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
       return;
     }
     Navigator.push(context, MaterialPageRoute(
-      builder: (_) => BatchAddWordPage(items: List.from(state.vocabItems)),
+      builder: (_) => BatchAddWordPage(
+        items: List.from(state.vocabItems),
+        detectedLanguage: state.detectedLanguage, // ✅ fix: truyền ngôn ngữ đã detect
+      ),
     ));
   }
 
@@ -393,7 +398,38 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Preview chips
+          // Language badge + Preview chips
+          if (state.status == SCANSTATUS.scanned && state.detectedLanguage != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF7B6FD4).withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF7B6FD4).withOpacity(0.5)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.translate_rounded, size: 13, color: Color(0xFF9B8FE4)),
+                        const SizedBox(width: 5),
+                        Text(
+                          state.detectedLanguageLabel,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF9B8FE4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Row(
             children: [
               _buildPreviewChip('Từ', preview.word, const Color(0xFF7B6FD4), role: TokenRole.word),
