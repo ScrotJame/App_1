@@ -9,6 +9,7 @@ import '../../repository/vocabulary_repository.dart';
 import '../add_word/add_word_cubit.dart';
 import '../add_word/add_word_page.dart';
 import '../scan_vocab/scan_vocab_page.dart';
+import '../widgets/app_gradient_header.dart';
 import '../widgets/drop_down_widget.dart';
 import 'list_word_cubit.dart';
 
@@ -65,12 +66,12 @@ class _ListWordPageState extends State<ListWordPage> {
         },
         child: Scaffold(
           backgroundColor: const Color(0xFFF5F6FA),
-          appBar: _buildAppBar(),
           body: RefreshIndicator(
-            onRefresh: ()=>_cubit.loadWords(),
+            onRefresh: () => _cubit.loadWords(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildHeader(),
                 _buildFilterBar(),
                 Expanded(child: _buildWordList()),
               ],
@@ -82,53 +83,78 @@ class _ListWordPageState extends State<ListWordPage> {
     );
   }
 
-  // ─── AppBar ───────────────────────────────────────────────
-  PreferredSizeWidget _buildAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(kToolbarHeight),
-      child: BlocBuilder<ListWordCubit, ListWordState>(
-        buildWhen: (prev, curr) => prev.isSearching != curr.isSearching,
-        builder: (context, state) {
-          return AppBar(
-            backgroundColor: const Color(0xFFF5F6FA),
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            titleSpacing: 20,
-            title: state.isSearching
-                ? _buildSearchField()
-                : const Text(
-              'Vocabulary List',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: Colors.black87,
-                letterSpacing: -0.5,
-              ),
-            ),
-            actions: [
-              IconButton(
-                icon: Icon(
-                  state.isSearching
-                      ? Icons.close_rounded
-                      : Icons.search_rounded,
-                  color: Colors.black87,
-                  size: 22,
+  // ─── Header ───────────────────────────────────────────────
+  Widget _buildHeader() {
+    return BlocBuilder<ListWordCubit, ListWordState>(
+      buildWhen: (prev, curr) =>
+      prev.isSearching != curr.isSearching ||
+          prev.totalCount != curr.totalCount,
+      builder: (context, state) {
+        final topPadding = MediaQuery.of(context).padding.top;
+        return AppGradientHeader(
+          height: topPadding + 110,
+          gradientColors: const [Color(0xFF7B8FE0), Color(0xFF5B6EC7)],
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, topPadding + 12, 8, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if(
+                !state.isSearching)...[IconButton(
+                  icon: Icon( Icons.arrow_back_ios,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                  onPressed: () {
+                    _cubit.toggleSearch();
+                    if (state.isSearching) _searchController.clear();
+                  },
+                ),],
+                Expanded(
+                  child: state.isSearching
+                      ? _buildSearchField()
+                      : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Vocabulary List',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+
+                    ],
+                  ),
                 ),
-                onPressed: () {
-                  _cubit.toggleSearch();
-                  if (state.isSearching) _searchController.clear();
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.tune_rounded,
-                    color: Colors.black87, size: 22),
-                onPressed: () {},
-              ),
-              const SizedBox(width: 4),
-            ],
-          );
-        },
-      ),
+                IconButton(
+                  icon: Icon(
+                    state.isSearching
+                        ? Icons.close_rounded
+                        : Icons.search_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                  onPressed: () {
+                    _cubit.toggleSearch();
+                    if (state.isSearching) _searchController.clear();
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.tune_rounded,
+                      color: Colors.white, size: 22),
+                  onPressed: () {},
+                ),
+                const SizedBox(width: 4),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -137,11 +163,15 @@ class _ListWordPageState extends State<ListWordPage> {
       controller: _searchController,
       autofocus: true,
       onChanged: _cubit.onSearchChanged,
-      style: const TextStyle(fontSize: 16, color: Colors.black87),
+      style: const TextStyle(fontSize: 16, color: Colors.white),
       decoration: InputDecoration(
         hintText: 'Tìm kiếm từ vựng...',
-        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
+        hintStyle: const TextStyle(color: Colors.white60, fontSize: 15),
         border: InputBorder.none,
+        prefixIcon:
+        const Icon(Icons.search_rounded, color: Colors.white60, size: 20),
+        prefixIconConstraints:
+        const BoxConstraints(minWidth: 36, minHeight: 36),
       ),
     );
   }
@@ -149,36 +179,40 @@ class _ListWordPageState extends State<ListWordPage> {
   // ─── Filter bar ───────────────────────────────────────────
   Widget _buildFilterBar() {
     return BlocBuilder<ListWordCubit, ListWordState>(
-      buildWhen: (prev, curr) =>
-      prev.activeTab != curr.activeTab ||
-          prev.totalCount != curr.totalCount,
+      buildWhen: (prev, curr) => prev.activeTab != curr.activeTab,
       builder: (context, state) {
         return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-          child: Row(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '${state.totalCount} words',
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade500),
+              Row(
+                children: [
+                  _buildFilterChip(
+                      label: 'All',
+                      tab: FilterTab.all,
+                      activeTab: state.activeTab),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                      label: 'Learned',
+                      tab: FilterTab.learned,
+                      activeTab: state.activeTab),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                      label: 'New',
+                      tab: FilterTab.newWord,
+                      activeTab: state.activeTab),
+                ],
               ),
-              const SizedBox(width: 16),
-              _buildFilterChip(
-                  label: 'All',
-                  tab: FilterTab.all,
-                  activeTab: state.activeTab),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                  label: 'Learned',
-                  tab: FilterTab.learned,
-                  activeTab: state.activeTab),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                  label: 'New',
-                  tab: FilterTab.newWord,
-                  activeTab: state.activeTab),
+              const SizedBox(height: 4,),
+              Text(
+                '${state.totalCount} từ vựng',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
             ],
           ),
         );
