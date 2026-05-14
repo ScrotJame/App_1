@@ -301,10 +301,22 @@ class _ListWordPageState extends State<ListWordPage> {
       ) {
     final word = item.word;
 
+    bool preferAbove = false;
+    final renderBox =
+    anchorKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox != null && renderBox.hasSize) {
+      final itemOffset = renderBox.localToGlobal(Offset.zero);
+      final itemBottom = itemOffset.dy + renderBox.size.height;
+      final screenHeight = MediaQuery.of(context).size.height;
+      const estimatedMenuHeight = 180.0;
+      preferAbove = (screenHeight - itemBottom) < estimatedMenuHeight;
+    }
+
     DropDownWidget.show(
       context: context,
       anchorKey: anchorKey,
       alignRight: true,
+      preferAbove: preferAbove,
       items: [
         DropDownItem(
           label: 'Chỉnh sửa',

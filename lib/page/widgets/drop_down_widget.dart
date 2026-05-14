@@ -32,6 +32,9 @@ class DropDownWidget {
 
     /// Căn trái hay phải so với anchor
     bool alignRight = true,
+
+    /// true → menu hiện lên trên anchor, false → hiện xuống dưới (mặc định)
+    bool preferAbove = false,
   }) {
     _dismiss();
 
@@ -50,6 +53,7 @@ class DropDownWidget {
         anchorSize: size,
         items: items,
         alignRight: alignRight,
+        preferAbove: preferAbove,
         onDismiss: _dismiss,
       ),
     );
@@ -68,6 +72,7 @@ class _DropDownOverlay extends StatefulWidget {
   final Size anchorSize;
   final List<DropDownItem> items;
   final bool alignRight;
+  final bool preferAbove;
   final VoidCallback onDismiss;
 
   const _DropDownOverlay({
@@ -75,6 +80,7 @@ class _DropDownOverlay extends StatefulWidget {
     required this.anchorSize,
     required this.items,
     required this.alignRight,
+    required this.preferAbove,
     required this.onDismiss,
   });
 
@@ -90,6 +96,7 @@ class _DropDownOverlayState extends State<_DropDownOverlay>
 
   static const _menuWidth = 220.0;
   static const _itemHeight = 44.0;
+  static const _gap = 6.0;
 
   @override
   void initState() {
@@ -114,20 +121,27 @@ class _DropDownOverlayState extends State<_DropDownOverlay>
     action();
   }
 
+  double get _estimatedMenuHeight {
+    final dividerCount =
+        widget.items.where((i) => i.hasDividerAbove).length;
+    return widget.items.length * _itemHeight + dividerCount * 0.5;
+  }
+
   @override
   Widget build(BuildContext context) {
     double left = widget.alignRight
-        ? widget.anchorPosition.dx +
-        widget.anchorSize.width -
-        _menuWidth
+        ? widget.anchorPosition.dx + widget.anchorSize.width - _menuWidth
         : widget.anchorPosition.dx;
 
-    double top = widget.anchorPosition.dy + widget.anchorSize.height + 6;
+    double top = widget.preferAbove
+        ? widget.anchorPosition.dy - _estimatedMenuHeight - _gap
+        : widget.anchorPosition.dy + widget.anchorSize.height + _gap;
 
     final screenWidth = MediaQuery.of(context).size.width;
     left = left.clamp(8.0, screenWidth - _menuWidth - 8);
 
     final originX = widget.alignRight ? 1.0 : 0.0;
+    final originY = widget.preferAbove ? 1.0 : -1.0;
 
     return Stack(
       children: [
@@ -149,7 +163,7 @@ class _DropDownOverlayState extends State<_DropDownOverlay>
             opacity: _fadeAnim,
             child: ScaleTransition(
               scale: _scaleAnim,
-              alignment: Alignment(originX, -1),
+              alignment: Alignment(originX, originY),
               child: _buildMenu(),
             ),
           ),
@@ -162,10 +176,13 @@ class _DropDownOverlayState extends State<_DropDownOverlay>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark
         ? const Color(0xFF2C2C2E)
-        : const Color(0xFFF2F2F7).withOpacity(0.97);
+        : const Color(0xFFFFFFFF).withOpacity(0.97);
     final dividerColor = isDark
         ? Colors.white.withOpacity(0.10)
         : Colors.black.withOpacity(0.10);
+    final borderColor = isDark
+        ? const Color(0xFF2C2C2E)
+        : const Color(0xFFE1E1EA).withOpacity(0.97);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(13),
@@ -174,6 +191,10 @@ class _DropDownOverlayState extends State<_DropDownOverlay>
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(13),
+          border: Border.all(
+            color: borderColor,
+            width: 1.5
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(isDark ? 0.45 : 0.18),
