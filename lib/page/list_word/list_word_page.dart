@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/database/app_db.dart';
+import 'package:test_abc/helper/language_helper.dart';
 
 import '../../models/tag_vocab.dart';
 import '../../repository/vocabulary_repository.dart';
@@ -184,7 +185,7 @@ class _ListWordPageState extends State<ListWordPage> {
       prev.languageTags != curr.languageTags ||
           prev.activeLanguage != curr.activeLanguage, // ← fix buildWhen
       builder: (context, state) {
-        final tabs = [null, ...?state.languageTags];
+        final tabs = [null, ...state.languageTags];
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -194,7 +195,7 @@ class _ListWordPageState extends State<ListWordPage> {
                   (tag) => Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: _buildFilterChip(
-                  label: tag ?? 'Tất cả',
+                  label: LanguageHelper.getDetectedLanguageLabelTag(tag),
                   tag: tag,
                   activeLanguage: state.activeLanguage,
                 ),
@@ -212,9 +213,9 @@ class _ListWordPageState extends State<ListWordPage> {
     String? tag,
     String? activeLanguage,
   }) {
-    final isActive = tag == activeLanguage; // ← so sánh đúng
+    final isActive = tag == activeLanguage;
     return GestureDetector(
-      onTap: () => _cubit.onLanguageChanged(tag), // ← đổi method
+      onTap: () => _cubit.onLanguageChanged(tag),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
