@@ -100,14 +100,14 @@ class _ListWordPageState extends State<ListWordPage> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if(
-                !state.isSearching)...[IconButton(
+                !state.isSearching)...[
+                  IconButton(
                   icon: Icon( Icons.arrow_back_ios,
                     color: Colors.white,
                     size: 22,
                   ),
                   onPressed: () {
-                    _cubit.toggleSearch();
-                    if (state.isSearching) _searchController.clear();
+                    Navigator.pop(context);
                   },
                 ),],
                 Expanded(
