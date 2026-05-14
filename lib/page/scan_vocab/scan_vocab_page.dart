@@ -31,7 +31,6 @@ class _ScanVocabView extends StatefulWidget {
 class _ScanVocabViewState extends State<_ScanVocabView> {
   File? _imageFile;
 
-  // Key để đo kích thước widget chứa ảnh
   final _imageKey = GlobalKey();
 
   static const _roleColors = {
@@ -56,8 +55,8 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
     if (mounted) context.read<ScanVocabCubit>().runOcr(File(picked.path));
   }
 
-  void _addCurrentItem() {
-    final success = context.read<ScanVocabCubit>().addCurrentItem();
+  Future<void> _addCurrentItem() async {
+    final success = await context.read<ScanVocabCubit>().addCurrentItem();
     if (!success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Chọn ít nhất Từ vựng hoặc Nghĩa'), backgroundColor: Colors.orange),
@@ -84,9 +83,104 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
     Navigator.push(context, MaterialPageRoute(
       builder: (_) => BatchAddWordPage(
         items: List.from(state.vocabItems),
-        detectedLanguage: state.detectedLanguage, // ✅ fix: truyền ngôn ngữ đã detect
+        detectedLanguage: state.detectedLanguage,
       ),
     ));
+  }
+
+  // ─── Bottom sheet chọn ngôn ngữ ──────────────────────────────────────────
+  void _showLanguagePicker(ScanVocabState state) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 4),
+                width: 36, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                child: Row(
+                  children: [
+                    const Text(
+                      'Chọn ngôn ngữ',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (state.isLanguageManuallySet)
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.read<ScanVocabCubit>().emit(
+                            context.read<ScanVocabCubit>().state.copyWith(
+                              isLanguageManuallySet: false,
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white10,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'Tự động',
+                            style: TextStyle(color: Colors.white54, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const Divider(color: Colors.white12, height: 1),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: kSupportedLanguages.length,
+                itemBuilder: (_, i) {
+                  final lang = kSupportedLanguages[i];
+                  final isSelected = state.detectedLanguage == lang.code;
+                  return ListTile(
+                    leading: Text(lang.flag, style: const TextStyle(fontSize: 24)),
+                    title: Text(
+                      lang.label,
+                      style: TextStyle(
+                        color: isSelected ? const Color(0xFF9B8FE4) : Colors.white,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? const Icon(Icons.check_rounded, color: Color(0xFF9B8FE4), size: 20)
+                        : null,
+                    onTap: () {
+                      context.read<ScanVocabCubit>().setLanguageManually(lang.code);
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   // ─── Tính vùng ảnh thực sự được render (BoxFit.contain) ──────────────────
@@ -210,13 +304,8 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
   Widget _buildLensView(ScanVocabState state) {
     return Column(
       children: [
-        // Role selector
         _buildRoleSelector(state),
-
-        // Ảnh + overlay
         Expanded(child: _buildImageWithOverlay(state)),
-
-        // Bottom panel
         _buildBottomPanel(state),
       ],
     );
@@ -269,7 +358,6 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
       builder: (context, constraints) {
         final widgetSize = Size(constraints.maxWidth, constraints.maxHeight);
 
-        // Tính displayRect khi đã biết imageSize
         Rect? displayRect;
         if (state.imageSize != null) {
           displayRect = _getDisplayRect(widgetSize, state.imageSize!);
@@ -297,7 +385,6 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // ── Ảnh gốc ──
               Image.file(
                 _imageFile!,
                 key: _imageKey,
@@ -305,8 +392,6 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
                 width: double.infinity,
                 height: double.infinity,
               ),
-
-              // ── Loading overlay ──
               if (state.status == SCANSTATUS.scanning)
                 Container(
                   color: Colors.black54,
@@ -318,8 +403,6 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
                     ]),
                   ),
                 ),
-
-              // ── Bounding box overlay ──
               if (state.status == SCANSTATUS.scanned && displayRect != null)
                 CustomPaint(
                   painter: _BlockOverlayPainter(
@@ -330,8 +413,6 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
                     activeRole: state.activeRole,
                   ),
                 ),
-
-              // ── Drag selection rect ──
               if (state.dragRect != null)
                 CustomPaint(
                   painter: _DragRectPainter(
@@ -339,8 +420,6 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
                     color: _roleColors[state.activeRole]!,
                   ),
                 ),
-
-              // ── Nút chụp lại (bottom-left) ──
               Positioned(
                 bottom: 12, left: 12,
                 child: GestureDetector(
@@ -398,38 +477,60 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Language badge + Preview chips
-          if (state.status == SCANSTATUS.scanned && state.detectedLanguage != null)
+          // ── Language badge (tappable) ──────────────────────────────────
+          if (state.status == SCANSTATUS.scanned)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF7B6FD4).withOpacity(0.18),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF7B6FD4).withOpacity(0.5)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.translate_rounded, size: 13, color: Color(0xFF9B8FE4)),
-                        const SizedBox(width: 5),
-                        Text(
-                          state.detectedLanguageLabel,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF9B8FE4),
-                          ),
+                  GestureDetector(
+                    onTap: () => _showLanguagePicker(state),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: state.isLanguageManuallySet
+                            ? const Color(0xFF7B6FD4).withOpacity(0.28)
+                            : const Color(0xFF7B6FD4).withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: state.isLanguageManuallySet
+                              ? const Color(0xFF7B6FD4).withOpacity(0.9)
+                              : const Color(0xFF7B6FD4).withOpacity(0.5),
                         ),
-                      ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.translate_rounded, size: 13, color: Color(0xFF9B8FE4)),
+                          const SizedBox(width: 5),
+                          Text(
+                            state.detectedLanguage != null
+                                ? state.languageBadgeLabel
+                                : 'Chọn ngôn ngữ',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: state.detectedLanguage != null
+                                  ? const Color(0xFF9B8FE4)
+                                  : Colors.white38,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          // Chỉ báo manual
+                          if (state.isLanguageManuallySet)
+                            const Icon(Icons.edit_rounded, size: 11, color: Color(0xFF9B8FE4))
+                          else
+                            const Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: Color(0xFF9B8FE4)),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
+
+          // ── Preview chips ─────────────────────────────────────────────
           Row(
             children: [
               _buildPreviewChip('Từ', preview.word, const Color(0xFF7B6FD4), role: TokenRole.word),
@@ -440,21 +541,14 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
             ],
           ),
           const SizedBox(height: 12),
+
           Row(
             children: [
-              // Clear selection
               if (state.hasAnySelection)
                 Padding(
                   padding: const EdgeInsets.only(right: 10),
                   child: GestureDetector(
-                    onTap: () {
-                      final cleared = context.read<ScanVocabCubit>().state.blocks
-                          .map((b) => b.copyWith(isSelected: false, role: TokenRole.none))
-                          .toList();
-                      context.read<ScanVocabCubit>().emit(
-                        context.read<ScanVocabCubit>().state.copyWith(blocks: cleared),
-                      );
-                    },
+                    onTap: () => context.read<ScanVocabCubit>().clearAllSelections(),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                       decoration: BoxDecoration(
@@ -509,14 +603,7 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
     final hasValue = value.isNotEmpty;
     return GestureDetector(
       onTap: hasValue
-          ? () {
-        final cleared = context.read<ScanVocabCubit>().state.blocks
-            .map((b) => b.role == role ? b.copyWith(isSelected: false, role: TokenRole.none) : b)
-            .toList();
-        context.read<ScanVocabCubit>().emit(
-          context.read<ScanVocabCubit>().state.copyWith(blocks: cleared),
-        );
-      }
+          ? () => context.read<ScanVocabCubit>().clearRole(role)
           : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -555,7 +642,7 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
 // ─── CustomPainter: vẽ bounding box của các OCR block ────────────────────────
 class _BlockOverlayPainter extends CustomPainter {
   final List<OcrBlock> blocks;
-  final Rect displayRect;       // vùng ảnh thực sự trên widget
+  final Rect displayRect;
   final Size imageSize;
   final Map<TokenRole, Color> roleColors;
   final TokenRole activeRole;
@@ -574,7 +661,6 @@ class _BlockOverlayPainter extends CustomPainter {
     final scaleY = displayRect.height / imageSize.height;
 
     for (final block in blocks) {
-      // Scale bounding box từ ảnh gốc → widget
       final r = Rect.fromLTWH(
         displayRect.left + block.boundingBox.left * scaleX,
         displayRect.top + block.boundingBox.top * scaleY,
@@ -584,12 +670,10 @@ class _BlockOverlayPainter extends CustomPainter {
 
       if (block.isSelected) {
         final color = roleColors[block.role]!;
-        // Fill
         canvas.drawRRect(
           RRect.fromRectAndRadius(r, const Radius.circular(4)),
           Paint()..color = color.withOpacity(0.35),
         );
-        // Border
         canvas.drawRRect(
           RRect.fromRectAndRadius(r, const Radius.circular(4)),
           Paint()
@@ -597,7 +681,6 @@ class _BlockOverlayPainter extends CustomPainter {
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2,
         );
-        // Label text bên trên box
         final roleLabel = {
           TokenRole.word: 'Từ',
           TokenRole.pronunciation: 'Âm',
@@ -612,7 +695,6 @@ class _BlockOverlayPainter extends CustomPainter {
         )..layout();
         tp.paint(canvas, Offset(r.left, r.top - 16));
       } else {
-        // Unselected: viền mờ để người dùng biết có text ở đây
         canvas.drawRRect(
           RRect.fromRectAndRadius(r, const Radius.circular(4)),
           Paint()
@@ -638,9 +720,7 @@ class _DragRectPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Fill mờ
     canvas.drawRect(rect, Paint()..color = color.withOpacity(0.2));
-    // Border nét đứt
     final dashPaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke

@@ -5,7 +5,8 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import 'package:test_abc/helper/language_helper.dart';import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
+import 'package:test_abc/helper/language_helper.dart';
+import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 
 part 'scan_vocab_state.dart';
 
@@ -25,7 +26,6 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
         frame.image.height.toDouble(),
       );
 
-      // Chạy OCR
       final inputImage = InputImage.fromFile(imageFile);
       final recognizer = TextRecognizer(script: TextRecognitionScript.japanese);
       final result = await recognizer.processImage(inputImage);
@@ -49,6 +49,7 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
         blocks: blocks,
         status: SCANSTATUS.scanned,
         clearDragRect: true,
+        clearLanguage: true,
       ));
     } catch (e) {
       emit(state.copyWith(status: SCANSTATUS.error, errorMessage: 'OCR thất bại: $e'));
@@ -62,19 +63,15 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
   void updateDragRect(Rect rect) => emit(state.copyWith(dragRect: rect));
 
   // ─── Khi thả tay: chọn các block nằm trong dragRect ──────────────────────
-  /// [widgetSize] = kích thước của widget hiển thị ảnh
-  /// [displayRect] = vùng ảnh thực sự được render trong widget (BoxFit.contain)
   void commitDragSelection(Rect dragRect, Size widgetSize, Rect displayRect) {
     if (state.imageSize == null) return;
 
     final imgW = state.imageSize!.width;
     final imgH = state.imageSize!.height;
 
-    // Scale: từ toạ độ widget → toạ độ ảnh gốc
     final scaleX = imgW / displayRect.width;
     final scaleY = imgH / displayRect.height;
 
-    // dragRect sang toạ độ ảnh gốc
     final selInImage = Rect.fromLTRB(
       (dragRect.left - displayRect.left) * scaleX,
       (dragRect.top - displayRect.top) * scaleY,
@@ -108,7 +105,7 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
   }
 
   // ─── Thêm từ hiện tại vào danh sách ─────────────────────────────────────
-  bool addCurrentItem() {
+  Future<bool> addCurrentItem() async {
     var preview = state.currentPreview;
     if (preview.word.trim().isEmpty && preview.meaning.trim().isEmpty) return false;
 
@@ -120,19 +117,34 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
     final cleared = state.blocks
         .map((b) => b.copyWith(isSelected: false, role: TokenRole.none))
         .toList();
-    emit(state.copyWith(vocabItems: newItems, blocks: cleared));
+    emit(state.copyWith(
+      vocabItems: newItems,
+      blocks: cleared,
+      clearLanguage: true,
+    ));
+    await _detectLanguageFromWordBlocks();
     return true;
   }
 
+  void setLanguageManually(String langCode) {
+    emit(state.copyWith(
+      detectedLanguage: langCode,
+      isLanguageManuallySet: true,
+    ));
+  }
+
   Future<void> _detectLanguageFromWordBlocks() async {
+    if (state.isLanguageManuallySet) return;
+
     final wordText = state.blocks
         .where((b) => b.role == TokenRole.word)
         .map((b) => b.text)
         .join(' ');
-    await detectLanguage(wordText);
+
+    await _autoDetectLanguage(wordText);
   }
 
-  Future<void> detectLanguage(String text) async {
+  Future<void> _autoDetectLanguage(String text) async {
     if (text.trim().length < 2) {
       emit(state.copyWith(clearLanguage: true));
       return;
@@ -143,10 +155,34 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
       await identifier.close();
       emit(state.copyWith(
         detectedLanguage: lang == 'und' ? null : lang,
+        isLanguageManuallySet: false,
       ));
     } catch (_) {
       emit(state.copyWith(clearLanguage: true));
     }
+  }
+
+  Future<void> detectLanguage(String text) => _autoDetectLanguage(text);
+
+  void clearRole(TokenRole role) {
+    final cleared = state.blocks
+        .map((b) => b.role == role ? b.copyWith(isSelected: false, role: TokenRole.none) : b)
+        .toList();
+    if (role == TokenRole.word) {
+      emit(state.copyWith(blocks: cleared, isLanguageManuallySet: false));
+    } else {
+      emit(state.copyWith(blocks: cleared));
+    }
+    _detectLanguageFromWordBlocks();
+  }
+
+  void clearAllSelections() {
+    final cleared = state.blocks
+        .map((b) => b.copyWith(isSelected: false, role: TokenRole.none))
+        .toList();
+    emit(state.copyWith(blocks: cleared, isLanguageManuallySet: false));
+    _detectLanguageFromWordBlocks();
+
   }
 
   // ─── Reset ────────────────────────────────────────────────────────────────

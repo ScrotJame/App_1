@@ -4,6 +4,28 @@ enum TokenRole { none, word, pronunciation, meaning, language }
 
 enum SCANSTATUS { idle, scanning, scanned, error }
 
+// ─── Danh sách ngôn ngữ hỗ trợ chọn thủ công ────────────────────────────────
+class SupportedLanguage {
+  final String code;
+  final String label;
+  final String flag;
+
+  const SupportedLanguage({required this.code, required this.label, required this.flag});
+}
+
+const kSupportedLanguages = [
+  SupportedLanguage(code: 'ja', label: 'Tiếng Nhật',   flag: '🇯🇵'),
+  SupportedLanguage(code: 'zh', label: 'Tiếng Trung',  flag: '🇨🇳'),
+  SupportedLanguage(code: 'ko', label: 'Tiếng Hàn',    flag: '🇰🇷'),
+  SupportedLanguage(code: 'en', label: 'Tiếng Anh',    flag: '🇬🇧'),
+  SupportedLanguage(code: 'fr', label: 'Tiếng Pháp',   flag: '🇫🇷'),
+  SupportedLanguage(code: 'de', label: 'Tiếng Đức',    flag: '🇩🇪'),
+  SupportedLanguage(code: 'es', label: 'Tiếng Tây Ban Nha', flag: '🇪🇸'),
+  SupportedLanguage(code: 'vi', label: 'Tiếng Việt',   flag: '🇻🇳'),
+  SupportedLanguage(code: 'ru', label: 'Tiếng Nga',    flag: '🇷🇺'),
+  SupportedLanguage(code: 'th', label: 'Tiếng Thái',   flag: '🇹🇭'),
+];
+
 // ─── Một block văn bản từ OCR, có vị trí trên ảnh gốc ───────────────────────
 class OcrBlock extends Equatable {
   final String text;
@@ -48,7 +70,7 @@ class ScannedVocabItem extends Equatable {
     String? word,
     String? pronunciation,
     String? meaning,
-    String? language
+    String? language,
   }) {
     return ScannedVocabItem(
       word: word ?? this.word,
@@ -74,6 +96,8 @@ class ScanVocabState extends Equatable {
   final String? errorMessage;
   final Rect? dragRect;
   final String? detectedLanguage;
+  /// true khi user đã chọn ngôn ngữ thủ công → auto-detect sẽ không ghi đè
+  final bool isLanguageManuallySet;
 
   const ScanVocabState({
     this.imageSize,
@@ -84,6 +108,7 @@ class ScanVocabState extends Equatable {
     this.errorMessage,
     this.dragRect,
     this.detectedLanguage,
+    this.isLanguageManuallySet = false,
   });
 
   // ─── Preview từ đang được chọn ────────────────────────────────────────────
@@ -96,13 +121,19 @@ class ScanVocabState extends Equatable {
       word: blocks.where((b) => b.role == TokenRole.word).map((b) => b.text).join(' '),
       pronunciation: blocks.where((b) => b.role == TokenRole.pronunciation).map((b) => b.text).join(' '),
       meaning: blocks.where((b) => b.role == TokenRole.meaning).map((b) => b.text).join(' '),
-      // Chỉ lấy từ block được chọn thủ công, KHÔNG fallback về detectedLanguage
       language: languageFromBlocks,
     );
   }
 
   bool get hasAnySelection => blocks.any((b) => b.isSelected);
   String get detectedLanguageLabel => LanguageHelper.getDetectedLanguageLabel(detectedLanguage);
+
+  /// Label hiển thị cho badge, ưu tiên kSupportedLanguages
+  String get languageBadgeLabel {
+    if (detectedLanguage == null) return '';
+    final found = kSupportedLanguages.where((l) => l.code == detectedLanguage).firstOrNull;
+    return found != null ? '${found.flag} ${found.label}' : detectedLanguageLabel;
+  }
 
   ScanVocabState copyWith({
     Size? imageSize,
@@ -116,6 +147,7 @@ class ScanVocabState extends Equatable {
     bool clearError = false,
     String? detectedLanguage,
     bool clearLanguage = false,
+    bool? isLanguageManuallySet,
   }) {
     return ScanVocabState(
       imageSize: imageSize ?? this.imageSize,
@@ -125,9 +157,8 @@ class ScanVocabState extends Equatable {
       status: status ?? this.status,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       dragRect: clearDragRect ? null : (dragRect ?? this.dragRect),
-      detectedLanguage: clearLanguage
-          ? null
-          : (detectedLanguage ?? this.detectedLanguage),
+      detectedLanguage: clearLanguage ? null : (detectedLanguage ?? this.detectedLanguage),
+      isLanguageManuallySet: clearLanguage ? false : (isLanguageManuallySet ?? this.isLanguageManuallySet),
     );
   }
 
@@ -135,6 +166,6 @@ class ScanVocabState extends Equatable {
   List<Object?> get props => [
     imageSize, blocks, activeRole, vocabItems,
     status, errorMessage, dragRect,
-    detectedLanguage,
+    detectedLanguage, isLanguageManuallySet,
   ];
 }
