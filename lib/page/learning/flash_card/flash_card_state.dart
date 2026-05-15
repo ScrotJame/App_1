@@ -2,7 +2,8 @@ part of 'flash_card_cubit.dart';
 
 
 
-class FlashCardState {
+class FlashCardState extends Equatable{
+  final ActiveCompanionEntity? activeCompanion;
   final FlashcardArenaStatus status;
   final List<VocabularyWithTags> cards;
   final int currentIndex;
@@ -10,7 +11,9 @@ class FlashCardState {
   final List<FlashcardResult> results;
   final DifficultyRating? pendingRating; // highlight trước khi advance
   final LOADSTATUS? loadstatus;
+  final LOADSTATUS? companionStatus;
   final String? errorMessage;
+  final double? lastFoodEarned;
 
   const FlashCardState({
     this.status = FlashcardArenaStatus.initial,
@@ -21,7 +24,13 @@ class FlashCardState {
     this.pendingRating,
     this.loadstatus = LOADSTATUS.INITAL,
     this.errorMessage,
+    this.companionStatus= LOADSTATUS.INITAL,
+    this.lastFoodEarned,
+    this.activeCompanion,
   });
+
+
+  bool get hasActiveCompanion => activeCompanion != null;
 
   // ── Computed ────────────────────────────────
   VocabularyWithTags? get currentCard =>
@@ -40,6 +49,7 @@ class FlashCardState {
 
   // ── copyWith ────────────────────────────────
   FlashCardState copyWith({
+    ActiveCompanionEntity? activeCompanion,
     FlashcardArenaStatus? status,
     List<VocabularyWithTags>? cards,
     int? currentIndex,
@@ -49,8 +59,11 @@ class FlashCardState {
     bool clearPending = false,
     LOADSTATUS? loadstatus,
     String? errorMessage,
+    LOADSTATUS? companionStatus,
+    double? lastFoodEarned,
   }) =>
       FlashCardState(
+        activeCompanion: activeCompanion ?? this.activeCompanion,
         status: status ?? this.status,
         cards: cards ?? this.cards,
         currentIndex: currentIndex ?? this.currentIndex,
@@ -59,10 +72,13 @@ class FlashCardState {
         pendingRating: clearPending ? null : pendingRating ?? this.pendingRating,
         loadstatus:  loadstatus ?? this.loadstatus,
         errorMessage: errorMessage ?? this. errorMessage,
+        companionStatus: companionStatus ?? this.companionStatus,
+        lastFoodEarned: lastFoodEarned ?? this.lastFoodEarned
       );
 
   @override
   List<Object?> get props =>[
+    activeCompanion,
     status,
     cards,
     currentIndex,
@@ -71,5 +87,7 @@ class FlashCardState {
     pendingRating,
     loadstatus,
     errorMessage,
+    companionStatus,
+    lastFoodEarned
   ];
 }

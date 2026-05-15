@@ -1,186 +1,46 @@
-// companion_repository.dart
-import 'package:drift/drift.dart';
+import 'dart:math' as math;
 
+import 'package:drift/drift.dart';
+import '../../models/entity/active_companion_entity.dart';
+import '../../models/entity/companion_definition_entity.dart';
 import '../database/app_db.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Entities
-// ─────────────────────────────────────────────────────────────────────────────
-
-class CompanionDefEntity {
-  final int id;
-  final String type; // 'pet' | 'plant'
-  final String name;
-  final String description;
-  final String iconKey;
-  final double maxXpBonus;
-  final int maxLevel;
-  final int baseWords;
-  final double scalingPow;
-  final int unlockUserLevel;
-
-  const CompanionDefEntity({
-    required this.id,
-    required this.type,
-    required this.name,
-    required this.description,
-    required this.iconKey,
-    required this.maxXpBonus,
-    required this.maxLevel,
-    required this.baseWords,
-    required this.scalingPow,
-    required this.unlockUserLevel,
-  });
-
-  /// Số từ cần để lên từ [level] → [level+1]
-  /// Formula: (baseWords * level^scalingPow).ceil()
-  int wordsNeededForLevel(int level) {
-    if (level >= maxLevel) return 999999; // đã max
-    return (baseWords * _pow(level, scalingPow)).ceil();
-  }
-
-  /// Tổng từ cần từ cấp 1 đến cấp [targetLevel]
-  int totalWordsToReach(int targetLevel) {
-    int total = 0;
-    for (int lvl = 1; lvl < targetLevel; lvl++) {
-      total += wordsNeededForLevel(lvl);
-    }
-    return total;
-  }
-
-  /// XP bonus tại level hiện tại (linear interpolation)
-  double xpBonusAtLevel(int level) {
-    if (maxLevel <= 0) return maxXpBonus;
-    return maxXpBonus * (level / maxLevel);
-  }
-
-  double _pow(num base, double exp) {
-    if (exp == 1.0) return base.toDouble();
-    double result = 1.0;
-    double b = base.toDouble();
-    // Simple iterative approximation for fractional powers
-    // In production, use dart:math pow()
-    return _dartPow(b, exp);
-  }
-
-  double _dartPow(double base, double exp) {
-    // Placeholder — replace with: import 'dart:math'; return pow(base, exp).toDouble();
-    return base * exp; // simplified; use dart:math in real code
-  }
+class InsufficientFoodException implements Exception {
+  final String message;
+  const InsufficientFoodException([
+    this.message = 'Không đủ food. Hãy học thêm từ để nhận food!',
+  ]);
+  @override
+  String toString() => message;
 }
 
-class ActiveCompanionEntity {
-  final String userKey;
-  final int definitionId;
-  final int level;
-  final int totalWordsLearned;
-  final int wordsInCurrentLevel;
-  final double currentXpBonus;
-  final bool isMaxLevel;
-  final DateTime adoptedAt;
-
-  final CompanionDefEntity? definition;
-
-  const ActiveCompanionEntity({
-    required this.userKey,
-    required this.definitionId,
-    required this.level,
-    required this.totalWordsLearned,
-    required this.wordsInCurrentLevel,
-    required this.currentXpBonus,
-    required this.isMaxLevel,
-    required this.adoptedAt,
-    this.definition,
-  });
-
-  /// Số từ cần để lên cấp tiếp theo
-  int get wordsNeededForNextLevel =>
-      definition?.wordsNeededForLevel(level) ?? 999999;
-
-  /// Progress 0.0 → 1.0 trong cấp hiện tại
-  double get levelProgress {
-    final needed = wordsNeededForNextLevel;
-    if (needed <= 0 || needed == 999999) return 1.0;
-    return (wordsInCurrentLevel / needed).clamp(0.0, 1.0);
-  }
-
-  /// Tên hiển thị
-  String get displayName => definition?.name ?? 'Companion';
-
-  ActiveCompanionEntity copyWith({
-    int? level,
-    int? totalWordsLearned,
-    int? wordsInCurrentLevel,
-    double? currentXpBonus,
-    bool? isMaxLevel,
-  }) {
-    return ActiveCompanionEntity(
-      userKey: userKey,
-      definitionId: definitionId,
-      level: level ?? this.level,
-      totalWordsLearned: totalWordsLearned ?? this.totalWordsLearned,
-      wordsInCurrentLevel: wordsInCurrentLevel ?? this.wordsInCurrentLevel,
-      currentXpBonus: currentXpBonus ?? this.currentXpBonus,
-      isMaxLevel: isMaxLevel ?? this.isMaxLevel,
-      adoptedAt: adoptedAt,
-      definition: definition,
-    );
-  }
+class CompanionMaxLevelException implements Exception {
+  final String message;
+  const CompanionMaxLevelException([
+    this.message = 'Companion đã đạt cấp tối đa!',
+  ]);
+  @override
+  String toString() => message;
 }
 
-class CompanionHistoryEntity {
-  final int id;
-  final String userKey;
-  final int definitionId;
-  final int levelReached;
-  final int totalWordsLearned;
-  final DateTime adoptedAt;
-  final DateTime deletedAt;
-  final CompanionDefEntity? definition;
-
-  const CompanionHistoryEntity({
-    required this.id,
-    required this.userKey,
-    required this.definitionId,
-    required this.levelReached,
-    required this.totalWordsLearned,
-    required this.adoptedAt,
-    required this.deletedAt,
-    this.definition,
-  });
+abstract class ICompanionRepository {
+  Stream<ActiveCompanionEntity?> watchActiveCompanion(String userKey);
+  Future<List<CompanionDefinitionEntity>> getDefinitionsByType(String type);
+  Future<void> adoptCompanion({required String userKey, required int definitionId});
+  Future<void> switchCompanion({required String userKey, required int newDefinitionId});
+  Future<double> earnFood({required String userKey, required double wordsLearned});
+  Future<void> feedCompanion({required String userKey});
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Repository
-// ─────────────────────────────────────────────────────────────────────────────
-
-class CompanionRepository {
+class CompanionRepository implements ICompanionRepository {
   final AppDatabase _db;
 
   CompanionRepository(this._db);
 
-  // ── Definitions ─────────────────────────────────────────────
-
-  Future<List<CompanionDefEntity>> getDefinitionsByType(String type) async {
-    final rows = await (_db.select(_db.companionDefinitions)
-      ..where((t) => t.type.equals(type)))
-        .get();
-    return rows.map(_mapDef).toList();
-  }
-
-  Future<CompanionDefEntity?> getDefinition(int id) async {
-    final row = await (_db.select(_db.companionDefinitions)
-      ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
-    return row != null ? _mapDef(row) : null;
-  }
-
-  // ── Active Companion ─────────────────────────────────────────
-
-  /// Stream active companion (null = chưa chọn)
+  @override
   Stream<ActiveCompanionEntity?> watchActiveCompanion(String userKey) {
     final query = _db.select(_db.activeCompanions).join([
-      leftOuterJoin(
+      innerJoin(
         _db.companionDefinitions,
         _db.companionDefinitions.id
             .equalsExp(_db.activeCompanions.definitionId),
@@ -190,219 +50,264 @@ class CompanionRepository {
 
     return query.watchSingleOrNull().map((row) {
       if (row == null) return null;
-      final a = row.readTable(_db.activeCompanions);
-      final d = row.readTableOrNull(_db.companionDefinitions);
-      return _mapActive(a, d);
+      final active = row.readTable(_db.activeCompanions);
+      final def = row.readTable(_db.companionDefinitions);
+      return _toEntity(active, def);
     });
   }
 
-  // ── Adopt (first time, no existing companion) ────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // getDefinitionsByType
+  // ─────────────────────────────────────────────────────────────────────────
 
-  Future<ActiveCompanionEntity> adoptCompanion({
+  @override
+  Future<List<CompanionDefinitionEntity>> getDefinitionsByType(String type) async {
+    final rows = await (_db.select(_db.companionDefinitions)
+      ..where((t) => t.type.equals(type))
+      ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+        .get();
+    return rows.map(_defToEntity).toList();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // adoptCompanion
+  // ─────────────────────────────────────────────────────────────────────────
+
+  @override
+  Future<void> adoptCompanion({
     required String userKey,
     required int definitionId,
   }) async {
-    final def = await getDefinition(definitionId);
-    if (def == null) throw Exception('Definition not found');
+    final def = await (_db.select(_db.companionDefinitions)
+      ..where((t) => t.id.equals(definitionId)))
+        .getSingle();
 
     await _db.into(_db.activeCompanions).insertOnConflictUpdate(
-      ActiveCompanionsCompanion(
-        userKey: Value(userKey),
-        definitionId: Value(definitionId),
+      ActiveCompanionsCompanion.insert(
+        userKey: userKey,
+        definitionId: definitionId,
         level: const Value(1),
+        foodInventory: const Value(0),
+        pendingWords: const Value(0),
+        foodUsedInCurrentLevel: const Value(0),
+        totalFoodUsed: const Value(0),
         totalWordsLearned: const Value(0),
-        wordsInCurrentLevel: const Value(0),
-        currentXpBonus: Value(def.xpBonusAtLevel(1)),
+        currentXpBonus: Value(def.maxXpBonus / def.maxLevel),
         isMaxLevel: const Value(false),
-        adoptedAt: Value(DateTime.now()),
-        updatedAt: Value(DateTime.now()),
       ),
     );
-
-    final row = await (_db.select(_db.activeCompanions)
-      ..where((t) => t.userKey.equals(userKey)))
-        .getSingle();
-    return _mapActive(row, null)
-        .copyWith(); // re-fetch with def via stream in practice
   }
 
-  /// Switch companion:
-  /// 1. Save current to CompanionHistory
-  /// 2. DELETE current ActiveCompanion
-  /// 3. INSERT new ActiveCompanion
+  @override
   Future<void> switchCompanion({
     required String userKey,
     required int newDefinitionId,
   }) async {
     await _db.transaction(() async {
-      // 1. Save to history
       final current = await (_db.select(_db.activeCompanions)
         ..where((t) => t.userKey.equals(userKey)))
           .getSingleOrNull();
 
       if (current != null) {
         await _db.into(_db.companionHistories).insert(
-          CompanionHistoriesCompanion(
-            userKey: Value(userKey),
-            definitionId: Value(current.definitionId),
-            levelReached: Value(current.level),
-            totalWordsLearned: Value(current.totalWordsLearned),
-            adoptedAt: Value(current.adoptedAt),
-            deletedAt: Value(DateTime.now()),
+          CompanionHistoriesCompanion.insert(
+            userKey: userKey,
+            definitionId: current.definitionId,
+            levelReached: current.level,
+            totalFoodUsed: current.totalFoodUsed,
+            totalWordsLearned: current.totalWordsLearned,
+            adoptedAt: current.adoptedAt,
           ),
         );
 
-        // 2. Delete current
         await (_db.delete(_db.activeCompanions)
           ..where((t) => t.userKey.equals(userKey)))
             .go();
       }
 
-      // 3. Insert new
-      final def = await getDefinition(newDefinitionId);
-      if (def == null) throw Exception('Definition not found');
+      await adoptCompanion(userKey: userKey, definitionId: newDefinitionId);
+    });
+  }
 
-      await _db.into(_db.activeCompanions).insert(
+  @override
+  Future<double> earnFood({
+    required String userKey,
+    required double wordsLearned,
+  }) async {
+    return _db.transaction(() async {
+      // 1. Đọc companion + definition
+      final row = await (_db.select(_db.activeCompanions).join([
+        innerJoin(
+          _db.companionDefinitions,
+          _db.companionDefinitions.id
+              .equalsExp(_db.activeCompanions.definitionId),
+        ),
+      ])
+        ..where(_db.activeCompanions.userKey.equals(userKey)))
+          .getSingleOrNull();
+
+      if (row == null) return 0;
+
+      final active = row.readTable(_db.activeCompanions);
+      final def = row.readTable(_db.companionDefinitions);
+
+      final wordsPerFood = def.wordsPerFood;
+      final maxInventory = def.maxFoodInventory;
+
+      // 2. Tính food earned
+      final totalPending = active.pendingWords + wordsLearned;
+      final foodEarned = totalPending ~/ wordsPerFood;
+      final remainingPending = totalPending % wordsPerFood;
+
+      // 3. Cộng food vào inventory (capped)
+      final newInventory =
+      (active.foodInventory + foodEarned).clamp(0, maxInventory);
+      final double actualFoodEarned = (newInventory - active.foodInventory).toDouble();
+
+      // 4. Update ActiveCompanion
+      await (_db.update(_db.activeCompanions)
+        ..where((t) => t.userKey.equals(userKey)))
+          .write(
         ActiveCompanionsCompanion(
-          userKey: Value(userKey),
-          definitionId: Value(newDefinitionId),
-          level: const Value(1),
-          totalWordsLearned: const Value(0),
-          wordsInCurrentLevel: const Value(0),
-          currentXpBonus: Value(def.xpBonusAtLevel(1)),
-          isMaxLevel: const Value(false),
-          adoptedAt: Value(DateTime.now()),
+          pendingWords: Value(remainingPending),
+          foodInventory: Value(newInventory),
+          totalWordsLearned: Value(active.totalWordsLearned + wordsLearned),
           updatedAt: Value(DateTime.now()),
         ),
       );
+
+      // 5. Ghi log nếu có food được earn
+      if (actualFoodEarned > 0) {
+        await _db.into(_db.companionWordEarnLogs).insert(
+          CompanionWordEarnLogsCompanion.insert(
+            userKey: userKey,
+            wordsLearned: wordsLearned,
+            foodEarned: actualFoodEarned,
+            definitionId: active.definitionId,
+          ),
+        );
+      }
+
+      return actualFoodEarned;
     });
   }
 
-  // ── Feed words (core mechanic) ───────────────────────────────
-
-  /// Gọi sau mỗi lần user học xong [wordsCount] từ.
-  /// Trả về true nếu companion lên cấp.
-  Future<bool> feedWords({
-    required String userKey,
-    required int wordsCount,
-  }) async {
-    bool leveledUp = false;
-
+  @override
+  Future<void> feedCompanion({required String userKey}) async {
     await _db.transaction(() async {
-      final current = await (_db.select(_db.activeCompanions)
-        ..where((t) => t.userKey.equals(userKey)))
+      final row = await (_db.select(_db.activeCompanions).join([
+        innerJoin(
+          _db.companionDefinitions,
+          _db.companionDefinitions.id
+              .equalsExp(_db.activeCompanions.definitionId),
+        ),
+      ])
+        ..where(_db.activeCompanions.userKey.equals(userKey)))
           .getSingleOrNull();
 
-      if (current == null || current.isMaxLevel) return;
+      if (row == null) return;
 
-      final def = await getDefinition(current.definitionId);
-      if (def == null) return;
+      final active = row.readTable(_db.activeCompanions);
+      final def = row.readTable(_db.companionDefinitions);
 
-      int newTotal = current.totalWordsLearned + wordsCount;
-      int newInLevel = current.wordsInCurrentLevel + wordsCount;
-      int newLevel = current.level;
+      // 2. Guard checks
+      if (active.isMaxLevel) throw const CompanionMaxLevelException();
+      if (active.foodInventory <= 0) throw const InsufficientFoodException();
 
-      // Level-up loop
-      while (newLevel < def.maxLevel) {
-        final needed = def.wordsNeededForLevel(newLevel);
-        if (newInLevel >= needed) {
-          newInLevel -= needed;
-          newLevel++;
-          leveledUp = true;
-        } else {
-          break;
-        }
+      // 3. Tính food cần để lên cấp tiếp theo
+      final foodNeeded = _foodNeededForLevel(
+        level: active.level,
+        base: def.baseFoodPerLevel,
+        scalingPow: def.scalingPow,
+      );
+
+      final newFoodUsed = active.foodUsedInCurrentLevel + 1;
+      final newTotalFoodUsed = active.totalFoodUsed + 1;
+      final newInventory = active.foodInventory - 1;
+      final didLevelUp = newFoodUsed >= foodNeeded;
+
+      int newLevel = active.level;
+      int newFoodUsedInLevel = newFoodUsed;
+      bool newIsMaxLevel = active.isMaxLevel;
+      double newXpBonus = active.currentXpBonus;
+
+      if (didLevelUp) {
+        newLevel = active.level + 1;
+        newFoodUsedInLevel = 0;
+        newIsMaxLevel = newLevel >= def.maxLevel;
+        newXpBonus = def.maxXpBonus * (newLevel / def.maxLevel);
       }
 
-      final reachedMax = newLevel >= def.maxLevel;
-      final newBonus = def.xpBonusAtLevel(newLevel);
-
+      // Update ActiveCompanion
       await (_db.update(_db.activeCompanions)
         ..where((t) => t.userKey.equals(userKey)))
-          .write(ActiveCompanionsCompanion(
-        level: Value(newLevel),
-        totalWordsLearned: Value(newTotal),
-        wordsInCurrentLevel: Value(reachedMax ? 0 : newInLevel),
-        currentXpBonus: Value(newBonus),
-        isMaxLevel: Value(reachedMax),
-        updatedAt: Value(DateTime.now()),
-      ));
+          .write(
+        ActiveCompanionsCompanion(
+          foodInventory: Value(newInventory),
+          foodUsedInCurrentLevel: Value(newFoodUsedInLevel),
+          totalFoodUsed: Value(newTotalFoodUsed),
+          level: Value(newLevel),
+          isMaxLevel: Value(newIsMaxLevel),
+          currentXpBonus: Value(newXpBonus),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
 
-      // Log
-      await _db.into(_db.companionWordLogs).insert(
-        CompanionWordLogsCompanion(
-          userKey: Value(userKey),
-          wordsCount: Value(wordsCount),
-          levelAtTime: Value(newLevel),
-          definitionId: Value(current.definitionId),
-          causedLevelUp: Value(leveledUp),
-          createdAt: Value(DateTime.now()),
+      await _db.into(_db.companionFoodLogs).insert(
+        CompanionFoodLogsCompanion.insert(
+          userKey: userKey,
+          foodUsed: 1,
+          levelAtTime: active.level,
+          definitionId: active.definitionId,
+          causedLevelUp: Value(didLevelUp),
         ),
       );
     });
-
-    return leveledUp;
   }
 
-  // ── History ──────────────────────────────────────────────────
-
-  Future<List<CompanionHistoryEntity>> getHistory(String userKey) async {
-    final rows = await (_db.select(_db.companionHistories)
-      ..where((t) => t.userKey.equals(userKey))
-      ..orderBy([(t) => OrderingTerm.desc(t.deletedAt)]))
-        .get();
-
-    final List<CompanionHistoryEntity> result = [];
-    for (final row in rows) {
-      final def = await getDefinition(row.definitionId);
-      result.add(_mapHistory(row, def));
-    }
-    return result;
+  int _foodNeededForLevel({
+    required int level,
+    required int base,
+    required double scalingPow,
+  }) {
+    return (base * math.pow(level, scalingPow)).ceil();
   }
 
-  // ── Mappers ──────────────────────────────────────────────────
+  ActiveCompanionEntity _toEntity(
+      ActiveCompanion active,
+      CompanionDefinition def,
+      ) {
+    return ActiveCompanionEntity(
+      userKey: active.userKey,
+      definitionId: active.definitionId,
+      level: active.level,
+      foodInventory: active.foodInventory,
+      pendingWords: active.pendingWords,
+      foodUsedInCurrentLevel: active.foodUsedInCurrentLevel,
+      totalFoodUsed: active.totalFoodUsed,
+      totalWordsLearned: active.totalWordsLearned,
+      currentXpBonus: active.currentXpBonus,
+      isMaxLevel: active.isMaxLevel,
+      adoptedAt: active.adoptedAt,
+      updatedAt: active.updatedAt,
+      definition: _defToEntity(def),
+    );
+  }
 
-  CompanionDefEntity _mapDef(CompanionDefinition row) => CompanionDefEntity(
-    id: row.id,
-    type: row.type,
-    name: row.name,
-    description: row.description,
-    iconKey: row.iconKey,
-    maxXpBonus: row.maxXpBonus,
-    maxLevel: row.maxLevel,
-    baseWords: row.baseWords,
-    scalingPow: row.scalingPow,
-    unlockUserLevel: row.unlockUserLevel,
-  );
-
-  ActiveCompanionEntity _mapActive(
-      ActiveCompanion row,
-      CompanionDefinition? def,
-      ) =>
-      ActiveCompanionEntity(
-        userKey: row.userKey,
-        definitionId: row.definitionId,
-        level: row.level,
-        totalWordsLearned: row.totalWordsLearned,
-        wordsInCurrentLevel: row.wordsInCurrentLevel,
-        currentXpBonus: row.currentXpBonus,
-        isMaxLevel: row.isMaxLevel,
-        adoptedAt: row.adoptedAt,
-        definition: def != null ? _mapDef(def) : null,
-      );
-
-  CompanionHistoryEntity _mapHistory(
-      CompanionHistory row,
-      CompanionDefEntity? def,
-      ) =>
-      CompanionHistoryEntity(
-        id: row.id,
-        userKey: row.userKey,
-        definitionId: row.definitionId,
-        levelReached: row.levelReached,
-        totalWordsLearned: row.totalWordsLearned,
-        adoptedAt: row.adoptedAt,
-        deletedAt: row.deletedAt,
-        definition: def,
-      );
+  CompanionDefinitionEntity _defToEntity(CompanionDefinition def) {
+    return CompanionDefinitionEntity(
+      id: def.id,
+      type: def.type,
+      name: def.name,
+      description: def.description,
+      iconKey: def.iconKey,
+      maxXpBonus: def.maxXpBonus,
+      maxLevel: def.maxLevel,
+      baseFoodPerLevel: def.baseFoodPerLevel,
+      scalingPow: def.scalingPow,
+      wordsPerFood: def.wordsPerFood,
+      maxFoodInventory: def.maxFoodInventory,
+      unlockUserLevel: def.unlockUserLevel,
+    );
+  }
 }

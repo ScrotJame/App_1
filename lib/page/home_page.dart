@@ -448,6 +448,8 @@ class _HomePageState extends State<HomePage>
           right: 20,
           bottom: 90,
           child: BubbleButton(
+            icon: AppImages.icCompanion,
+            width: 50,
             onTap: () async {
               final userKey = UserSession.instance.dbUserKey;
               Navigator.push(

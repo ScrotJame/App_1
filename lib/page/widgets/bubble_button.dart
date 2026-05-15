@@ -1,11 +1,19 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+
+import '../../commons/app_images.dart';
 
 
 class BubbleButton extends StatefulWidget {
+  final String? icon;
+  final String? label;
+  final double? width;
+  final double? height;
+  final Color? colorButton;
   final VoidCallback onTap;
 
-  const BubbleButton({required this.onTap});
+  const BubbleButton({super.key, required this.onTap, this.icon, this.label, this.colorButton, this.width, this.height});
 
   @override
   State<BubbleButton> createState() => BubbleButtonState();
@@ -100,8 +108,30 @@ class BubbleButtonState extends State<BubbleButton>
       child: Stack(
         children: [
           _buildHighlight(),
-          const Center(
-            child: Icon(Icons.add_rounded, color: Colors.white, size: 32),
+
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SvgPicture.asset(
+                  widget.icon ?? '',
+                  width: widget.width !=null ? widget.width : 25,
+                ),
+
+
+                if(widget.label != null)...[
+                  const SizedBox(height: 4),
+                  Text(
+                  widget.label ?? '',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),]
+              ],
+            ),
           ),
         ],
       ),

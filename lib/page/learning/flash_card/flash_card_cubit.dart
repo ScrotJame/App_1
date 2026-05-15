@@ -1,18 +1,25 @@
 import 'dart:math';
 
 import 'package:bloc/bloc.dart';
+import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
+import 'package:test_abc/repository/companion_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 
 import '../../../commons/enums.dart';
+import '../../../commons/user_sesion.dart';
+import '../../../models/entity/active_companion_entity.dart';
 import '../../../models/flash_card_model.dart';
 import '../../../models/tag_vocab.dart';
 part 'flash_card_state.dart';
 
 class FlashCardCubit extends Cubit<FlashCardState> {
   final VocabularyRepository _repo;
+  final CompanionRepository _repoCompanion;
 
-  FlashCardCubit(this._repo) : super(FlashCardState());
+  FlashCardCubit(this._repo, this._repoCompanion) : super(FlashCardState());
+
+  final userKey = UserSession.instance.userKey;
 
   Future<void> start() async {
     emit(state.copyWith(loadstatus: LOADSTATUS.LOADING));
@@ -51,19 +58,24 @@ class FlashCardCubit extends Cubit<FlashCardState> {
     ));
   }
 
-  /// Chọn độ khó → highlight → advance sau 350ms
-  // void rate(DifficultyRating rating) {
-  //   if (state.currentCard == null) return;
-  //   if (state.status == FlashcardArenaStatus.completed) return;
-  //
-  //   final newResults = [...state.results, FlashcardResult(card: state.currentCard, rating: rating)];
-  //
-  //   // 1. Highlight rating button
-  //   emit(state.copyWith(pendingRating: rating, results: newResults));
-  //
-  //   // 2. Advance sau animation delay
-  //   Future.delayed(const Duration(milliseconds: 350), _advance);
-  // }
+  Future<void> exitAndSave(double wordsCount) async {
+    if (!state.hasActiveCompanion || wordsCount <= 0) return;
+    try {
+      final foodEarned = await _repoCompanion.earnFood(
+        userKey: userKey,
+        wordsLearned: wordsCount,
+      );
+      if (foodEarned > 0) {
+        emit(state.copyWith(lastFoodEarned: foodEarned));
+      }
+    } catch (e) {
+      emit(state.copyWith(
+        companionStatus: LOADSTATUS.FAILED,
+        errorMessage: e.toString(),
+      ));
+    }
+  }
+
 
   void restart() => start();
 
@@ -91,4 +103,26 @@ class FlashCardCubit extends Cubit<FlashCardState> {
       ));
     }
   }
+
+
+  Future<void> earnFood(double wordsCount) async {
+    if (!state.hasActiveCompanion || wordsCount <= 0) return;
+
+    try {
+      final foodEarned = await _repoCompanion.earnFood(
+        userKey: userKey,
+        wordsLearned: wordsCount,
+      );
+
+      if (foodEarned > 0) {
+        emit(state.copyWith(lastFoodEarned: foodEarned));
+      }
+    } catch (e) {
+      emit(state.copyWith(
+        companionStatus: LOADSTATUS.FAILED,
+        errorMessage: e.toString(),
+      ));
+    }
+  }
+
 }
