@@ -7,7 +7,7 @@ class CompanionHistoryEntity {
   final String? userKey;
   final int? definitionId;
   final int? levelReached;
-  final int? totalWordsLearned;
+  final double? totalWordsLearned;
   final DateTime? adoptedAt;
   final DateTime? deletedAt;
 

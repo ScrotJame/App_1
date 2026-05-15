@@ -30,6 +30,9 @@ class AppImages {
   static final icBadge ='assets/vector/ic_badge.svg';
   static final icLearnHistory ='assets/vector/ic_learn_history.svg';
   static final icLanguage ='assets/vector/ic_language.svg';
+  static final icPetFood ='assets/vector/ic_pet_food.svg';
+  static final icWaterCan ='assets/vector/ic_watering_can.svg';
+  static final icCompanion = 'assets/vector/ic_companion.svg';
 
 }
 

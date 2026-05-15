@@ -22,25 +22,28 @@ enum CompanionStatus {
 class CompanionState extends Equatable {
   final CompanionStatus status;
 
-  // ── Active companion ────────────────────────────────────────
+  // ── Active companion ─────────────────────────────────────────
   final ActiveCompanionEntity? activeCompanion;
 
-  // ── Browsing ────────────────────────────────────────────────
+  // ── Browsing ─────────────────────────────────────────────────
   /// 'pet' | 'plant' | null
   final String? browsingType;
-  final List<CompanionDefEntity> availableDefinitions;
+  final List<CompanionDefinitionEntity> availableDefinitions;
 
   /// Definition đang pending chọn (tap lần 1)
   final int? pendingDefinitionId;
 
-  // ── Level-up feedback ───────────────────────────────────────
+  // ── Food feedback ─────────────────────────────────────────────
   /// Set khi companion vừa lên cấp (để trigger animation)
   final int? justReachedLevel;
 
-  /// Words vừa nạp (để hiện +N animation)
-  final int? lastWordsAdded;
+  /// Số food vừa được earn từ học từ (để hiện "+N food" toast)
+  final int? lastFoodEarned;
 
-  // ── Error ────────────────────────────────────────────────────
+  /// true ngay sau khi feed thành công (để trigger animation)
+  final bool justFed;
+
+  // ── Error ─────────────────────────────────────────────────────
   final String? errorMessage;
 
   const CompanionState({
@@ -50,21 +53,29 @@ class CompanionState extends Equatable {
     this.availableDefinitions = const [],
     this.pendingDefinitionId,
     this.justReachedLevel,
-    this.lastWordsAdded,
+    this.lastFoodEarned,
+    this.justFed = false,
     this.errorMessage,
   });
 
   bool get hasActiveCompanion => activeCompanion != null;
   bool get isMaxLevel => activeCompanion?.isMaxLevel ?? false;
 
+  /// Có food trong kho để cho ăn không?
+  bool get canFeed =>
+      hasActiveCompanion &&
+          !isMaxLevel &&
+          (activeCompanion!.foodInventory ?? 0) > 0;
+
   CompanionState copyWith({
     CompanionStatus? status,
     ActiveCompanionEntity? activeCompanion,
     String? browsingType,
-    List<CompanionDefEntity>? availableDefinitions,
+    List<CompanionDefinitionEntity>? availableDefinitions,
     int? pendingDefinitionId,
     int? justReachedLevel,
-    int? lastWordsAdded,
+    int? lastFoodEarned,
+    bool? justFed,
     String? errorMessage,
     bool clearActive = false,
     bool clearPending = false,
@@ -82,8 +93,9 @@ class CompanionState extends Equatable {
       clearPending ? null : (pendingDefinitionId ?? this.pendingDefinitionId),
       justReachedLevel:
       clearFeedback ? null : (justReachedLevel ?? this.justReachedLevel),
-      lastWordsAdded:
-      clearFeedback ? null : (lastWordsAdded ?? this.lastWordsAdded),
+      lastFoodEarned:
+      clearFeedback ? null : (lastFoodEarned ?? this.lastFoodEarned),
+      justFed: clearFeedback ? false : (justFed ?? this.justFed),
       errorMessage:
       clearError ? null : (errorMessage ?? this.errorMessage),
     );
@@ -97,7 +109,8 @@ class CompanionState extends Equatable {
     availableDefinitions,
     pendingDefinitionId,
     justReachedLevel,
-    lastWordsAdded,
+    lastFoodEarned,
+    justFed,
     errorMessage,
   ];
 }

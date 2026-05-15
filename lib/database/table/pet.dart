@@ -1,26 +1,8 @@
-// companion_table.dart
-// Drift table definitions — companion system (pet / plant).
-//
-// Cơ chế chính:
-//   • Mỗi từ học được  →  +food/water  →  companion lên cấp
-//   • Cấp càng cao càng cần nhiều từ (exponential scaling)
-//   • Đổi companion    →  XÓA HOÀN TOÀN, lưu vào history, bắt đầu lại
-//   • Mỗi user chỉ có 1 active companion tại 1 thời điểm
-//
-// Thêm vào @DriftDatabase:
-//   tables: [
-//     ...existing,
-//     CompanionDefinitions,
-//     ActiveCompanions,
-//     CompanionWordLogs,
-//     CompanionHistories,
-//   ]
-
 import 'package:drift/drift.dart';
-import 'user.dart'; // references UsersEntrie
+import 'user.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. CompanionDefinitions  –  static templates (seed once)
+// 1. CompanionDefinitions  –  blueprint cho từng loại companion
 // ─────────────────────────────────────────────────────────────────────────────
 
 class CompanionDefinitions extends Table {
@@ -35,32 +17,35 @@ class CompanionDefinitions extends Table {
   /// Emoji hoặc asset path để render UI
   TextColumn get iconKey => text()();
 
-  // ── XP bonus stat (duy nhất) ────────────────────────────────
+  // ── XP bonus stat ────────────────────────────────────────────
   /// Bonus XP % tối đa khi đạt maxLevel  (vd: 0.25 = +25%)
   RealColumn get maxXpBonus =>
       real().withDefault(const Constant(0.10))();
 
-  // ── Progression config ──────────────────────────────────────
-  /// Số cấp tối đa
+  // ── Progression config ───────────────────────────────────────
   IntColumn get maxLevel => integer().withDefault(const Constant(10))();
 
-  /// Số từ cần để lên cấp 1→2 (base)
-  /// wordsNeeded(level) = (baseWords * level^scalingPow).ceil()
-  /// Ví dụ base=10, scaling=1.5:
-  ///   Cấp 1: 10 từ | Cấp 2: 14 từ | Cấp 5: 35 từ | Cấp 10: 100 từ
-  IntColumn get baseWords => integer().withDefault(const Constant(10))();
+  /// Số food item cần để lên 1 cấp (base, scale theo level)
+  /// foodNeeded(level) = (baseFoodPerLevel * level^scalingPow).ceil()
+  IntColumn get baseFoodPerLevel =>
+      integer().withDefault(const Constant(5))();
   RealColumn get scalingPow =>
       real().withDefault(const Constant(1.5))();
 
-  // ── Unlock condition ────────────────────────────────────────
+  // ── Food earn rate ───────────────────────────────────────────
+  /// Số từ cần học để nhận được 1 food item
+  /// Ví dụ: wordsPerFood = 10 → học 10 từ = +1 food
+  IntColumn get wordsPerFood =>
+      integer().withDefault(const Constant(10))();
+
+  /// Số food tối đa có thể tích lũy (inventory cap)
+  IntColumn get maxFoodInventory =>
+      integer().withDefault(const Constant(10))();
+
+  // ── Unlock condition ─────────────────────────────────────────
   IntColumn get unlockUserLevel =>
       integer().withDefault(const Constant(1))();
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 2. ActiveCompanions  –  companion đang nuôi (1 row / user)
-//    Khi đổi companion: DELETE row này → lưu CompanionHistory → INSERT mới
-// ─────────────────────────────────────────────────────────────────────────────
 
 class ActiveCompanions extends Table {
   /// Primary key = userKey (enforce 1 companion / user at DB level)
@@ -73,15 +58,32 @@ class ActiveCompanions extends Table {
   /// Cấp hiện tại (1 → maxLevel)
   IntColumn get level => integer().withDefault(const Constant(1))();
 
-  /// Tổng số từ đã học kể từ khi adopt companion này
-  IntColumn get totalWordsLearned =>
+  // ── Food inventory ───────────────────────────────────────────
+  /// Số food/water item đang tích lũy trong kho
+  /// Tăng khi học từ, giảm khi user tap "Cho ăn / Tưới cây"
+  IntColumn get foodInventory =>
       integer().withDefault(const Constant(0))();
 
-  /// Số từ đã tích lũy trong cấp hiện tại
+  /// Phần dư từ học chưa đủ để đổi thành food
+  /// pendingWords + wordsCount >= wordsPerFood → +1 food, reset pendingWords
+  RealColumn get pendingWords =>
+      real().withDefault(const Constant(0))();
+
+  // ── Progression ──────────────────────────────────────────────
+  /// Số food đã dùng trong cấp hiện tại (tiến trình lên cấp)
   /// Reset về 0 mỗi khi lên cấp
-  IntColumn get wordsInCurrentLevel =>
+  IntColumn get foodUsedInCurrentLevel =>
       integer().withDefault(const Constant(0))();
 
+  /// Tổng food đã dùng kể từ khi adopt companion này (cross-level)
+  IntColumn get totalFoodUsed =>
+      integer().withDefault(const Constant(0))();
+
+  /// Tổng số từ đã học kể từ khi adopt (để thống kê)
+  RealColumn get totalWordsLearned =>
+      real().withDefault(const Constant(0))();
+
+  // ── XP bonus cache ───────────────────────────────────────────
   /// Bonus XP % hiện tại — cached, tính lại mỗi lần lên cấp
   /// currentXpBonus = maxXpBonus * (level / maxLevel)
   RealColumn get currentXpBonus =>
@@ -102,25 +104,26 @@ class ActiveCompanions extends Table {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. CompanionWordLogs  –  log mỗi batch từ học được
+// 3. CompanionFoodLogs  –  log mỗi lần user dùng food cho companion
+//    (thay thế CompanionWordLogs cũ — word earning được track qua pendingWords)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class CompanionWordLogs extends Table {
+class CompanionFoodLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
 
   TextColumn get userKey =>
       text().references(UsersEntrie, #keyOpen)();
 
-  /// Số từ học được trong lần này
-  IntColumn get wordsCount => integer()();
+  /// Số food đã dùng trong lần này (thường = 1)
+  IntColumn get foodUsed => integer()();
 
-  /// Level companion tại thời điểm nhận
+  /// Level companion tại thời điểm dùng food
   IntColumn get levelAtTime => integer()();
 
   /// Companion definition (để trace kể cả sau khi đổi)
   IntColumn get definitionId => integer()();
 
-  /// Companion lên cấp trong lần này không?
+  /// Companion lên cấp sau lần feed này không?
   BoolColumn get causedLevelUp =>
       boolean().withDefault(const Constant(false))();
 
@@ -129,8 +132,29 @@ class CompanionWordLogs extends Table {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. CompanionHistories  –  lưu companion đã bị xóa (để hiển thị "đã qua")
+// 4. CompanionWordEarnLogs  –  log mỗi khi học từ → nhận food
+//    Giúp debug và hiển thị lịch sử "bạn vừa nhận được N food"
 // ─────────────────────────────────────────────────────────────────────────────
+
+class CompanionWordEarnLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  TextColumn get userKey =>
+      text().references(UsersEntrie, #keyOpen)();
+
+  /// Số từ đã học trong session này
+  RealColumn get wordsLearned => real()();
+
+  /// Số food nhận được từ batch từ này
+  RealColumn get foodEarned => real()();
+
+  /// Companion definition tại thời điểm nhận
+  IntColumn get definitionId => integer()();
+
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime)();
+}
+
 
 class CompanionHistories extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -143,8 +167,11 @@ class CompanionHistories extends Table {
   /// Level đạt được trước khi bị xóa
   IntColumn get levelReached => integer()();
 
-  /// Tổng từ đã học với companion này
-  IntColumn get totalWordsLearned => integer()();
+  /// Tổng food đã dùng với companion này
+  IntColumn get totalFoodUsed => integer()();
+
+  /// Tổng từ đã học (để thống kê)
+  RealColumn get totalWordsLearned => real()();
 
   DateTimeColumn get adoptedAt => dateTime()();
 

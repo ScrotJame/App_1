@@ -18,7 +18,7 @@ part 'app_db.g.dart';
 @DriftDatabase(tables: [
   VocabularyEntries, UnitsEntries, Tags, VocabularyTags,
   UsersEntrie, UserActivitiesEntrie, UserWordProgressEntrie,
-  ItemsEntrie, UserItemsEntrie,CompanionDefinitions, ActiveCompanions, CompanionWordLogs, CompanionHistories
+  ItemsEntrie, UserItemsEntrie,CompanionDefinitions, ActiveCompanions, CompanionFoodLogs, CompanionHistories, CompanionWordEarnLogs
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -101,7 +101,6 @@ class AppDatabase extends _$AppDatabase {
         iconKey: '🐱',
         maxXpBonus: const Value(0.20), // +20% XP tối đa
         maxLevel: const Value(10),
-        baseWords: const Value(10),
         scalingPow: const Value(1.5),
         unlockUserLevel: const Value(1),
       ),
@@ -112,7 +111,6 @@ class AppDatabase extends _$AppDatabase {
         iconKey: '🐶',
         maxXpBonus: const Value(0.25),
         maxLevel: const Value(10),
-        baseWords: const Value(12),
         scalingPow: const Value(1.5),
         unlockUserLevel: const Value(1),
       ),
@@ -123,7 +121,6 @@ class AppDatabase extends _$AppDatabase {
         iconKey: '🦉',
         maxXpBonus: const Value(0.30),
         maxLevel: const Value(10),
-        baseWords: const Value(15),
         scalingPow: const Value(1.6),
         unlockUserLevel: const Value(2),
       ),
@@ -134,7 +131,6 @@ class AppDatabase extends _$AppDatabase {
         iconKey: '🐉',
         maxXpBonus: const Value(0.40),
         maxLevel: const Value(10),
-        baseWords: const Value(20),
         scalingPow: const Value(1.8),
         unlockUserLevel: const Value(5),
       ),
@@ -147,7 +143,6 @@ class AppDatabase extends _$AppDatabase {
         iconKey: '🌱',
         maxXpBonus: const Value(0.18),
         maxLevel: const Value(10),
-        baseWords: const Value(10),
         scalingPow: const Value(1.5),
         unlockUserLevel: const Value(1),
       ),
@@ -158,7 +153,6 @@ class AppDatabase extends _$AppDatabase {
         iconKey: '🌸',
         maxXpBonus: const Value(0.22),
         maxLevel: const Value(10),
-        baseWords: const Value(11),
         scalingPow: const Value(1.5),
         unlockUserLevel: const Value(1),
       ),
@@ -169,7 +163,6 @@ class AppDatabase extends _$AppDatabase {
         iconKey: '🌵',
         maxXpBonus: const Value(0.20),
         maxLevel: const Value(10),
-        baseWords: const Value(8),
         scalingPow: const Value(1.4),
         unlockUserLevel: const Value(1),
       ),
@@ -180,7 +173,6 @@ class AppDatabase extends _$AppDatabase {
         iconKey: '🌳',
         maxXpBonus: const Value(0.35),
         maxLevel: const Value(10),
-        baseWords: const Value(18),
         scalingPow: const Value(1.7),
         unlockUserLevel: const Value(3),
       ),

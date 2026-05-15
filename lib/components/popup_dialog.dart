@@ -11,6 +11,7 @@ class PopUpDialog extends StatefulWidget {
   final String? message;
   final bool onClose;
   final List<Widget>? child;
+  final VoidCallback? onGetResult;
   final VoidCallback? onRestart;
 
   const PopUpDialog({
@@ -19,7 +20,7 @@ class PopUpDialog extends StatefulWidget {
     this.message,
     this.onClose = true,
     this.child,
-    this.onRestart});
+    this.onRestart, this.onGetResult});
 
   @override
   State<PopUpDialog> createState() => _PopUpDialogState();
@@ -140,7 +141,14 @@ class _PopUpDialogState extends State<PopUpDialog>
                         child: SizedBox(
                           height: 48,
                           child: ElevatedButton(
-                            onPressed: () => AppRouter.router.navigateTo(context, Routes.home),
+                            onPressed: ()
+                            {
+                              widget.onGetResult?.call();
+                              Navigator.of(context).pushNamedAndRemoveUntil(
+                                Routes.home,
+                                    (route) => false,
+                              );
+                            },
                             style: buttonStyle.copyWith(
                               backgroundColor: WidgetStateProperty.all(Colors.grey[200]),
                               foregroundColor: WidgetStateProperty.all(Colors.black87),

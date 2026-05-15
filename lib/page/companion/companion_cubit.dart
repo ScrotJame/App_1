@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import '../../models/entity/active_companion_entity.dart';
+import '../../models/entity/companion_definition_entity.dart';
 import '../../repository/companion_repository.dart';
 
 part 'companion_state.dart';
@@ -19,7 +21,7 @@ class CompanionCubit extends Cubit<CompanionState> {
     _init();
   }
 
-  // ── Init ─────────────────────────────────────────────────────
+  // ── Init ──────────────────────────────────────────────────────
 
   void _init() {
     emit(state.copyWith(status: CompanionStatus.loading));
@@ -34,9 +36,10 @@ class CompanionCubit extends Cubit<CompanionState> {
           return;
         }
 
-        // Detect level-up
+        // Detect level-up qua stream
         final prevLevel = state.activeCompanion?.level ?? 0;
-        final justLeveledUp = active.level > prevLevel && prevLevel > 0;
+        final justLeveledUp =
+            (active.level ?? 0) > prevLevel && prevLevel > 0;
 
         emit(state.copyWith(
           status: CompanionStatus.active,
@@ -51,9 +54,8 @@ class CompanionCubit extends Cubit<CompanionState> {
     );
   }
 
-  // ── Browse type ──────────────────────────────────────────────
+  // ── Browse type ───────────────────────────────────────────────
 
-  /// User chọn tab 'pet' hoặc 'plant'
   Future<void> browseType(String type) async {
     assert(type == 'pet' || type == 'plant');
     emit(state.copyWith(
@@ -74,7 +76,6 @@ class CompanionCubit extends Cubit<CompanionState> {
     }
   }
 
-  /// Quay lại màn chọn loại (chỉ khi chưa có companion)
   void backToTypeChoice() {
     if (state.hasActiveCompanion) return;
     emit(state.copyWith(
@@ -85,19 +86,15 @@ class CompanionCubit extends Cubit<CompanionState> {
     ));
   }
 
-  // ── Pending / Confirm ────────────────────────────────────────
+  // ── Pending / Confirm ─────────────────────────────────────────
 
-  /// Tap vào một companion card → set pending
   void setPending(int definitionId) {
     if (state.pendingDefinitionId == definitionId) return;
     emit(state.copyWith(pendingDefinitionId: definitionId));
   }
 
-  void clearPending() {
-    emit(state.copyWith(clearPending: true));
-  }
+  void clearPending() => emit(state.copyWith(clearPending: true));
 
-  /// Xác nhận adopt — không có companion cũ
   Future<void> confirmAdopt() async {
     final defId = state.pendingDefinitionId;
     if (defId == null) return;
@@ -105,7 +102,6 @@ class CompanionCubit extends Cubit<CompanionState> {
     emit(state.copyWith(status: CompanionStatus.loading));
     try {
       await _repo.adoptCompanion(userKey: _userKey, definitionId: defId);
-      // Stream sẽ tự update status → active
     } catch (e) {
       emit(state.copyWith(
         status: CompanionStatus.error,
@@ -114,10 +110,8 @@ class CompanionCubit extends Cubit<CompanionState> {
     }
   }
 
-  // ── Switch companion (có companion cũ → dialog xác nhận) ─────
+  // ── Switch companion ──────────────────────────────────────────
 
-  /// Gọi khi user đang có companion và muốn chọn cái mới.
-  /// UI phải hiện Dialog trước khi gọi confirmSwitch().
   void requestSwitch(int newDefinitionId) {
     emit(state.copyWith(
       status: CompanionStatus.confirmingDelete,
@@ -132,7 +126,6 @@ class CompanionCubit extends Cubit<CompanionState> {
     ));
   }
 
-  /// Thực sự xóa companion cũ và nhận con mới
   Future<void> confirmSwitch() async {
     final defId = state.pendingDefinitionId;
     if (defId == null) return;
@@ -143,7 +136,6 @@ class CompanionCubit extends Cubit<CompanionState> {
         userKey: _userKey,
         newDefinitionId: defId,
       );
-      // Stream sẽ tự update
     } catch (e) {
       emit(state.copyWith(
         status: CompanionStatus.error,
@@ -152,19 +144,21 @@ class CompanionCubit extends Cubit<CompanionState> {
     }
   }
 
-  // ── Feed words ───────────────────────────────────────────────
 
-  /// Gọi sau mỗi phiên học — [wordsCount] = số từ user vừa học được.
-  /// Companion sẽ nhận thức ăn/nước và có thể lên cấp.
-  Future<void> feedWords(int wordsCount) async {
-    if (!state.hasActiveCompanion || wordsCount <= 0) return;
+
+  // ── Feed companion (gọi khi user tap nút) ────────────────────
+
+  /// User tap "Cho ăn / Tưới cây":
+  ///   - Lấy 1 food từ inventory
+  ///   - Tăng foodUsedInCurrentLevel
+  ///   - Nếu đủ → lên cấp (stream sẽ detect)
+  Future<void> feedCompanion() async {
+    if (!state.canFeed) return;
+
     try {
-      await _repo.feedWords(
-        userKey: _userKey,
-        wordsCount: wordsCount,
-      );
-      emit(state.copyWith(lastWordsAdded: wordsCount));
-      // level-up được detect tự động qua stream so sánh level
+      await _repo.feedCompanion(userKey: _userKey);
+      emit(state.copyWith(justFed: true));
+      // Level-up detect tự động qua stream so sánh level
     } catch (e) {
       emit(state.copyWith(
         status: CompanionStatus.error,
@@ -173,7 +167,7 @@ class CompanionCubit extends Cubit<CompanionState> {
     }
   }
 
-  // ── Helpers ──────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────
 
   void clearFeedback() {
     emit(state.copyWith(clearFeedback: true, clearError: true));

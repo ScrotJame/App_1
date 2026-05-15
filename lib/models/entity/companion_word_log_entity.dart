@@ -4,7 +4,7 @@ part 'companion_word_log_entity.g.dart';
 class CompanionWordLogEntity {
   final int? id;
   final String? userKey;
-  final int? wordsCount;
+  final int? foodUsed;
   final int? levelAtTime;
   final int? definitionId;
   final bool? causedLevelUp;
@@ -13,7 +13,7 @@ class CompanionWordLogEntity {
   const CompanionWordLogEntity({
     this.id,
     this.userKey,
-    this.wordsCount,
+    this.foodUsed,
     this.levelAtTime,
     this.definitionId,
     this.causedLevelUp,
