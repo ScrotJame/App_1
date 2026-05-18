@@ -6,6 +6,7 @@ import 'package:test_abc/database/app_db.dart';
 import 'package:test_abc/helper/language_helper.dart';
 
 import '../../models/tag_vocab.dart';
+import '../../models/unit_entity.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../add_word/add_word_cubit.dart';
 import '../add_word/add_word_page.dart';
@@ -13,9 +14,18 @@ import '../scan_vocab/scan_vocab_page.dart';
 import '../widgets/app_gradient_header.dart';
 import '../widgets/drop_down_widget.dart';
 import 'list_word_cubit.dart';
+///use
+//Navigator.push(
+//       context,
+//       MaterialPageRoute(
+//         builder: (_) => ListWordPage(unit: unitWithWords),
+//       ),
+//     );
 
 class ListWordPage extends StatefulWidget {
-  const ListWordPage({super.key});
+  final UnitWithWords? unit;
+
+  const ListWordPage({super.key, this.unit});
 
   @override
   State<ListWordPage> createState() => _ListWordPageState();
@@ -31,8 +41,12 @@ class _ListWordPageState extends State<ListWordPage> {
   void initState() {
     super.initState();
     _cubit = ListWordCubit(context.read<VocabularyRepository>());
-    _cubit.loadWords();
-    _cubit.getLanguageTags();
+    if (widget.unit != null) {
+      _cubit.loadFromUnit(widget.unit!.words);
+    } else {
+      _cubit.loadWords();
+      _cubit.getLanguageTags();
+    }
   }
 
   @override
@@ -74,7 +88,20 @@ class _ListWordPageState extends State<ListWordPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(),
-                _buildFilterBar(),
+              if (widget.unit == null)...
+              [_buildFilterBar()]
+                else ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    '${widget.unit!.words.length} từ vựng',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ],
                 Expanded(child: _buildWordList()),
               ],
             ),
@@ -119,8 +146,8 @@ class _ListWordPageState extends State<ListWordPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Vocabulary List',
+                      Text(
+                        widget.unit?.unit.title ?? 'Vocabulary List', // ← MỚI
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
@@ -128,8 +155,6 @@ class _ListWordPageState extends State<ListWordPage> {
                           letterSpacing: -0.5,
                         ),
                       ),
-                      const SizedBox(height: 2),
-
                     ],
                   ),
                 ),

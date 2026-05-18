@@ -22,6 +22,7 @@ import '../router/router.dart';
 import 'add_word/add_word_page.dart';
 import 'home_cubit.dart';
 import 'learning/flash_card/flash_card_page.dart';
+import 'list_unit/list_unit_page.dart';
 import 'list_word/list_word_page.dart';
 import 'widgets/avatar/avatar_widget.dart';
 
@@ -56,7 +57,7 @@ class _HomePageState extends State<HomePage>
       label: (ctx) => S.of(ctx).library.capitalizeWords(),
       primaryColor: const Color(0xFF5EC95C),
       secondaryColor: const Color(0xFF3A7D34),
-      pageBuilder: (_) => ListWordPage(),
+      pageBuilder: (_) => ListUnitPage(),
     ),
     IslandItem(
       label: (ctx) => S.of(ctx).flash_card.capitalizeWords(),

@@ -30,6 +30,18 @@ class ListWordCubit extends Cubit<ListWordState> {
     }
   }
 
+  void loadFromUnit(List<VocabularyEntry> words) {
+    final withTags = words
+        .map((w) => VocabularyWithTags(word: w, languageTags: w.language))
+        .toList();
+
+    emit(state.copyWith(
+      allWords: withTags,
+      filteredWords: _applyFilter(withTags, null, state.searchQuery),
+      loadstatus: LOADSTATUS.SUCCESS,
+    ));
+  }
+
   Future<void> getLanguageTags() async {
     try {
       final tags = await _repo.getLanguageTags();
