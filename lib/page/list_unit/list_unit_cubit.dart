@@ -1,7 +1,9 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:test_abc/repository/vocabulary_repository.dart';
 
 import '../../commons/enums.dart';
+import '../../database/app_db.dart';
 import '../../models/unit_entity.dart';
 import '../../repository/unit_repository.dart';
 
@@ -9,8 +11,9 @@ part 'list_unit_state.dart';
 
 class ListUnitCubit extends Cubit<ListUnitState> {
   final UnitRepository _repo;
+  final VocabularyRepository _vocabRepo;
 
-  ListUnitCubit(this._repo) : super(const ListUnitState());
+  ListUnitCubit(this._repo, this._vocabRepo) : super(const ListUnitState());
 
   Future<void> loadUnits() async {
     emit(state.copyWith(loadStatus: LOADSTATUS.LOADING));
@@ -100,10 +103,12 @@ class ListUnitCubit extends Cubit<ListUnitState> {
 
   Future<void> deleteUnit(int id) async {
     try {
+      emit(state.copyWith( loadStatus: LOADSTATUS.LOADING));
       await _repo.deleteUnit(id);
-      // Xóa khỏi expandedUnitIds nếu có
       final current = Set<int>.from(state.expandedUnitIds)..remove(id);
-      emit(state.copyWith(expandedUnitIds: current));
+      emit(state.copyWith(
+          loadStatus: LOADSTATUS.SUCCESS,
+          expandedUnitIds: current));
       await loadUnits();
     } catch (e) {
       emit(state.copyWith(
@@ -149,4 +154,75 @@ class ListUnitCubit extends Cubit<ListUnitState> {
 
     return result;
   }
+
+  Future<void> loadWordWithoutUnit() async{
+    try{
+      emit(state.copyWith(loadStatus: LOADSTATUS.LOADING));
+
+      final words = await _repo.getWordsNotInAnyUnit();
+      emit(state.copyWith(
+        loadStatus: LOADSTATUS.SUCCESS,
+        unassignedWords: words,
+      ));
+    }
+    catch (e){
+      emit(state.copyWith(
+        loadStatus: LOADSTATUS.FAILED,
+        errorMessage: 'Looi $e'
+      ));
+    }
+  }
+
+  Future<void> addWordToUnit({required int unitId,
+    required String word,
+    required String meaning,
+    String? pronunciation,
+    String? language,
+  }) async {
+    try {
+      final wordId = await _vocabRepo.insertWord(
+        word: word,
+        meaning: meaning,
+        pronunciation: pronunciation,
+        language: language,
+      );
+      await _repo.addWordToUnit(wordId: wordId, unitId: unitId);
+      await loadUnits();
+    } catch (e) {
+      emit(state.copyWith(
+        loadStatus: LOADSTATUS.FAILED,
+        errorMessage: 'Thêm từ thất bại: $e',
+      ));
+    }
+  }
+
+  Future<void> assignExistingWordToUnit({
+    required int wordId,
+    required int unitId,
+  }) async {
+    try {
+      await _repo.addWordToUnit(wordId: wordId, unitId: unitId);
+      await loadUnits();
+      await loadWordWithoutUnit();
+    } catch (e) {
+      emit(state.copyWith(
+        loadStatus: LOADSTATUS.FAILED,
+        errorMessage: 'Gán từ thất bại: $e',
+      ));
+    }
+  }
+
+  /// Tháo từ khỏi unit (không xóa từ).
+  Future<void> removeWordFromUnit({required int wordId}) async {
+    try {
+      await _repo.removeWordFromUnit(wordId: wordId);
+      await loadUnits();
+    } catch (e) {
+      emit(state.copyWith(
+        loadStatus: LOADSTATUS.FAILED,
+        errorMessage: 'Tháo từ thất bại: $e',
+      ));
+    }
+  }
+
 }

@@ -7,6 +7,7 @@ class ListUnitState extends Equatable {
     this.allUnits = const [],
     this.filteredUnits = const [],
     this.expandedUnitIds = const {},
+    this.unassignedWords = const [],
     this.searchQuery = '',
     this.isSearching = false,
     this.sortOrder = UnitSortOrder.byId,
@@ -22,6 +23,9 @@ class ListUnitState extends Equatable {
 
   /// Tập hợp id của các unit đang expand
   final Set<int> expandedUnitIds;
+
+  /// Từ chưa thuộc unit nào — dùng khi chọn từ để thêm vào unit
+  final List<VocabularyEntry> unassignedWords;
 
   final String searchQuery;
   final bool isSearching;
@@ -41,6 +45,7 @@ class ListUnitState extends Equatable {
     List<UnitWithWords>? allUnits,
     List<UnitWithWords>? filteredUnits,
     Set<int>? expandedUnitIds,
+    List<VocabularyEntry>? unassignedWords,
     String? searchQuery,
     bool? isSearching,
     UnitSortOrder? sortOrder,
@@ -51,6 +56,7 @@ class ListUnitState extends Equatable {
       allUnits: allUnits ?? this.allUnits,
       filteredUnits: filteredUnits ?? this.filteredUnits,
       expandedUnitIds: expandedUnitIds ?? this.expandedUnitIds,
+      unassignedWords: unassignedWords ?? this.unassignedWords,
       searchQuery: searchQuery ?? this.searchQuery,
       isSearching: isSearching ?? this.isSearching,
       sortOrder: sortOrder ?? this.sortOrder,
@@ -64,6 +70,7 @@ class ListUnitState extends Equatable {
     allUnits,
     filteredUnits,
     expandedUnitIds,
+    unassignedWords,
     searchQuery,
     isSearching,
     sortOrder,

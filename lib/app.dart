@@ -79,7 +79,7 @@ class _MyAppState extends State<MyApp> {
             create: (ctx) => ProfileCubit(ctx.read<UserRepository>())..loadProfile(),
           ),
           BlocProvider<ListUnitCubit>(
-            create: (ctx) => ListUnitCubit(ctx.read<UnitRepository>())
+            create: (ctx) => ListUnitCubit(ctx.read<UnitRepository>(), ctx.read<VocabularyRepository>())
           ),
         ],
         child: _buildMaterialApp(),
