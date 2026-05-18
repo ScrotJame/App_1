@@ -10,6 +10,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../commons/app_colors.dart';
 import '../../helper/language_helper.dart';
 import '../../models/model_local/support_language_local.dart';
+import '../../repository/unit_repository.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../scan_vocab/scan_vocab_cubit.dart';
 import '../scan_vocab/scan_vocab_page.dart';
@@ -18,11 +19,13 @@ import 'add_word_cubit.dart';
 class AddWordPage extends StatefulWidget {
   final PageType type;
   final VocabularyEntry? initialEntry;
+  final int? unitId; // null = thêm vào tổng, non-null = thêm thẳng vào unit
 
   const AddWordPage({
     super.key,
     this.type = PageType.Add,
     this.initialEntry,
+    this.unitId,
   }) : assert(
   type == PageType.Add || initialEntry != null,
   'initialEntry là bắt buộc khi type = PageType.Put',
@@ -51,6 +54,7 @@ class _AddWordPageState extends State<AddWordPage>
     _cubit = AddWordCubit(
       context.read<VocabularyRepository>(),
       context.read<TagRepository>(),
+      widget.unitId != null ? context.read<UnitRepository>() : null,
     );
 
     if (_isEditMode && widget.initialEntry != null) {
@@ -92,6 +96,14 @@ class _AddWordPageState extends State<AddWordPage>
   Future<void> _onSubmit() async {
     if (_isEditMode) {
       await _cubit.updateWord(widget.initialEntry!.id);
+    } else if (widget.unitId != null) {
+      await _cubit.saveWordToUnit(
+        unitId: widget.unitId!,
+        word: _cubit.state.vocabulary,
+        meaning: _cubit.state.meaning,
+        pronunciation: _cubit.state.furigana.isNotEmpty ? _cubit.state.furigana : null,
+        language: _cubit.state.detectedLanguage,
+      );
     } else {
       await _cubit.saveWord();
     }
@@ -105,9 +117,11 @@ class _AddWordPageState extends State<AddWordPage>
         listener: (context, state) {
           if (state.loadstatus == LOADSTATUS.SUCCESS) {
             _showSuccessSnackbar(context);
-            if (_isEditMode) {
+            if (_isEditMode || widget.unitId != null) {
+              // Edit mode hoặc add vào unit → pop về, trả true để caller reload
               Navigator.maybePop(context, true);
             } else {
+              // Add mode thông thường → reset form để tiếp tục thêm
               _cubit.reset();
               _cubit.loadTags();
               _vocabularyController.clear();
@@ -155,7 +169,7 @@ class _AddWordPageState extends State<AddWordPage>
         onPressed: () => Navigator.maybePop(context),
       ),
       title: Text(
-        _isEditMode ? 'Chỉnh sửa từ' : 'Thêm mới',
+        _isEditMode ? 'Chỉnh sửa từ' : (widget.unitId != null ? 'Thêm vào unit' : 'Thêm mới'),
         style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w700,

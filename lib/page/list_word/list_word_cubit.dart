@@ -1,17 +1,91 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:test_abc/database/app_db.dart';
 
 import '../../commons/enums.dart';
 import '../../models/tag_vocab.dart';
+import '../../models/unit_entity.dart';
+import '../../repository/unit_repository.dart';
 import '../../repository/vocabulary_repository.dart';
 
 part 'list_word_state.dart';
 
 class ListWordCubit extends Cubit<ListWordState> {
   final VocabularyRepository _repo;
+  final UnitRepository? _unitRepo;
+  final int? _unitId; // non-null = đang xem list từ của unit cụ thể
 
-  ListWordCubit(this._repo) : super(const ListWordState());
+  StreamSubscription<List<UnitWithWords>>? _unitStreamSub;
+
+  /// Dùng khi xem toàn bộ từ vựng
+  ListWordCubit(this._repo)
+      : _unitRepo = null,
+        _unitId = null,
+        super(const ListWordState());
+
+  /// Dùng khi xem từ vựng của một unit — tự watch stream DB
+  ListWordCubit.forUnit(this._repo, UnitRepository unitRepo, int unitId)
+      : _unitRepo = unitRepo,
+        _unitId = unitId,
+        super(const ListWordState());
+
+  /// Gọi trong initState khi ở unit mode — subscribe stream DB để realtime
+  void watchUnit() {
+    if (_unitRepo == null || _unitId == null) return;
+
+    emit(state.copyWith(loadstatus: LOADSTATUS.LOADING));
+
+    _unitStreamSub = _unitRepo!.watchAllUnitsWithWords().listen(
+          (units) {
+        final match = units.where((u) => u.unit.id == _unitId).firstOrNull;
+        if (match == null) return;
+
+        final withTags = match.words
+            .map((w) => VocabularyWithTags(word: w, languageTags: w.language))
+            .toList();
+
+        emit(state.copyWith(
+          allWords: withTags,
+          filteredWords: _applyFilter(withTags, state.activeLanguage, state.searchQuery),
+          unitWordCount: match.words.length,
+          loadstatus: LOADSTATUS.SUCCESS,
+        ));
+      },
+      onError: (e) => emit(state.copyWith(
+        loadstatus: LOADSTATUS.FAILED,
+        errorMessage: 'Tải dữ liệu thất bại: $e',
+      )),
+    );
+  }
+
+  /// Gọi sau khi thêm từ vào unit để đảm bảo list luôn cập nhật,
+  /// dùng làm fallback nếu stream không tự emit (tuỳ implementation của UnitRepository).
+  Future<void> reloadUnit() async {
+    if (_unitRepo == null || _unitId == null) return;
+    try {
+      final units = await _unitRepo!.watchAllUnitsWithWords().first;
+      final match = units.where((u) => u.unit.id == _unitId).firstOrNull;
+      if (match == null) return;
+
+      final withTags = match.words
+          .map((w) => VocabularyWithTags(word: w, languageTags: w.language))
+          .toList();
+
+      emit(state.copyWith(
+        allWords: withTags,
+        filteredWords: _applyFilter(withTags, state.activeLanguage, state.searchQuery),
+        unitWordCount: match.words.length,
+        loadstatus: LOADSTATUS.SUCCESS,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        loadstatus: LOADSTATUS.FAILED,
+        errorMessage: 'Tải dữ liệu thất bại: $e',
+      ));
+    }
+  }
 
   Future<void> loadWords() async {
     emit(state.copyWith(loadstatus: LOADSTATUS.LOADING));
@@ -30,7 +104,8 @@ class ListWordCubit extends Cubit<ListWordState> {
     }
   }
 
-  void loadFromUnit(List<VocabularyEntry> words) {
+  /// Giữ lại để tương thích ngược
+  Future<void> loadFromUnit(List<VocabularyEntry> words) async {
     final withTags = words
         .map((w) => VocabularyWithTags(word: w, languageTags: w.language))
         .toList();
@@ -38,6 +113,7 @@ class ListWordCubit extends Cubit<ListWordState> {
     emit(state.copyWith(
       allWords: withTags,
       filteredWords: _applyFilter(withTags, null, state.searchQuery),
+      unitWordCount: words.length,
       loadstatus: LOADSTATUS.SUCCESS,
     ));
   }
@@ -108,7 +184,11 @@ class ListWordCubit extends Cubit<ListWordState> {
   Future<void> deleteWord(int id) async {
     try {
       await _repo.deleteWord(id);
-      await loadWords();
+      if (_unitId != null) {
+        await reloadUnit();
+      } else {
+        await loadWords();
+      }
     } catch (e) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
@@ -141,5 +221,11 @@ class ListWordCubit extends Cubit<ListWordState> {
     }
 
     return result;
+  }
+
+  @override
+  Future<void> close() {
+    _unitStreamSub?.cancel();
+    return super.close();
   }
 }

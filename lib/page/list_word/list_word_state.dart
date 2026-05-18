@@ -9,6 +9,7 @@ class ListWordState extends Equatable {
   final bool isSearching;
   final LOADSTATUS loadstatus;
   final String? errorMessage;
+  final int unitWordCount;
 
   const ListWordState({
     this.allWords = const [],
@@ -19,6 +20,7 @@ class ListWordState extends Equatable {
     this.isSearching = false,
     this.loadstatus = LOADSTATUS.INITAL,
     this.errorMessage,
+    this.unitWordCount = 0,
   });
 
   int get totalCount => allWords.length;
@@ -33,6 +35,7 @@ class ListWordState extends Equatable {
     bool? isSearching,
     LOADSTATUS? loadstatus,
     String? errorMessage,
+    int? unitWordCount,
   }) {
     return ListWordState(
       allWords: allWords ?? this.allWords,
@@ -43,6 +46,7 @@ class ListWordState extends Equatable {
       isSearching: isSearching ?? this.isSearching,
       loadstatus: loadstatus ?? this.loadstatus,
       errorMessage: errorMessage ?? this.errorMessage,
+      unitWordCount: unitWordCount ?? this.unitWordCount,
     );
   }
 
@@ -56,5 +60,6 @@ class ListWordState extends Equatable {
     isSearching,
     loadstatus,
     errorMessage,
+    unitWordCount,
   ];
 }

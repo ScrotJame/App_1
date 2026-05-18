@@ -7,6 +7,7 @@ import 'package:test_abc/helper/language_helper.dart';
 
 import '../../models/tag_vocab.dart';
 import '../../models/unit_entity.dart';
+import '../../repository/unit_repository.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../add_word/add_word_cubit.dart';
 import '../add_word/add_word_page.dart';
@@ -40,10 +41,16 @@ class _ListWordPageState extends State<ListWordPage> {
   @override
   void initState() {
     super.initState();
-    _cubit = ListWordCubit(context.read<VocabularyRepository>());
     if (widget.unit != null) {
-      _cubit.loadFromUnit(widget.unit!.words);
+      // Unit mode: dùng named constructor, watch stream DB realtime
+      _cubit = ListWordCubit.forUnit(
+        context.read<VocabularyRepository>(),
+        context.read<UnitRepository>(),
+        widget.unit!.unit.id,
+      );
+      _cubit.watchUnit();
     } else {
+      _cubit = ListWordCubit(context.read<VocabularyRepository>());
       _cubit.loadWords();
       _cubit.getLanguageTags();
     }
@@ -63,7 +70,7 @@ class _ListWordPageState extends State<ListWordPage> {
         builder: (_) => AddWordPage(type: PageType.Put, initialEntry: word),
       ),
     );
-    if (updated == true) _cubit.loadWords();
+    // Stream tự cập nhật sau khi edit/delete trong unit mode
   }
 
   @override
@@ -83,25 +90,30 @@ class _ListWordPageState extends State<ListWordPage> {
         child: Scaffold(
           backgroundColor: const Color(0xFFF5F6FA),
           body: RefreshIndicator(
-            onRefresh: () => _cubit.loadWords(),
+            onRefresh: () async {
+              if (widget.unit == null) {
+                await Future.wait([_cubit.loadWords(), _cubit.getLanguageTags()]);
+              }
+              // Unit mode: stream tự cập nhật, không cần làm gì
+            },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(),
-              if (widget.unit == null)...
-              [_buildFilterBar()]
+                if (widget.unit == null)...
+                [_buildFilterBar()]
                 else ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                    '${widget.unit!.words.length} từ vựng',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: BlocBuilder<ListWordCubit, ListWordState>(
+                      buildWhen: (p, c) => p.unitWordCount != c.unitWordCount,
+                      builder: (context, state) => Text(
+                        '${state.unitWordCount} từ vựng',
+                        style: TextStyle(fontSize: 13, color: Colors.black),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
                 Expanded(child: _buildWordList()),
               ],
             ),
@@ -396,7 +408,9 @@ class _ListWordPageState extends State<ListWordPage> {
           hasDividerAbove: true,
           onTap: () async {
             final confirm = await _confirmDelete(word);
-            if (confirm) _cubit.deleteWord(word.id);
+            if (confirm) {
+              await _cubit.deleteWord(word.id);
+            }
           },
         ),
       ],
@@ -531,11 +545,21 @@ class _ListWordPageState extends State<ListWordPage> {
   Widget _buildFAB() {
     return FloatingActionButton(
       onPressed: () async {
-        await Navigator.push(
+        final added = await Navigator.push<bool>(
           context,
-          MaterialPageRoute(builder: (_) => AddWordPage()),
+          MaterialPageRoute(
+            builder: (_) => AddWordPage(
+              unitId: widget.unit?.unit.id, // null = add tổng, non-null = add vào unit
+            ),
+          ),
         );
-        _cubit.loadWords();
+        // Fallback reload: nếu stream không tự emit (do UnitRepository
+        // không watch bảng word_unit), reload thủ công sau khi thêm từ.
+        if (added == true && widget.unit != null) {
+          await _cubit.reloadUnit();
+        } else if (added == true && widget.unit == null) {
+          await _cubit.loadWords();
+        }
       },
       backgroundColor: const Color(0xFF6B7FD4),
       elevation: 4,

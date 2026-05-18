@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:test_abc/database/app_db.dart';
 import 'package:test_abc/repository/tag_repository.dart';
+import 'package:test_abc/repository/unit_repository.dart';
 
 import '../../commons/enums.dart';
 import '../../helper/language_helper.dart';
@@ -15,8 +16,9 @@ part 'add_word_state.dart';
 class AddWordCubit extends Cubit<AddWordState> {
   final VocabularyRepository _repo;
   final TagRepository _tagRepository;
+  final UnitRepository? _unitRepository;
 
-  AddWordCubit(this._repo, this._tagRepository) : super(AddWordState());
+  AddWordCubit(this._repo, this._tagRepository, [this._unitRepository]) : super(AddWordState());
 
   // ─── Khởi tạo dữ liệu khi ở mode Put ─────────────────────
   Future<void> initForEdit(VocabularyEntry entry) async {
@@ -138,6 +140,37 @@ class AddWordCubit extends Cubit<AddWordState> {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
         errorMessage: 'Lưu thất bại: $e',
+      ));
+    }
+  }
+
+  Future<void> saveWordToUnit({required int unitId,
+    required String word,
+    required String meaning,
+    String? pronunciation,
+    String? language,
+  }) async {
+    if (word.trim().isEmpty || meaning.trim().isEmpty) {
+      emit(state.copyWith(
+        loadstatus: LOADSTATUS.FAILED,
+        errorMessage: word.trim().isEmpty ? 'Vui lòng nhập từ vựng' : 'Vui lòng nhập nghĩa',
+      ));
+      return;
+    }
+    emit(state.copyWith(loadstatus: LOADSTATUS.LOADING));
+    try {
+      final wordId = await _repo.insertWord(
+        word: word.trim(),
+        meaning: meaning.trim(),
+        pronunciation: pronunciation?.trim().isEmpty == true ? null : pronunciation?.trim(),
+        language: language,
+      );
+      await _unitRepository!.addWordToUnit(wordId: wordId, unitId: unitId);
+      emit(state.copyWith(loadstatus: LOADSTATUS.SUCCESS));
+    } catch (e) {
+      emit(state.copyWith(
+        loadstatus: LOADSTATUS.FAILED,
+        errorMessage: 'Thêm từ thất bại: $e',
       ));
     }
   }

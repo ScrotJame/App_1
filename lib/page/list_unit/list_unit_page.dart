@@ -7,6 +7,7 @@ import '../../models/unit_entity.dart';
 import '../../repository/unit_repository.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../list_word/list_word_page.dart';
+import '../widgets/app_gradient_header.dart';
 import 'list_unit_cubit.dart';
 
 // Bảng màu cho các unit (lặp vòng nếu > 6 unit)
@@ -64,10 +65,17 @@ class _ListUnitPageState extends State<ListUnitPage> {
         },
         child: Scaffold(
           backgroundColor: const Color(0xFFF5F6FA),
-          appBar: _buildAppBar(),
-          body: RefreshIndicator(
-            onRefresh: _cubit.loadUnits,
-            child: _buildBody(),
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _cubit.loadUnits,
+                  child: _buildBody(),
+                ),
+              ),
+            ],
           ),
           floatingActionButton: _buildFAB(),
         ),
@@ -76,48 +84,56 @@ class _ListUnitPageState extends State<ListUnitPage> {
   }
 
   // ─── AppBar ───────────────────────────────────────────────
-  PreferredSizeWidget _buildAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(kToolbarHeight),
-      child: BlocBuilder<ListUnitCubit, ListUnitState>(
-        buildWhen: (prev, curr) => prev.isSearching != curr.isSearching,
-        builder: (context, state) {
-          return AppBar(
-            backgroundColor: const Color(0xFFF5F6FA),
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            titleSpacing: 20,
-            title: state.isSearching
-                ? _buildSearchField()
-                : const Text(
-              'Vocabulary Units',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: Colors.black87,
-                letterSpacing: -0.5,
-              ),
-            ),
-            actions: [
-              IconButton(
-                icon: Icon(
-                  state.isSearching
-                      ? Icons.close_rounded
-                      : Icons.search_rounded,
-                  color: Colors.black87,
-                  size: 22,
+  Widget _buildHeader() {
+    return BlocBuilder<ListUnitCubit, ListUnitState>(
+      buildWhen: (prev, curr) => prev.isSearching != curr.isSearching,
+      builder: (context, state) {
+        final topPadding = MediaQuery.of(context).padding.top;
+        return AppGradientHeader(
+          height: topPadding + 90,
+          gradientColors: const [Color(0xFF7B8FE0), Color(0xFF5B6EC7)],
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, topPadding + 12, 8, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                InkWell(
+                    onTap: () => Navigator.pop(context),
+                    child: Icon(Icons.arrow_back_ios_new)),
+                const SizedBox(width: 6,),
+                Expanded(
+                  child: state.isSearching
+                      ? _buildSearchField()
+                      : Text(
+                    'Vocabulary Units',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
                 ),
-                onPressed: () {
-                  _cubit.toggleSearch();
-                  if (state.isSearching) _searchController.clear();
-                },
-              ),
-              _buildSortButton(),
-              const SizedBox(width: 4),
-            ],
-          );
-        },
-      ),
+                IconButton(
+                  icon: Icon(
+                    state.isSearching
+                        ? Icons.close_rounded
+                        : Icons.search_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                  onPressed: () {
+                    _cubit.toggleSearch();
+                    if (state.isSearching) _searchController.clear();
+                  },
+                ),
+                _buildSortButton(),
+                const SizedBox(width: 4),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -198,7 +214,15 @@ class _ListUnitPageState extends State<ListUnitPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSummaryBar(state),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text('${state.totalUnitCount} units',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade500),
+              ),
+            ),
             Expanded(
               child: state.filteredUnits.isEmpty
                   ? _buildEmptyState()
@@ -210,40 +234,6 @@ class _ListUnitPageState extends State<ListUnitPage> {
     );
   }
 
-  // ─── Summary bar ──────────────────────────────────────────
-  Widget _buildSummaryBar(ListUnitState state) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-      child: Row(
-        children: [
-          Text(
-            '${state.totalUnitCount} units · ${state.totalWordCount} words',
-            style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey.shade500),
-          ),
-          const Spacer(),
-          GestureDetector(
-            onTap: state.expandedUnitIds.length == state.allUnits.length
-                ? _cubit.collapseAll
-                : _cubit.expandAll,
-            child: Text(
-              state.expandedUnitIds.length == state.allUnits.length
-                  ? 'Thu gọn tất cả'
-                  : 'Mở rộng tất cả',
-              style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF6B7FD4)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── Unit list ────────────────────────────────────────────
   Widget _buildUnitList(ListUnitState state) {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
@@ -294,10 +284,11 @@ class _ListUnitPageState extends State<ListUnitPage> {
                   : BorderRadius.circular(16),
               onTap: () {
                 Navigator.push(
-                  context, MaterialPageRoute(
-                  builder: (_) => ListWordPage(unit: item),
-                ),
-                );
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ListWordPage(unit: item),
+                  ),
+                ).then((_) => _cubit.loadUnits());
               },
               //=> _cubit.toggleExpand(unit.id),
               child: Padding(
