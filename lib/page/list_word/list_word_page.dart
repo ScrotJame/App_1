@@ -1,16 +1,21 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/database/app_db.dart';
 import 'package:test_abc/helper/language_helper.dart';
 
+import '../../commons/app_images.dart';
 import '../../models/tag_vocab.dart';
 import '../../models/unit_entity.dart';
 import '../../repository/unit_repository.dart';
 import '../../repository/vocabulary_repository.dart';
+import '../../router/app_router.dart';
+import '../../router/router.dart';
 import '../add_word/add_word_cubit.dart';
 import '../add_word/add_word_page.dart';
+import '../list_unit/list_unit_page.dart';
 import '../scan_vocab/scan_vocab_page.dart';
 import '../widgets/app_gradient_header.dart';
 import '../widgets/drop_down_widget.dart';
@@ -37,12 +42,12 @@ class _ListWordPageState extends State<ListWordPage> {
   late final ListWordCubit _cubit;
   final _menuKey = GlobalKey();
   final _searchController = TextEditingController();
+  bool _isFabExpanded = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.unit != null) {
-      // Unit mode: dùng named constructor, watch stream DB realtime
       _cubit = ListWordCubit.forUnit(
         context.read<VocabularyRepository>(),
         context.read<UnitRepository>(),
@@ -70,7 +75,6 @@ class _ListWordPageState extends State<ListWordPage> {
         builder: (_) => AddWordPage(type: PageType.Put, initialEntry: word),
       ),
     );
-    // Stream tự cập nhật sau khi edit/delete trong unit mode
   }
 
   @override
@@ -94,7 +98,6 @@ class _ListWordPageState extends State<ListWordPage> {
               if (widget.unit == null) {
                 await Future.wait([_cubit.loadWords(), _cubit.getLanguageTags()]);
               }
-              // Unit mode: stream tự cập nhật, không cần làm gì
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,7 +136,7 @@ class _ListWordPageState extends State<ListWordPage> {
       builder: (context, state) {
         final topPadding = MediaQuery.of(context).padding.top;
         return AppGradientHeader(
-          height: topPadding + 110,
+          height: topPadding + 90,
           gradientColors: const [Color(0xFF7B8FE0), Color(0xFF5B6EC7)],
           child: Padding(
             padding: EdgeInsets.fromLTRB(20, topPadding + 12, 8, 12),
@@ -148,8 +151,13 @@ class _ListWordPageState extends State<ListWordPage> {
                       size: 22,
                     ),
                     onPressed: () {
-                      Navigator.pop(context);
-                    },
+                      if (widget.unit != null) {
+                        Navigator.pop(context);
+                      } else{
+                        AppRouter.router.navigateTo(context, Routes.home);
+                      }
+                    }
+                    ,
                   ),],
                 Expanded(
                   child: state.isSearching
@@ -183,12 +191,17 @@ class _ListWordPageState extends State<ListWordPage> {
                     if (state.isSearching) _searchController.clear();
                   },
                 ),
-                IconButton(
-                  icon: const Icon(Icons.tune_rounded,
-                      color: Colors.white, size: 22),
-                  onPressed: () {},
-                ),
-                const SizedBox(width: 4),
+                InkWell(
+                    onTap: (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ListUnitPage(),
+                        ),
+                      );
+                    },
+                    child: SvgPicture.asset(AppImages.icLibraryAdd, width: 24, color: Colors.white,)),
+                const SizedBox(width: 16),
               ],
             ),
           ),
@@ -475,7 +488,6 @@ class _ListWordPageState extends State<ListWordPage> {
   }
 
   Widget _buildBadge(String label) {
-    // JLPT tag (N1-N5) → tím, còn lại → xám
     final isJlpt = RegExp(r'^N[1-5]$').hasMatch(label);
     final color = isJlpt ? const Color(0xFFE8E3FF) : const Color(0xFFE8E8E8);
     final textColor =
@@ -527,44 +539,157 @@ class _ListWordPageState extends State<ListWordPage> {
     );
   }
 
-  Widget _buildDismissBackground() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.redAccent.shade100,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      alignment: Alignment.centerRight,
-      padding: const EdgeInsets.only(right: 20),
-      child: const Icon(Icons.delete_outline_rounded,
-          color: Colors.redAccent, size: 24),
+  // ─── FAB ──────────────────────────────────────────────────
+  Widget _buildFAB() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        AnimatedSlide(
+          duration: const Duration(milliseconds: 200),
+          offset: _isFabExpanded ? Offset.zero : const Offset(0, 0.3),
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: _isFabExpanded ? 1.0 : 0.0,
+            child: IgnorePointer(
+              ignoring: !_isFabExpanded,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _buildSpeedDialItem(
+                    icon: AppImages.icLibrary,
+                    label: 'Thư viện từ vựng',
+                    onTap: () {
+                      setState(() => _isFabExpanded = false);
+                      // TODO: mở trang thư viện
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildSpeedDialItem(
+                    icon: AppImages.icAddCircle,
+                    label: 'Thêm từ thủ công',
+                    onTap: () async {
+                      setState(() => _isFabExpanded = false);
+                      final added = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AddWordPage(
+                            unitId: widget.unit?.unit.id,
+                          ),
+                        ),
+                      );
+                      if (added == true && widget.unit != null) {
+                        await _cubit.reloadUnit();
+                      } else if (added == true && widget.unit == null) {
+                        await _cubit.loadWords();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildSpeedDialItem(
+                    icon: AppImages.icScanFile, // material-symbols:list
+                    label: 'Quét từ vựng',
+                    onTap: () async {
+                      setState(() => _isFabExpanded = false);
+                      final added = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ScanVocabPage(),
+                        ),
+                      );
+                      if (added == true && widget.unit != null) {
+                        await _cubit.reloadUnit();
+                      } else if (added == true && widget.unit == null) {
+                        await _cubit.loadWords();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // ── Main FAB ──
+        FloatingActionButton(
+          onPressed: () => setState(() => _isFabExpanded = !_isFabExpanded),
+          backgroundColor: const Color(0xFF6B7FD4),
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: AnimatedRotation(
+            duration: const Duration(milliseconds: 250),
+            turns: _isFabExpanded ? 0.125 : 0,
+            child: const Icon(Icons.add_rounded, color: Colors.white, size: 26),
+          ),
+        ),
+      ],
     );
   }
 
-  // ─── FAB ──────────────────────────────────────────────────
-  Widget _buildFAB() {
-    return FloatingActionButton(
-      onPressed: () async {
-        final added = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AddWordPage(
-              unitId: widget.unit?.unit.id, // null = add tổng, non-null = add vào unit
+  Widget _buildSpeedDialItem({
+    String? icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Label tooltip
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.12),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
             ),
           ),
-        );
-        // Fallback reload: nếu stream không tự emit (do UnitRepository
-        // không watch bảng word_unit), reload thủ công sau khi thêm từ.
-        if (added == true && widget.unit != null) {
-          await _cubit.reloadUnit();
-        } else if (added == true && widget.unit == null) {
-          await _cubit.loadWords();
-        }
-      },
-      backgroundColor: const Color(0xFF6B7FD4),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: const Icon(Icons.add_rounded, color: Colors.white, size: 26),
+        ),
+        const SizedBox(width: 12),
+        // Icon button
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFF6B7FD4),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF6B7FD4).withOpacity(0.35),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Center(
+              child: SvgPicture.asset(
+                icon ?? '',
+                width: 24,
+                height: 24,
+                color: Colors.white,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

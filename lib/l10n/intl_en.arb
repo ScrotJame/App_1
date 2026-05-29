@@ -72,5 +72,235 @@
   "my_space": "my space",
   "my_inventory": "inventory",
   "rewards": "rewards",
-  "learning_history": "learning history"
+  "learning_history": "learning history",
+  "hall_of_fame": "Hall of Fame",
+  "@hall_of_fame": {
+    "description": "Achievement page title"
+  },
+
+  "total_xp": "Total XP",
+  "@total_xp": {
+    "description": "Total experience points label"
+  },
+
+  "league": "League",
+  "@league": {
+    "description": "League rank label"
+  },
+
+  "badges": "Badges",
+  "@badges": {
+    "description": "Badge count label"
+  },
+
+  "overall_progress": "Overall Progress",
+  "@overall_progress": {
+    "description": "Overall progress bar label"
+  },
+
+  "achievements_unlocked": "achievements unlocked",
+  "@achievements_unlocked": {
+    "description": "Subtitle below unlocked achievements count"
+  },
+
+  "recent_badges": "Recent Badges",
+  "@recent_badges": {
+    "description": "Recent badges section title"
+  },
+
+  "view_all": "View All",
+  "@view_all": {
+    "description": "Button to view full list"
+  },
+
+  "earned_achievements": "Earned Achievements",
+  "@earned_achievements": {
+    "description": "Achievements list section title"
+  },
+
+  "filter_all": "All",
+  "@filter_all": {
+    "description": "Filter chip: show all categories"
+  },
+
+  "filter_milestone": "Milestone",
+  "@filter_milestone": {
+    "description": "Filter chip for milestone category"
+  },
+
+  "filter_streak": "Streak",
+  "@filter_streak": {
+    "description": "Filter chip for streak category"
+  },
+
+  "filter_collection": "Collection",
+  "@filter_collection": {
+    "description": "Filter chip for collection category"
+  },
+
+  "filter_special": "Special",
+  "@filter_special": {
+    "description": "Filter chip for special category"
+  },
+
+  "filterLabel": "{labelKey}",
+  "@filterLabel": {
+    "description": "Wrapper to resolve label from key — used when calling S.current.filterLabel(item.labelKey). Remove if project resolves directly using switch.",
+    "placeholders": {
+      "labelKey": {
+        "type": "String"
+      }
+    }
+  },
+
+  "achievementTitle": "{titleKey}",
+  "@achievementTitle": {
+    "description": "Achievement title — titleKey is the l10n key of each achievement, e.g. word_smith, social_butterfly",
+    "placeholders": {
+      "titleKey": {
+        "type": "String"
+      }
+    }
+  },
+
+  "achievementDesc": "{descriptionKey}",
+  "@achievementDesc": {
+    "description": "Achievement description — descriptionKey is the l10n key of each achievement",
+    "placeholders": {
+      "descriptionKey": {
+        "type": "String"
+      }
+    }
+  },
+
+  "achievement_unlocked": "ACHIEVEMENT UNLOCKED",
+  "@achievement_unlocked": {
+    "description": "Small title above achievement unlock popup"
+  },
+
+  "unlocked": "Unlocked",
+  "@unlocked": {
+    "description": "Unlocked status badge on achievement card"
+  },
+
+  "awesome": "Awesome!",
+  "@awesome": {
+    "description": "Final confirmation button in unlock dialog"
+  },
+
+  "next": "Next",
+  "@next": {
+    "description": "Button to move to next achievement in unlock dialog (when unlocking multiple)"
+  },
+
+  "load_failed": "Failed to load data",
+  "@load_failed": {
+    "description": "Error message when loading list fails"
+  },
+
+  "retry": "Retry",
+  "@retry": {
+    "description": "Retry button when loading fails"
+  },
+
+  "no_achievements": "No achievements in this category",
+  "@no_achievements": {
+    "description": "Empty state when filter has no results"
+  },
+
+  "word_smith": "Word Smith",
+  "@word_smith": {
+    "description": "Word Smith achievement title"
+  },
+
+  "word_smith_desc": "Learn 500 unique vocabulary words in any language",
+  "@word_smith_desc": {
+    "description": "Word Smith achievement description"
+  },
+
+  "social_butterfly": "Social Butterfly",
+  "@social_butterfly": {
+    "description": "Social Butterfly achievement title"
+  },
+
+  "social_butterfly_desc": "Add 10 friends to your LingoQuest guild",
+  "@social_butterfly_desc": {
+    "description": "Social Butterfly achievement description"
+  },
+
+  "night_owl": "Night Owl",
+  "@night_owl": {
+    "description": "Night Owl achievement title"
+  },
+
+  "night_owl_desc": "Complete 5 lessons after 10 PM",
+  "@night_owl_desc": {
+    "description": "Night Owl achievement description"
+  },
+
+  "on_fire": "On Fire",
+  "@on_fire": {
+    "description": "On Fire achievement title"
+  },
+
+  "on_fire_desc": "Maintain a 30-day learning streak",
+  "@on_fire_desc": {
+    "description": "On Fire achievement description"
+  },
+
+  "legend": "Legend",
+  "@legend": {
+    "description": "Legend achievement title"
+  },
+
+  "legend_desc": "Reach the top 3 of the global leaderboard",
+  "@legend_desc": {
+    "description": "Legend achievement description"
+  },
+
+  "first_step": "First Step",
+  "@first_step": {
+    "description": "First Step badge title"
+  },
+
+  "perfect_week": "Perfect Week",
+  "@perfect_week": {
+    "description": "Perfect Week badge title"
+  },
+
+  "polyglot": "Polyglot",
+  "@polyglot": {
+    "description": "Polyglot badge title"
+  },
+
+  "elite": "Elite",
+  "@elite": {
+    "description": "Elite badge title (locked)"
+  },
+  "achievement_first_word_title": "First Word",
+  "achievement_first_word_desc": "Learn your first word.",
+  "achievement_total_10_title": "Language Learner",
+  "achievement_total_10_desc": "Learn 10 words.",
+  "achievement_total_50_title": "Vocabulary Builder",
+  "achievement_total_50_desc": "Learn 50 words.",
+  "achievement_total_100_title": "Word Collector",
+  "achievement_total_100_desc": "Learn 100 words.",
+  "achievement_total_500_title": "Lexicon Master",
+  "achievement_total_500_desc": "Learn 500 words.",
+  "achievement_total_1000_title": "Language Expert",
+  "achievement_total_1000_desc": "Learn 1000 words.",
+  "achievement_streak_3_title": "Getting Started",
+  "achievement_streak_3_desc": "Maintain a 3-day streak.",
+  "achievement_streak_7_title": "Weekly Warrior",
+  "achievement_streak_7_desc": "Maintain a 7-day streak.",
+  "achievement_streak_30_title": "Monthly Dedication",
+  "achievement_streak_30_desc": "Maintain a 30-day streak.",
+  "achievement_streak_100_title": "Streak Legend",
+  "achievement_streak_100_desc": "Maintain a 100-day streak.",
+  "achievement_complete_unit_title": "Unit Finisher",
+  "achievement_complete_unit_desc": "Complete your first unit.",
+  "achievement_complete_unit_5_title": "Unit Conqueror",
+  "achievement_complete_unit_5_desc": "Complete 5 units.",
+  "achievement_night_owl_title": "Night Owl",
+  "achievement_night_owl_desc": "Practice late at night."
 }

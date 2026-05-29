@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/commons/enums.dart';
+import 'package:test_abc/components/edit_dialog.dart';
 
 import '../../database/app_db.dart';
 import '../../models/unit_entity.dart';
 import '../../repository/unit_repository.dart';
 import '../../repository/vocabulary_repository.dart';
+import '../../router/app_router.dart';
+import '../../router/router.dart';
 import '../list_word/list_word_page.dart';
 import '../widgets/app_gradient_header.dart';
 import 'list_unit_cubit.dart';
@@ -97,9 +102,12 @@ class _ListUnitPageState extends State<ListUnitPage> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                InkWell(
-                    onTap: () => Navigator.pop(context),
-                    child: Icon(Icons.arrow_back_ios_new)),
+                if(!state.isSearching)...[
+                  InkWell(
+                    onTap: () => AppRouter.router.navigateTo(context, Routes.home),
+                    child: Icon(Icons.arrow_back_ios_new, color: Colors.white,)
+                  ),
+                ],
                 const SizedBox(width: 6,),
                 Expanded(
                   child: state.isSearching
@@ -127,8 +135,17 @@ class _ListUnitPageState extends State<ListUnitPage> {
                     if (state.isSearching) _searchController.clear();
                   },
                 ),
-                _buildSortButton(),
-                const SizedBox(width: 4),
+                InkWell(
+                    onTap: (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ListWordPage(),
+                        ),
+                      );
+                    },
+                    child: SvgPicture.asset(AppImages.icLibraryAdd, width: 24, color: Colors.white,)),
+                const SizedBox(width: 16),
               ],
             ),
           ),
@@ -345,19 +362,12 @@ class _ListUnitPageState extends State<ListUnitPage> {
                       padding: EdgeInsets.zero,
                       constraints:
                       const BoxConstraints(minWidth: 32, minHeight: 32),
-                      onPressed: () => _showEditDialog(
-                        unit.id,
-                        unit.title,
-                        unit.createdAt,
-                        unit.updatedAt,
+                      onPressed: () => showUpdateDialog(
+                        context,
+                        initialValue: unit.title,
+                        tagColor: color,
+                        onUpdate: (value) => _cubit.updateUnit(unit.id, value, unit.createdAt, unit.updatedAt),
                       ),
-                    ),
-                    // Expand arrow
-                    AnimatedRotation(
-                      turns: isExpanded ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(Icons.keyboard_arrow_down_rounded,
-                          color: Colors.grey.shade400),
                     ),
                   ],
                 ),

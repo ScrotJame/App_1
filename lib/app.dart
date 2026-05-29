@@ -4,9 +4,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:test_abc/page/list_unit/list_unit_cubit.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
+import 'package:test_abc/repository/achievement_repository.dart';
 import 'package:test_abc/repository/backup_data_repository.dart';
 import 'package:test_abc/repository/companion_repository.dart';
 import 'package:test_abc/repository/inventory_repository.dart';
+import 'package:test_abc/repository/learning_history_repository.dart';
 import 'package:test_abc/repository/shop_repository.dart';
 import 'package:test_abc/repository/tag_repository.dart';
 import 'package:test_abc/repository/unit_repository.dart';
@@ -68,6 +70,10 @@ class _MyAppState extends State<MyApp> {
             create:(_) => CompanionRepository(_db)),
         RepositoryProvider<InventoryRepository>(
             create:(_) => InventoryRepository(_db)),
+        RepositoryProvider<AchievementRepository>(
+            create:(_) => AchievementRepository(_db)),
+        RepositoryProvider<LearningHistoryRepository>(
+            create:(_) => LearningHistoryRepository(_db)),
       ],
       child: MultiBlocProvider(
         providers: [

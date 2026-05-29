@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:test_abc/commons/app_colors.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/generated/l10n.dart';
+import 'package:test_abc/page/achievement/achievement_page.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/ultis/extension/label_extension.dart';
@@ -455,7 +456,12 @@ class _ProfilePageState extends State<ProfilePage> {
               settingsItem(
                   icon: AppImages.icBadge,
                   label: S.current.rewards.capitalize(),
-                  onTap: () {}),
+                  onTap: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(
+                            builder: (_) => const AchievementPage()));
+                    //AchievementPage
+                  }),
             ],
           ),
         ),

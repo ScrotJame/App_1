@@ -33,6 +33,10 @@ class AppImages {
   static final icPetFood ='assets/vector/ic_pet_food.svg';
   static final icWaterCan ='assets/vector/ic_watering_can.svg';
   static final icCompanion = 'assets/vector/ic_companion.svg';
+  static final icAddCircle = 'assets/vector/ic_add_circle.svg';
+  static final icLibrary = 'assets/vector/ic_library.svg';
+  static final icLibraryAdd = 'assets/vector/ic_lib.svg';
+  static final icUnitBook = 'assets/vector/ic_unit_book.svg';
 
 }
 

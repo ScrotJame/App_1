@@ -18,7 +18,13 @@ class LanguageHelper {
       case 'zh': return 'Tiếng Trung';
       case 'ko': return 'Tiếng Hàn';
       case 'vi': return 'Tiếng Việt';
-      default:   return 'Tất cả';
+      case 'ru': return 'Tiếng Nga';
+      case 'th': return 'Tiếng Thái';
+      case 'fr': return 'Tiếng Pháp';
+      case 'da': return 'Tiếng Đan Mạch';
+      case 'de': return 'Tiếng Đức';
+      case 'es': return 'Tiếng Tây Ban Nha';
+      default: return 'Tất cả';
     }
   }
 

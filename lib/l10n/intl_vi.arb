@@ -72,5 +72,237 @@
   "my_space": "không gian của tôi",
   "my_inventory": "túi đồ",
   "rewards": "thành tựu",
-  "learning_history": "quá trình học"
+  "learning_history": "quá trình học",
+  "hall_of_fame": "Bảng Danh Vọng",
+  "@hall_of_fame": {
+    "description": "Tiêu đề trang thành tựu"
+  },
+
+  "total_xp": "Tổng XP",
+  "@total_xp": {
+    "description": "Nhãn tổng điểm kinh nghiệm"
+  },
+
+  "league": "Hạng",
+  "@league": {
+    "description": "Nhãn hạng đấu"
+  },
+
+  "badges": "Huy hiệu",
+  "@badges": {
+    "description": "Nhãn số lượng huy hiệu"
+  },
+
+  "overall_progress": "Tiến độ tổng thể",
+  "@overall_progress": {
+    "description": "Nhãn thanh tiến độ tổng quan"
+  },
+
+  "achievements_unlocked": "thành tựu đã mở khóa",
+  "@achievements_unlocked": {
+    "description": "Phụ đề bên dưới số lượng thành tựu đã mở"
+  },
+
+  "recent_badges": "Huy Hiệu Gần Đây",
+  "@recent_badges": {
+    "description": "Tiêu đề khu vực huy hiệu gần đây"
+  },
+
+  "view_all": "Xem tất cả",
+  "@view_all": {
+    "description": "Nút xem toàn bộ danh sách"
+  },
+
+  "earned_achievements": "Thành Tựu Đạt Được",
+  "@earned_achievements": {
+    "description": "Tiêu đề khu vực danh sách thành tựu"
+  },
+
+  "filter_all": "Tất cả",
+  "@filter_all": {
+    "description": "Chip lọc: hiển thị tất cả category"
+  },
+
+  "filter_milestone": "Cột mốc",
+  "@filter_milestone": {
+    "description": "Chip lọc category milestone"
+  },
+
+  "filter_streak": "Chuỗi ngày",
+  "@filter_streak": {
+    "description": "Chip lọc category streak"
+  },
+
+  "filter_collection": "Bộ sưu tập",
+  "@filter_collection": {
+    "description": "Chip lọc category collection"
+  },
+
+  "filter_special": "Đặc biệt",
+  "@filter_special": {
+    "description": "Chip lọc category special"
+  },
+
+  "filterLabel": "{labelKey}",
+  "@filterLabel": {
+    "description": "Wrapper resolve label từ key — dùng khi gọi S.current.filterLabel(item.labelKey). Nếu dự án resolve trực tiếp bằng switch thì bỏ key này.",
+    "placeholders": {
+      "labelKey": {
+        "type": "String"
+      }
+    }
+  },
+
+  "achievementTitle": "{titleKey}",
+  "@achievementTitle": {
+    "description": "Tên thành tựu — titleKey là key l10n của từng thành tựu, ví dụ: word_smith, social_butterfly",
+    "placeholders": {
+      "titleKey": {
+        "type": "String"
+      }
+    }
+  },
+
+  "achievementDesc": "{descriptionKey}",
+  "@achievementDesc": {
+    "description": "Mô tả thành tựu — descriptionKey là key l10n của từng thành tựu",
+    "placeholders": {
+      "descriptionKey": {
+        "type": "String"
+      }
+    }
+  },
+
+  "achievement_unlocked": "THÀNH TỰU MỞ KHÓA",
+  "@achievement_unlocked": {
+    "description": "Tiêu đề nhỏ phía trên popup mở khóa thành tựu"
+  },
+
+  "unlocked": "Đã mở khóa",
+  "@unlocked": {
+    "description": "Badge trạng thái đã mở khóa trên card thành tựu"
+  },
+
+  "awesome": "Tuyệt vời!",
+  "@awesome": {
+    "description": "Nút xác nhận cuối cùng trong dialog unlock"
+  },
+
+  "next": "Tiếp theo",
+  "@next": {
+    "description": "Nút chuyển sang thành tựu tiếp theo trong dialog unlock (khi mở nhiều cùng lúc)"
+  },
+
+  "load_failed": "Không thể tải dữ liệu",
+  "@load_failed": {
+    "description": "Thông báo lỗi khi tải danh sách thất bại"
+  },
+
+  "retry": "Thử lại",
+  "@retry": {
+    "description": "Nút thử tải lại khi gặp lỗi"
+  },
+
+  "no_achievements": "Không có thành tựu nào trong mục này",
+  "@no_achievements": {
+    "description": "Empty state khi filter không có kết quả"
+  },
+
+  "word_smith": "Thợ Từ Ngữ",
+  "@word_smith": {
+    "description": "Tên thành tựu Word Smith"
+  },
+
+  "word_smith_desc": "Học 500 từ vựng độc đáo trong bất kỳ ngôn ngữ nào",
+  "@word_smith_desc": {
+    "description": "Mô tả thành tựu Word Smith"
+  },
+
+  "social_butterfly": "Cánh Bướm Xã Hội",
+  "@social_butterfly": {
+    "description": "Tên thành tựu Social Butterfly"
+  },
+
+  "social_butterfly_desc": "Thêm 10 bạn vào guild LingoQuest của bạn",
+  "@social_butterfly_desc": {
+    "description": "Mô tả thành tựu Social Butterfly"
+  },
+
+  "night_owl": "Cú Đêm",
+  "@night_owl": {
+    "description": "Tên thành tựu Night Owl"
+  },
+
+  "night_owl_desc": "Hoàn thành 5 bài học sau 10 giờ tối",
+  "@night_owl_desc": {
+    "description": "Mô tả thành tựu Night Owl"
+  },
+
+  "on_fire": "Bùng Cháy",
+  "@on_fire": {
+    "description": "Tên thành tựu On Fire"
+  },
+
+  "on_fire_desc": "Duy trì chuỗi học liên tục 30 ngày",
+  "@on_fire_desc": {
+    "description": "Mô tả thành tựu On Fire"
+  },
+
+  "legend": "Huyền Thoại",
+  "@legend": {
+    "description": "Tên thành tựu Legend"
+  },
+
+  "legend_desc": "Lọt top 3 bảng xếp hạng toàn cầu",
+  "@legend_desc": {
+    "description": "Mô tả thành tựu Legend"
+  },
+
+  "first_step": "Bước Đầu Tiên",
+  "@first_step": {
+    "description": "Tên huy hiệu First Step"
+  },
+
+  "perfect_week": "Tuần Hoàn Hảo",
+  "@perfect_week": {
+    "description": "Tên huy hiệu Perfect Week"
+  },
+
+  "polyglot": "Đa Ngôn Ngữ",
+  "@polyglot": {
+    "description": "Tên huy hiệu Polyglot"
+  },
+
+  "elite": "Tinh Hoa",
+  "@elite": {
+    "description": "Tên huy hiệu Elite (chưa mở khóa)"
+  },
+
+  "achievement_first_word_title": "Từ đầu tiên",
+  "achievement_first_word_desc": "Học từ đầu tiên của bạn.",
+  "achievement_total_10_title": "Người học ngôn ngữ",
+  "achievement_total_10_desc": "Học 10 từ.",
+  "achievement_total_50_title": "Xây dựng vốn từ",
+  "achievement_total_50_desc": "Học 50 từ.",
+  "achievement_total_100_title": "Nhà sưu tập từ",
+  "achievement_total_100_desc": "Học 100 từ.",
+  "achievement_total_500_title": "Bậc thầy ngôn ngữ",
+  "achievement_total_500_desc": "Học 500 từ.",
+  "achievement_total_1000_title": "Chuyên gia ngôn ngữ",
+  "achievement_total_1000_desc": "Học 1000 từ.",
+  "achievement_streak_3_title": "Khởi động",
+  "achievement_streak_3_desc": "Duy trì chuỗi 3 ngày.",
+  "achievement_streak_7_title": "Chiến binh tuần",
+  "achievement_streak_7_desc": "Duy trì chuỗi 7 ngày.",
+  "achievement_streak_30_title": "Sự tận tâm hàng tháng",
+  "achievement_streak_30_desc": "Duy trì chuỗi 30 ngày.",
+  "achievement_streak_100_title": "Huyền thoại chuỗi",
+  "achievement_streak_100_desc": "Duy trì chuỗi 100 ngày.",
+  "achievement_complete_unit_title": "Hoàn thành đơn vị",
+  "achievement_complete_unit_desc": "Hoàn thành đơn vị đầu tiên.",
+  "achievement_complete_unit_5_title": "Chinh phục đơn vị",
+  "achievement_complete_unit_5_desc": "Hoàn thành 5 đơn vị.",
+  "achievement_night_owl_title": "Cú đêm",
+  "achievement_night_owl_desc": "Luyện tập vào đêm khuya."
+
 }
