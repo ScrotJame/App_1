@@ -18,6 +18,12 @@ class AppImages {
   static final imgGem = 'assets/images/ic_diamond.png';
   static final imgFreezeStreak ='assets/images/ic_freeze_streak.png';
   static final icStarXp ='assets/images/ic_star_xp.png';
+  static final imgLibLand= 'assets/images/ic_lib_island.png';
+  static final imgTrainLand= 'assets/images/ic_lib_island.png';
+  static final imgAddWordLand= 'assets/images/ic_lib_island.png';
+  static final imgTestLand= 'assets/images/ic_lib_island.png';
+  static final imgShopLand= 'assets/images/ic_lib_island.png';
+
   ///svg
   static final icScanFile ='assets/vector/ic_scan_file.svg';
   static final icAccount ='assets/vector/ic_account.svg';
