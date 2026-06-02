@@ -15,16 +15,23 @@ import '../../../commons/user_sesion.dart';
 import '../../../models/entity/active_companion_entity.dart';
 import '../../../models/flash_card_model.dart';
 import '../../../models/tag_vocab.dart';
+import '../learning_cubit.dart';
 part 'flash_card_state.dart';
 
 class FlashCardCubit extends Cubit<FlashCardState> {
   final VocabularyRepository _repo;
   final CompanionRepository _repoCompanion;
   final LearningHistoryRepository _repoHistory;
+  final LearningConfig? config;
 
   final PublishSubject<String> messageController = PublishSubject();
 
-  FlashCardCubit(this._repo, this._repoCompanion, this._repoHistory) : super(FlashCardState());
+  FlashCardCubit(
+    this._repo,
+    this._repoCompanion,
+    this._repoHistory, {
+    this.config,
+  }) : super(FlashCardState());
 
   final userKey = UserSession.instance.userKey;
 
@@ -32,13 +39,31 @@ class FlashCardCubit extends Cubit<FlashCardState> {
     emit(state.copyWith(loadstatus: LOADSTATUS.LOADING));
     try {
       final words = await _repo.watchAllWordsWithTags().first;
-      // Shuffle để mỗi session thứ tự khác nhau
-      final shuffled = List.of(words)..shuffle();
+      
+      // Apply filters from config
+      var filtered = List<VocabularyWithTags>.from(words);
+      if (config != null) {
+        if (config!.language != null && config!.language!.isNotEmpty) {
+          filtered = filtered.where((w) => w.word.language == config!.language).toList();
+        }
+        if (config!.unitId != null) {
+          filtered = filtered.where((w) => w.word.unitId == config!.unitId).toList();
+        }
+      }
+
+      // Shuffle
+      final shuffled = List.of(filtered)..shuffle();
+
+      // Limit the number of words
+      final finalWords = (config != null && config!.limitWords != null && config!.limitWords! > 0)
+          ? shuffled.take(config!.limitWords!).toList()
+          : shuffled;
+
       emit(state.copyWith(
-        cards: shuffled,
+        cards: finalWords,
         currentIndex: 0,
         isFlipped: false,
-        status: shuffled.isEmpty
+        status: finalWords.isEmpty
             ? FlashcardArenaStatus.completed
             : FlashcardArenaStatus.inProgress,
         loadstatus: LOADSTATUS.SUCCESS,
@@ -209,5 +234,4 @@ class FlashCardCubit extends Cubit<FlashCardState> {
     messageController.close();
     return super.close();
   }
-}
 }

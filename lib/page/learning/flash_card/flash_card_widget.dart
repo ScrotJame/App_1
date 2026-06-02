@@ -103,16 +103,21 @@ Widget _cardSide(VocabularyWithTags? card, bool? isFront,) {
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if ((card?.word.example ?? '').isNotEmpty)
-          Text(
-            card!.word.example!.toUpperCase(),
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 2,
-              color: front ? const Color(0xFF29B6F6) : Colors.white54,
-            ),
-          ),
+        () {
+          final example = card?.word.example;
+          if (example != null && example.trim().isNotEmpty) {
+            return Text(
+              example.trim().toUpperCase(),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+                color: front ? const Color(0xFF29B6F6) : Colors.white54,
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }(),
         const Spacer(),
         Text(
           front ? (card?.word.word ?? '') : (card?.word.meaning ?? ''),

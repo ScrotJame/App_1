@@ -19,6 +19,7 @@ script_run
 .claude/
 .codegraph/
 .gemini/
+.agents/
 .env
 migrate_working_dir/
 

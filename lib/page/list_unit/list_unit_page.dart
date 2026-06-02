@@ -277,7 +277,10 @@ class _ListUnitPageState extends State<ListUnitPage> {
       key: ValueKey(unit.id),
       direction: DismissDirection.endToStart,
       background: _buildDismissBackground(),
-      confirmDismiss: (_) => _confirmDelete(unit.title),
+      confirmDismiss: (_) async {
+        final result = await _confirmDelete(unit.title);
+        return result;
+      },
       onDismissed: (_) => _cubit.deleteUnit(unit.id),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -468,6 +471,7 @@ class _ListUnitPageState extends State<ListUnitPage> {
             tooltip: 'Tháo khỏi unit',
             onPressed: () async {
               final confirm = await _confirmRemoveWord(word.word);
+              if (!mounted) return; // thêm dòng này
               if (confirm) {
                 _cubit.removeWordFromUnit(wordId: word.id);
               }
@@ -558,7 +562,7 @@ class _ListUnitPageState extends State<ListUnitPage> {
   }
 
   void _showEditDialog(
-      int id, String currentTitle, DateTime? createdAt, DateTime updatedAt) {
+      int id, String currentTitle, DateTime? createdAt, DateTime? updatedAt) {
     _showUnitDialog(
       title: 'Đổi tên unit',
       initialValue: currentTitle,

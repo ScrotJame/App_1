@@ -22,6 +22,7 @@ import '../router/router.dart';
 import 'add_word/add_word_page.dart';
 import 'home_cubit.dart';
 import 'learning/flash_card/flash_card_page.dart';
+import 'learning/learning_page.dart';
 import 'list_unit/list_unit_page.dart';
 import 'list_word/list_word_page.dart';
 import 'widgets/avatar/avatar_widget.dart';
@@ -65,7 +66,7 @@ class _HomePageState extends State<HomePage>
       primaryColor: const Color(0xFF5B9EF5),
       secondaryColor: const Color(0xFF2A62C0),
       imagePath: AppImages.imgTrainLand,
-      pageBuilder: (_) => FlashCardPage(),
+      pageBuilder: (_) => LearningPage(),
     ),
     IslandItem(
       label: (ctx) => S.of(ctx).add_word.capitalizeWords(),

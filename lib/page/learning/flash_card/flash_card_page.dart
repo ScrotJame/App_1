@@ -11,6 +11,7 @@ import '../../../repository/vocabulary_repository.dart';
 import '../../../router/app_router.dart';
 import '../../../router/router.dart';
 import '../../widgets/avatar/xp_cubit.dart';
+import '../learning_cubit.dart';
 import 'flash_card_cubit.dart';
 import 'flash_card_widget.dart';
 
@@ -31,10 +32,12 @@ class _FlashCardPageState extends State<FlashCardPage> {
   @override
   void initState() {
     super.initState();
+    final config = context.read<LearningCubit>().state.config;
     _cubit = FlashCardCubit(
         context.read<VocabularyRepository>(),
         context.read<CompanionRepository>(),
-        context.read<LearningHistoryRepository>()
+        context.read<LearningHistoryRepository>(),
+        config: config,
     );
     _messageSubscription = _cubit.messageController.stream.listen((message) {
       if (mounted) {
@@ -298,10 +301,10 @@ class _FlashCardPageState extends State<FlashCardPage> {
           ),
         ],
           onGetResult: () async {
-            await context.read<XpCubit>().addXp(xpEarned);
-            await context.read<XpCubit>().addGems(gemsEarned);
+            final xpCubit = context.read<XpCubit>();
+            await xpCubit.addXp(xpEarned);
+            await xpCubit.addGems(gemsEarned);
             await _cubit.earnFood(foodEarned);
-            if (context.mounted) Navigator.of(context).pop();
           },
         onRestart: () {
           Navigator.of(context).pop();

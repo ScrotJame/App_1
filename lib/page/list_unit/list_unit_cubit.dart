@@ -18,16 +18,17 @@ class ListUnitCubit extends Cubit<ListUnitState> {
   Future<void> loadUnits() async {
     emit(state.copyWith(loadStatus: LOADSTATUS.LOADING));
     try {
+      await _repo.fixNullTimestamps();
       final units = await _repo.watchAllUnitsWithWords().first;
       emit(state.copyWith(
         allUnits: units,
         filteredUnits: _applyFilter(units, state.searchQuery, state.sortOrder),
         loadStatus: LOADSTATUS.SUCCESS,
       ));
-    } catch (e) {
+    } catch (e, stackTrace) {
       emit(state.copyWith(
         loadStatus: LOADSTATUS.FAILED,
-        errorMessage: 'Tải dữ liệu thất bại: $e',
+        errorMessage: 'Tải dữ liệu thất bại: $e\n$stackTrace',
       ));
     }
   }
@@ -89,9 +90,9 @@ class ListUnitCubit extends Cubit<ListUnitState> {
     }
   }
 
-  Future<void> updateUnit(int id, String newTitle, DateTime? createdAt, DateTime updatedAt) async {
+  Future<void> updateUnit(int id, String newTitle, DateTime? createdAt, DateTime? updatedAt) async {
     try {
-      await _repo.updateUnit(id, newTitle, createdAt, updatedAt);
+      await _repo.updateUnit(id, newTitle, createdAt, updatedAt ?? DateTime.now());
       await loadUnits();
     } catch (e) {
       emit(state.copyWith(
@@ -103,10 +104,10 @@ class ListUnitCubit extends Cubit<ListUnitState> {
 
   Future<void> deleteUnit(int id) async {
     try {
-      emit(state.copyWith( loadStatus: LOADSTATUS.LOADING));
+      if (!isClosed) emit(state.copyWith(loadStatus: LOADSTATUS.LOADING));
       await _repo.deleteUnit(id);
       final current = Set<int>.from(state.expandedUnitIds)..remove(id);
-      emit(state.copyWith(
+      if (!isClosed) emit(state.copyWith(
           loadStatus: LOADSTATUS.SUCCESS,
           expandedUnitIds: current));
       await loadUnits();
