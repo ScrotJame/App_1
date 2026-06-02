@@ -57,30 +57,35 @@ class _HomePageState extends State<HomePage>
       label: (ctx) => S.of(ctx).library.capitalizeWords(),
       primaryColor: const Color(0xFF5EC95C),
       secondaryColor: const Color(0xFF3A7D34),
+      imagePath: AppImages.imgLibLand,
       pageBuilder: (_) => ListUnitPage(),
     ),
     IslandItem(
       label: (ctx) => S.of(ctx).flash_card.capitalizeWords(),
       primaryColor: const Color(0xFF5B9EF5),
       secondaryColor: const Color(0xFF2A62C0),
+      imagePath: AppImages.imgTrainLand,
       pageBuilder: (_) => FlashCardPage(),
     ),
     IslandItem(
       label: (ctx) => S.of(ctx).add_word.capitalizeWords(),
       primaryColor: const Color(0xFFF5A623),
       secondaryColor: const Color(0xFFC47A0A),
+      imagePath: AppImages.imgAddWordLand,
       pageBuilder: (_) => AddWordPage(),
     ),
     IslandItem(
       label: (ctx) => S.of(ctx).test.capitalizeWords(),
       primaryColor: const Color(0xFFF52323),
       secondaryColor: const Color(0xFFC40A0A),
+      imagePath: AppImages.imgTestLand,
       pageBuilder: (_) => TestPage(),
     ),
     IslandItem(
       label: (ctx) => S.of(ctx).shop.capitalizeWords(),
       primaryColor: const Color(0xFF23F5BD),
       secondaryColor: const Color(0xFF1DBF94),
+      imagePath: AppImages.imgShopLand,
       pageBuilder: (_) => ShopPage(),
     ),
   ];
@@ -197,98 +202,46 @@ class _HomePageState extends State<HomePage>
       child: AnimatedOpacity(
         opacity: isSelected ? 1.0 : 0.65,
         duration: const Duration(milliseconds: 250),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [item.primaryColor, item.secondaryColor],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: item.secondaryColor.withOpacity(isSelected ? 0.55 : 0.25),
-                blurRadius: isSelected ? 24 : 12,
-                offset: const Offset(0, 10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            item.imagePath != null
+                ? Image.asset(
+              item.imagePath!,
+              fit: BoxFit.contain,
+              width: 250,
+              height: 250,
+            )
+                : Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [item.primaryColor, item.secondaryColor],
+                ),
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Hoa văn trang trí nền
-                Positioned(
-                  right: -20,
-                  top: -20,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.08),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: -30,
-                  bottom: -30,
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.06),
-                    ),
-                  ),
-                ),
-                // Nội dung chính
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 12),
-                    Text(
-                      item.label(context),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black26,
-                            offset: Offset(0, 2),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (isSelected) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.25),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'Đang chọn',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              item.label(context),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+                shadows: [
+                  Shadow(
+                    color: Colors.black26,
+                    offset: Offset(0, 2),
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -327,7 +280,7 @@ class _HomePageState extends State<HomePage>
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            height: 240,
+            height: 300,
             child: PageView.builder(
               controller: _pageController,
               itemCount: _islandItems.length,
@@ -339,8 +292,6 @@ class _HomePageState extends State<HomePage>
               },
             ),
           ),
-          const SizedBox(height: 12),
-          _buildDotIndicator(),
         ],
       ),
     );
@@ -441,6 +392,8 @@ class _HomePageState extends State<HomePage>
           children: [
             const SizedBox(height: 40),
             _buildFloatingIsland(),
+            const SizedBox(height: 24),
+            _buildDotIndicator(),
             const SizedBox(height: 48),
             _buildPlayButton(),
           ],

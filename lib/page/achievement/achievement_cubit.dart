@@ -21,6 +21,10 @@ class AchievementCubit extends Cubit<AchievementState> {
 
   AchievementCubit(this._repo) : super(const AchievementState());
 
+  void setUser(UsersEntrieData? user) {
+    emit(state.copyWith(user: user));
+  }
+
   // ── Khởi tạo dữ liệu trang ───────────────────────────────────
   Future<void> initData(String userKey) async {
     emit(state.copyWith(loadStatus: LOADSTATUS.LOADING));

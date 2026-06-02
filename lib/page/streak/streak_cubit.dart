@@ -1,7 +1,9 @@
 import 'package:bloc/bloc.dart';
 import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:test_abc/ultis/error_utils.dart';
 
 import '../../commons/enums.dart';
 import '../../database/app_db.dart';
@@ -13,6 +15,8 @@ class StreakCubit extends Cubit<StreakState> {
   final UserRepository _userRepository;
 
   static const String _prefKey = 'streak_marked_dates';
+  
+  final PublishSubject<String> messageController = PublishSubject();
 
   StreakCubit(this._userRepository) : super(const StreakState());
 
@@ -130,7 +134,7 @@ class StreakCubit extends Cubit<StreakState> {
       if (markedDates.isEmpty &&
           user.currentStreak > 0 &&
           user.lastActiveDate != null) {
-        final end = _dateOnly(user.lastActiveDate!);
+        final end = _dateOnly(user.lastActiveDate ?? DateTime.now());
         final generated = <String>{};
         for (int i = 0; i < user.currentStreak; i++) {
           final d = end.subtract(Duration(days: i));
@@ -152,16 +156,18 @@ class StreakCubit extends Cubit<StreakState> {
         weekOffset: 0,
         markedDates: markedDates,
         weekDays: weekDays,
-        weekStreak: currentStreak == 0 ? user.currentStreak : currentStreak,
+        weekStreak: currentStreak,
         longestStreak: dbLongestStreak,
         streakStartDate: streakStart,
         streakWasReset: streakWasReset,
       ));
     } catch (e) {
+      final errMsg = ErrorUtils.networkErrorToMessage(e);
       emit(state.copyWith(
         loadStatus: LOADSTATUS.FAILED,
-        errorMessage: e.toString(),
+        errorMessage: errMsg,
       ));
+      messageController.sink.add(errMsg);
     }
   }
 
@@ -238,5 +244,11 @@ class StreakCubit extends Cubit<StreakState> {
 
   void onInsightsTapped() {
     // TODO: navigate hoặc mở bottom sheet insights
+  }
+
+  @override
+  Future<void> close() {
+    messageController.close();
+    return super.close();
   }
 }

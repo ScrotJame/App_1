@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -28,16 +29,23 @@ class ShopPage extends StatefulWidget {
 class _ShopPageState extends State<ShopPage> {
   late ShopCubit _cubit;
   late final TextEditingController _searchCtrl;
+  StreamSubscription<String>? _messageSub;
 
   @override
   void initState() {
     super.initState();
     _cubit = ShopCubit(context.read<ShopRepository>());
+    _messageSub = _cubit.messageController.stream.listen((message) {
+      if (mounted) {
+        _handleError(message);
+      }
+    });
     _searchCtrl = TextEditingController();
   }
 
   @override
   void dispose() {
+    _messageSub?.cancel();
     _cubit.close();
     _searchCtrl.dispose();
     super.dispose();

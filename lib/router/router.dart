@@ -3,5 +3,5 @@ class Routes {
   static const String splash = '/splash';
   static const String home = '/home';
   static const String profile = '/profile';
-// TODO: thêm route mới ở đây
+  static const String learningHistory = '/learning_history';
 }

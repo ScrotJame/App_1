@@ -17,6 +17,11 @@ class VocabularyEntries extends Table {
   DateTimeColumn get lastReviewed => dateTime().nullable()();
   DateTimeColumn get nextReview => dateTime().nullable()();
 
+  // SM-2 properties
+  RealColumn get easeFactor => real().withDefault(const Constant(2.5))();
+  IntColumn get repetitions => integer().withDefault(const Constant(0))();
+  IntColumn get interval => integer().withDefault(const Constant(0))();
+
   IntColumn get unitId => integer()
       .nullable()
       .references(UnitsEntries, #id, onDelete: KeyAction.cascade)();

@@ -3,8 +3,12 @@ import 'dart:math';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:test_abc/repository/companion_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
+import 'package:test_abc/repository/learning_history_repository.dart';
+import 'package:test_abc/service/sm2/sm2_algorithm.dart';
+import 'package:test_abc/ultis/error_utils.dart';
 
 import '../../../commons/enums.dart';
 import '../../../commons/user_sesion.dart';
@@ -16,8 +20,11 @@ part 'flash_card_state.dart';
 class FlashCardCubit extends Cubit<FlashCardState> {
   final VocabularyRepository _repo;
   final CompanionRepository _repoCompanion;
+  final LearningHistoryRepository _repoHistory;
 
-  FlashCardCubit(this._repo, this._repoCompanion) : super(FlashCardState());
+  final PublishSubject<String> messageController = PublishSubject();
+
+  FlashCardCubit(this._repo, this._repoCompanion, this._repoHistory) : super(FlashCardState());
 
   final userKey = UserSession.instance.userKey;
 
@@ -38,10 +45,12 @@ class FlashCardCubit extends Cubit<FlashCardState> {
         clearPending: true,
       ));
     } catch (e) {
+      final errMsg = ErrorUtils.networkErrorToMessage(e);
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Tải dữ liệu thất bại: $e',
+        errorMessage: errMsg,
       ));
+      messageController.sink.add(errMsg);
     }
   }
 
@@ -69,10 +78,11 @@ class FlashCardCubit extends Cubit<FlashCardState> {
         emit(state.copyWith(lastFoodEarned: foodEarned));
       }
     } catch (e) {
+      final errMsg = ErrorUtils.networkErrorToMessage(e);
       emit(state.copyWith(
         companionStatus: LOADSTATUS.FAILED,
-        errorMessage: e.toString(),
       ));
+      messageController.sink.add(errMsg);
     }
   }
 
@@ -118,11 +128,86 @@ class FlashCardCubit extends Cubit<FlashCardState> {
         emit(state.copyWith(lastFoodEarned: foodEarned));
       }
     } catch (e) {
+      final errMsg = ErrorUtils.networkErrorToMessage(e);
       emit(state.copyWith(
         companionStatus: LOADSTATUS.FAILED,
-        errorMessage: e.toString(),
       ));
+      messageController.sink.add(errMsg);
     }
   }
 
+  /// Rate difficulty of recall using SM-2
+  Future<void> rateCard(DifficultyRating rating) async {
+    final card = state.currentCard;
+    if (card == null) return;
+
+    emit(state.copyWith(pendingRating: rating));
+
+    // Wait a brief delay for user feedback visual transitions
+    await Future.delayed(const Duration(milliseconds: 350));
+
+    try {
+      // Retrieve previous SM-2 values (or use Drift default values if newly created)
+      final int prevRep = card.word.repetitions;
+      final int prevInt = card.word.interval;
+      final double prevEF = card.word.easeFactor;
+
+      // Calculate new parameters using SM-2 spaced repetition algorithm
+      final sm2 = SM2Algorithm.calculate(
+        rating: rating,
+        prevRepetitions: prevRep,
+        prevInterval: prevInt,
+        prevEaseFactor: prevEF,
+      );
+
+      // Save calculations to Drift Database
+      await _repo.updateWordSM2Progress(
+        wordId: card.word.id,
+        easeFactor: sm2.easeFactor,
+        repetitions: sm2.repetitions,
+        interval: sm2.interval,
+        nextReview: sm2.nextReview,
+      );
+
+      // Save study history log to Drift database
+      final isCorrect = rating != DifficultyRating.again;
+      await _repoHistory.logWordLearned(
+        userKey: userKey,
+        wordId: card.word.id,
+        wordLevelSnapshot: sm2.repetitions,
+        sessionType: 'Flashcard',
+        isCorrect: isCorrect,
+      );
+
+      // Save local session results for display
+      final cardModel = FlashcardModel(
+        id: card.word.id.toString(),
+        category: 'Vocab',
+        frontText: card.word.word,
+        pronunciation: card.word.pronunciation ?? '',
+        backText: card.word.meaning,
+        backDescription: card.word.example ?? '',
+      );
+
+      final updatedResults = List<FlashcardResult>.from(state.results)
+        ..add(FlashcardResult(card: cardModel, rating: rating));
+
+      emit(state.copyWith(
+        results: updatedResults,
+      ));
+    } catch (e) {
+      final errMsg = ErrorUtils.networkErrorToMessage(e);
+      messageController.sink.add(errMsg);
+    }
+
+    // Slide to the next card
+    _advance();
+  }
+
+  @override
+  Future<void> close() {
+    messageController.close();
+    return super.close();
+  }
+}
 }

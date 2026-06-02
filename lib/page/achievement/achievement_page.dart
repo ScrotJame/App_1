@@ -10,6 +10,7 @@ import 'package:test_abc/page/achievement/widgets/achievement_card_widget.dart';
 import 'package:test_abc/page/achievement/widgets/achievement_filter_bar_widget.dart';
 import 'package:test_abc/page/achievement/widgets/achievement_summary_widget.dart';
 import 'package:test_abc/page/achievement/widgets/achievement_unlock_dialog.dart';
+import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/page/widgets/app_gradient_header.dart';
 import 'package:test_abc/repository/achievement_repository.dart';
 
@@ -36,7 +37,9 @@ class _AchievementPageState extends State<AchievementPage> {
   void initState() {
     super.initState();
     _cubit = AchievementCubit(context.read<AchievementRepository>());
+    final user = context.read<ProfileCubit>().state.data;
 
+    _cubit.setUser(user);
     _cubit.initData(UserSession.instance.userKey);
 
     // Lắng nghe thông báo lỗi
@@ -188,25 +191,7 @@ class _AchievementPageState extends State<AchievementPage> {
             ),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
-        // ── Recent Badges ─────────────────────────────────────
-        SliverToBoxAdapter(
-          child: BlocBuilder<AchievementCubit, AchievementState>(
-            buildWhen: (prev, curr) =>
-            prev.achievements != curr.achievements,
-            builder: (context, state) {
-              final recentBadges = state.achievements
-                  .where((a) => a.isUnlocked ?? false)
-                  .take(6)
-                  .toList();
-              return AchievementBadgeRowWidget(
-                badges: recentBadges,
-                onViewAll: () => _onViewAllBadges(),
-              );
-            },
-          ),
-        ),
         const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
         // ── Section title ─────────────────────────────────────

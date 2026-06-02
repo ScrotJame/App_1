@@ -451,7 +451,9 @@ class _ProfilePageState extends State<ProfilePage> {
               settingsItem(
                   icon:  AppImages.icLearnHistory,
                   label: S.current.learning_history.capitalize(),
-                  onTap: () {}),
+                  onTap: () {
+                    AppRouter.router.navigateTo(context, Routes.learningHistory);
+                  }),
               divider,
               settingsItem(
                   icon: AppImages.icBadge,

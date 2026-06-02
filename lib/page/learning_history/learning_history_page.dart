@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/app_colors.dart';
-import 'package:test_abc/commons/app_images.dart';
-import 'package:test_abc/commons/user_sesion.dart';
 import 'package:test_abc/models/entity/learning_history_entity.dart';
 import 'package:test_abc/repository/learning_history_repository.dart';
-import 'package:test_abc/service/personalization_service.dart';
 import 'package:intl/intl.dart';
+
+import 'learning_history_cubit.dart';
 
 class LearningHistoryPage extends StatefulWidget {
   const LearningHistoryPage({super.key});
@@ -16,142 +15,79 @@ class LearningHistoryPage extends StatefulWidget {
 }
 
 class _LearningHistoryPageState extends State<LearningHistoryPage> {
-  late final String _userKey;
-  late final LearningHistoryRepository _historyRepo;
-
-  DateTime _focusedMonth = DateTime.now();
-  DateTime _selectedDate = DateTime.now();
-
-  List<DateTime> _activeDates = [];
-  List<LearningHistoryEntity> _wordsStudied = [];
-  bool _isLoadingHistory = false;
-  bool _isLoadingActiveDates = false;
-
-  // Personalization settings
-  int _dailyGoal = 20;
+  late LearningHistoryCubit _cubit;
 
   @override
   void initState() {
     super.initState();
-    _userKey = UserSession.instance.userKey;
-    _historyRepo = context.read<LearningHistoryRepository>();
-
-    _initPersonalization();
-    _loadActiveDates();
-    _loadHistoryForSelectedDate();
+    _cubit = LearningHistoryCubit(
+      context.read<LearningHistoryRepository>(),
+    );
+    _cubit.init();
   }
 
-  Future<void> _initPersonalization() async {
-    await PersonalizationService.instance.init();
-    setState(() {
-      _dailyGoal = PersonalizationService.instance.getDailyWordTarget();
-    });
-  }
-
-  Future<void> _loadActiveDates() async {
-    setState(() => _isLoadingActiveDates = true);
-    try {
-      final dates = await _historyRepo.getActiveDates(userKey: _userKey);
-      setState(() {
-        _activeDates = dates.map((d) => DateTime(d.year, d.month, d.day)).toList();
-      });
-    } catch (e) {
-      debugPrint('Error loading active dates: $e');
-    } finally {
-      setState(() => _isLoadingActiveDates = false);
-    }
-  }
-
-  Future<void> _loadHistoryForSelectedDate() async {
-    setState(() => _isLoadingHistory = true);
-    try {
-      final history = await _historyRepo.getHistoryByDate(
-        userKey: _userKey,
-        date: _selectedDate,
-        page: 1,
-        pageSize: 100, // retrieve all for selected day
-      );
-      setState(() {
-        _wordsStudied = history;
-      });
-    } catch (e) {
-      debugPrint('Error loading history: $e');
-    } finally {
-      setState(() => _isLoadingHistory = false);
-    }
-  }
-
-  void _onDateSelected(DateTime date) {
-    if (date.isAfter(DateTime.now())) return; // cannot select future dates
-    setState(() {
-      _selectedDate = date;
-    });
-    _loadHistoryForSelectedDate();
-  }
-
-  void _previousMonth() {
-    setState(() {
-      _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1);
-    });
-  }
-
-  void _nextMonth() {
-    final next = DateTime(_focusedMonth.year, _focusedMonth.month + 1);
-    if (next.isAfter(DateTime.now()) && next.month != DateTime.now().month) return;
-    setState(() {
-      _focusedMonth = next;
-    });
+  @override
+  void dispose() {
+    _cubit.close();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.mainGradient,
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF6F8FE),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(36),
-                      topRight: Radius.circular(36),
+    return BlocProvider.value(
+      value: _cubit,
+      child: Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.mainGradient,
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF6F8FE),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(36),
+                        topRight: Radius.circular(36),
+                      ),
                     ),
-                  ),
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildPersonalizationBanner(),
-                        const SizedBox(height: 20),
-                        _buildCalendarCard(),
-                        const SizedBox(height: 24),
-                        _buildStatsSummary(),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Vocabulary Reviewed (${_wordsStudied.length})',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF1E293B),
+                    child: BlocBuilder<LearningHistoryCubit, LearningHistoryState>(
+                      builder: (context, state) {
+                        return SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildPersonalizationBanner(state),
+                              const SizedBox(height: 20),
+                              _buildCalendarCard(state),
+                              const SizedBox(height: 24),
+                              _buildStatsSummary(state),
+                              const SizedBox(height: 24),
+                              Text(
+                                'Vocabulary Reviewed (${state.wordsStudied.length})',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF1E293B),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildHistoryList(state),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildHistoryList(),
-                      ],
+                        );
+                      },
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -186,11 +122,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
     );
   }
 
-  Widget _buildPersonalizationBanner() {
-    final correctCount = _wordsStudied.where((w) => w.isCorrect ?? false).length;
-    final progress = _wordsStudied.isEmpty ? 0.0 : _wordsStudied.length / _dailyGoal;
-    final displayProgress = progress > 1.0 ? 1.0 : progress;
-
+  Widget _buildPersonalizationBanner(LearningHistoryState state) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -235,7 +167,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  'Goal: $_dailyGoal',
+                  'Goal: ${state.dailyGoal}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -249,7 +181,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
-              value: displayProgress,
+              value: state.dailyProgress,
               minHeight: 8,
               backgroundColor: Colors.white.withOpacity(0.25),
               valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
@@ -260,7 +192,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${_wordsStudied.length} / $_dailyGoal words studied today',
+                '${state.wordsStudied.length} / ${state.dailyGoal} words studied today',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 13,
@@ -268,7 +200,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                 ),
               ),
               Text(
-                '${(displayProgress * 100).toInt()}% completed',
+                '${(state.dailyProgress * 100).toInt()}% completed',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 13,
@@ -282,7 +214,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
     );
   }
 
-  Widget _buildCalendarCard() {
+  Widget _buildCalendarCard(LearningHistoryState state) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -298,25 +230,25 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildCalendarHeader(),
+          _buildCalendarHeader(state),
           const SizedBox(height: 16),
           _buildWeekdayLabels(),
           const SizedBox(height: 8),
-          _buildCalendarGrid(),
+          _buildCalendarGrid(state),
         ],
       ),
     );
   }
 
-  Widget _buildCalendarHeader() {
-    final monthName = DateFormat('MMMM yyyy').format(_focusedMonth);
+  Widget _buildCalendarHeader(LearningHistoryState state) {
+    final monthName = DateFormat('MMMM yyyy').format(state.focusedMonth);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         IconButton(
           icon: const Icon(Icons.chevron_left, color: Color(0xFF64748B)),
-          onPressed: _previousMonth,
+          onPressed: _cubit.previousMonth,
         ),
         Text(
           monthName,
@@ -328,7 +260,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
         ),
         IconButton(
           icon: const Icon(Icons.chevron_right, color: Color(0xFF64748B)),
-          onPressed: _nextMonth,
+          onPressed: _cubit.nextMonth,
         ),
       ],
     );
@@ -355,9 +287,9 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
     );
   }
 
-  Widget _buildCalendarGrid() {
-    final daysInMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
-    final firstDayWeekday = DateTime(_focusedMonth.year, _focusedMonth.month, 1).weekday;
+  Widget _buildCalendarGrid(LearningHistoryState state) {
+    final daysInMonth = DateTime(state.focusedMonth.year, state.focusedMonth.month + 1, 0).day;
+    final firstDayWeekday = DateTime(state.focusedMonth.year, state.focusedMonth.month, 1).weekday;
 
     final List<Widget> dayCells = [];
 
@@ -369,16 +301,16 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
     final today = DateTime.now();
 
     for (int day = 1; day <= daysInMonth; day++) {
-      final cellDate = DateTime(_focusedMonth.year, _focusedMonth.month, day);
-      final isSelected = cellDate.year == _selectedDate.year &&
-          cellDate.month == _selectedDate.month &&
-          cellDate.day == _selectedDate.day;
+      final cellDate = DateTime(state.focusedMonth.year, state.focusedMonth.month, day);
+      final isSelected = cellDate.year == state.selectedDate.year &&
+          cellDate.month == state.selectedDate.month &&
+          cellDate.day == state.selectedDate.day;
 
       final isToday = cellDate.year == today.year &&
           cellDate.month == today.month &&
           cellDate.day == today.day;
 
-      final hasHistory = _activeDates.any((d) =>
+      final hasHistory = state.activeDates.any((d) =>
           d.year == cellDate.year &&
           d.month == cellDate.month &&
           d.day == cellDate.day);
@@ -387,7 +319,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
 
       dayCells.add(
         GestureDetector(
-          onTap: isFuture ? null : () => _onDateSelected(cellDate),
+          onTap: isFuture ? null : () => _cubit.onDateSelected(cellDate),
           child: AspectRatio(
             aspectRatio: 1,
             child: Container(
@@ -454,16 +386,13 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
     );
   }
 
-  Widget _buildStatsSummary() {
-    final correctCount = _wordsStudied.where((w) => w.isCorrect ?? false).length;
-    final accuracy = _wordsStudied.isEmpty ? 0 : ((correctCount / _wordsStudied.length) * 100).toInt();
-
+  Widget _buildStatsSummary(LearningHistoryState state) {
     return Row(
       children: [
         Expanded(
           child: _buildStatItem(
             'Reviewed',
-            '${_wordsStudied.length}',
+            '${state.wordsStudied.length}',
             'vocabulary cards',
             const Color(0xFF3B82F6),
             Icons.menu_book,
@@ -473,7 +402,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
         Expanded(
           child: _buildStatItem(
             'Accuracy',
-            '$accuracy%',
+            '${state.accuracy}%',
             'correct rate',
             const Color(0xFF10B981),
             Icons.offline_bolt,
@@ -537,8 +466,8 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
     );
   }
 
-  Widget _buildHistoryList() {
-    if (_isLoadingHistory) {
+  Widget _buildHistoryList(LearningHistoryState state) {
+    if (state.isLoadingHistory) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 40),
@@ -547,24 +476,25 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
       );
     }
 
-    if (_wordsStudied.isEmpty) {
+    if (state.wordsStudied.isEmpty) {
       return _buildEmptyState();
     }
 
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _wordsStudied.length,
+      itemCount: state.wordsStudied.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final item = _wordsStudied[index];
+        final item = state.wordsStudied[index];
         return _buildHistoryCard(item);
       },
     );
   }
 
   Widget _buildHistoryCard(LearningHistoryEntity item) {
-    final statusColor = item.isCorrect! ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final isCorrect = item.isCorrect ?? false;
+    final statusColor = isCorrect ? const Color(0xFF10B981) : const Color(0xFFEF4444);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -638,7 +568,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  item.isCorrect! ? 'Correct' : 'Again',
+                  isCorrect ? 'Correct' : 'Again',
                   style: TextStyle(
                     color: statusColor,
                     fontSize: 11,

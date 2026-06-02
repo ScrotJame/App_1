@@ -10,6 +10,7 @@ import '../page/home_page.dart';
 import '../page/splash/splash_cubit.dart';
 import '../page/splash/splash_page.dart';
 import '../page/user/profile/profile_page.dart';
+import '../page/learning_history/learning_history_page.dart';
 import 'app_router.dart';
 import 'router.dart';
 
@@ -50,5 +51,12 @@ Handler homeHandler = Handler(
 Handler profileHandler = Handler(
   handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
     return const ProfilePage();
+  },
+);
+
+// ── Learning History ───────────────────────────────────────────
+Handler learningHistoryHandler = Handler(
+  handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
+    return const LearningHistoryPage();
   },
 );

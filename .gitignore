@@ -16,6 +16,9 @@ script_run
 .svn/
 .swiftpm/
 .cursor/
+.claude/
+.codegraph/
+.gemini/
 .env
 migrate_working_dir/
 

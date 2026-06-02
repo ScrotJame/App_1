@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:rxdart/rxdart.dart';
+import 'package:test_abc/ultis/error_utils.dart';
 import '../../commons/user_sesion.dart';
 import '../../models/items_entity.dart';
 import '../../repository/shop_repository.dart';
@@ -11,6 +13,8 @@ part 'shop_state.dart';
 class ShopCubit extends Cubit<ShopState> {
   final ShopRepository _repository;
   StreamSubscription<List<ItemsEntity>>? _itemsSub;
+  
+  final PublishSubject<String> messageController = PublishSubject();
 
   ShopCubit(this._repository) : super(const ShopState()) {
     _watchItems();
@@ -24,20 +28,25 @@ class ShopCubit extends Cubit<ShopState> {
         status: ShopStatus.initial,
         items: items,
       )),
-      onError: (e) => emit(state.copyWith(
-        status: ShopStatus.error,
-        errorMessage: " tesst ${e.toString()}",
-      )),
+      onError: (e) {
+        final errMsg = ErrorUtils.networkErrorToMessage(e);
+        emit(state.copyWith(
+          status: ShopStatus.error,
+          errorMessage: errMsg,
+        ));
+        messageController.sink.add(errMsg);
+      },
     );
   }
 
   // ── Mua item ────────────────────────────────────────────────
   Future<void> purchase(ItemsEntity item) async {
-    if (item.stock != null && item.stock! <= 0) {
+    final stockVal = item.stock ?? 0;
+    if (item.stock != null && stockVal <= 0) {
       emit(state.copyWith(
         status: ShopStatus.error,
-        errorMessage: 'Sản phẩm đã hết hàng',
       ));
+      messageController.sink.add('Sản phẩm đã hết hàng');
       return;
     }
 
@@ -56,10 +65,11 @@ class ShopCubit extends Cubit<ShopState> {
         purchasedItemId: item.id,
       ));
     } catch (e) {
+      final errMsg = ErrorUtils.networkErrorToMessage(e);
       emit(state.copyWith(
         status: ShopStatus.error,
-        errorMessage: e.toString(), // lỗi từ repo (hết hàng, không tìm thấy,…)
       ));
+      messageController.sink.add(errMsg);
     }
   }
 
@@ -70,6 +80,7 @@ class ShopCubit extends Cubit<ShopState> {
   void clearSearch() {
     emit(state.copyWith(searchQuery: ''));
   }
+  
   void reset() => emit(state.copyWith(
     status: ShopStatus.initial,
     purchasedItemId: null,
@@ -79,6 +90,7 @@ class ShopCubit extends Cubit<ShopState> {
   @override
   Future<void> close() {
     _itemsSub?.cancel();
+    messageController.close();
     return super.close();
   }
 }

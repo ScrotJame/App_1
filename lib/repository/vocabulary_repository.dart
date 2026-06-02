@@ -37,6 +37,14 @@ abstract class IVocabularyRepository {
   Future<void> countWordLearn( String userId);
   Future<bool> isWordAlreadyMastered(int wordId, String userId);
 
+  Future<void> updateWordSM2Progress({
+    required int wordId,
+    required double easeFactor,
+    required int repetitions,
+    required int interval,
+    required DateTime nextReview,
+  });
+
   Future<void> getLanguageTags();
   Future<List<VocabularyEntry>> getWordsByLanguageTags(String? tags);
 }
@@ -165,6 +173,25 @@ class VocabularyRepository implements IVocabularyRepository {
     return (_db.select(_db.vocabularyEntries)
       ..where((t) => t.id.equals(id)))
         .getSingleOrNull();
+  }
+
+  @override
+  Future<void> updateWordSM2Progress({
+    required int wordId,
+    required double easeFactor,
+    required int repetitions,
+    required int interval,
+    required DateTime nextReview,
+  }) async {
+    await (_db.update(_db.vocabularyEntries)
+          ..where((t) => t.id.equals(wordId)))
+        .write(VocabularyEntriesCompanion(
+      easeFactor: Value(easeFactor),
+      repetitions: Value(repetitions),
+      interval: Value(interval),
+      nextReview: Value(nextReview),
+      lastReviewed: Value(DateTime.now()),
+    ));
   }
 
   Future<void> changeWordState(int wordId, int newLevel, String? userId) async {

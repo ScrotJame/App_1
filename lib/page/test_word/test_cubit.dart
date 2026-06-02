@@ -173,7 +173,7 @@ class TestCubit extends Cubit<TestState> {
       }).toList();
     }
 
-    if (cfg.selectedLanguage != null && cfg.selectedLanguage!.isNotEmpty) {
+    if (cfg.selectedLanguage != null && (cfg.selectedLanguage?.isNotEmpty ?? false)) {
       result = result
           .where((w) => w.word.language == cfg.selectedLanguage)
           .toList();
@@ -286,7 +286,8 @@ class TestCubit extends Cubit<TestState> {
     }
 
     final leveledUpWords = <VocabularyEntry>[];
-    final wordsToSchedule = <VocabularyEntry>[];
+    // Map từ vựng → trạng thái đúng/sai để tính DifficultyRating cho SM-2
+    final wordsToSchedule = <VocabularyEntry, AnswerStatus>{};
 
     int correctCount = 0;
     int masteredCount = 0;
@@ -304,21 +305,21 @@ class TestCubit extends Cubit<TestState> {
           final updated = await _repo.incrementWordLevel(vocabEntry.id);
           if (updated != null) {
             leveledUpWords.add(updated);
-            wordsToSchedule.add(updated);
+            wordsToSchedule[updated] = AnswerStatus.correct;
             await _repo.changeWordState(updated.id, updated.level, userKey);
             if (updated.level >= 5 && !alreadyMastered) {
               masteredCount++;
             }
           } else {
-            wordsToSchedule.add(vocabEntry);
+            wordsToSchedule[vocabEntry] = AnswerStatus.correct;
             await _repo.changeWordState(vocabEntry.id, vocabEntry.level, userKey);
           }
         } catch (_) {
-          wordsToSchedule.add(vocabEntry);
+          wordsToSchedule[vocabEntry] = AnswerStatus.correct;
           await _repo.changeWordState(vocabEntry.id, vocabEntry.level, userKey);
         }
       } else {
-        wordsToSchedule.add(vocabEntry);
+        wordsToSchedule[vocabEntry] = AnswerStatus.incorrect;
         await _repo.changeWordState(vocabEntry.id, vocabEntry.level, userKey);
       }
     }
@@ -439,18 +440,32 @@ class TestCubit extends Cubit<TestState> {
     }
   }
 
-  void _scheduleIndividualNotifications(List<VocabularyEntry> words) {
+  void _scheduleIndividualNotifications(
+    Map<VocabularyEntry, AnswerStatus> wordsWithStatus,
+  ) {
     final now = DateTime.now();
 
-    for (final entry in words) {
-      final nextReviewTime = SetTimeHelper.calculateNextReviewTime(entry.level);
-      final notificationId = entry.id;
+    for (final mapEntry in wordsWithStatus.entries) {
+      final entry = mapEntry.key;
+      final answerStatus = mapEntry.value;
 
-      final secondsToWait = nextReviewTime.difference(now).inSeconds;
+      // Map AnswerStatus → DifficultyRating cho SM-2
+      final rating = answerStatus == AnswerStatus.correct
+          ? DifficultyRating.good
+          : DifficultyRating.again;
 
+      final result = SetTimeHelper.calculateNextReviewTime(
+        entry.level,
+        rating: rating,
+        prevRepetitions: entry.repetitions,
+        prevInterval: entry.interval,
+        prevEaseFactor: entry.easeFactor,
+      );
+
+      final secondsToWait = result.nextReview.difference(now).inSeconds;
       _handleSchedule(secondsToWait, entry.word);
 
-      print(' Đã set thông báo ID: $notificationId cho từ "${entry.word}" (Lv.${entry.level}) vào lúc: $nextReviewTime (Sau $secondsToWait giây)');
+      print(' Đã set thông báo ID: ${entry.id} cho từ "${entry.word}" (Lv.${entry.level}) vào lúc: ${result.nextReview} (Sau $secondsToWait giây)');
     }
   }
 

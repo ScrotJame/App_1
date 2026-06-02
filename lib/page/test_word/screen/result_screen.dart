@@ -46,12 +46,13 @@ class ResultScreenState extends State<ResultScreen> {
     double? percent,
     int? score,
   }) {
+    final pct = percent ?? 0.0;
     return GradientCard(
       child: Column(
         children: [
-          Text(_resultEmoji(percent!), style: const TextStyle(fontSize: 44)),
+          Text(_resultEmoji(pct), style: const TextStyle(fontSize: 44)),
           const SizedBox(height: 10),
-          Text(_resultMsg(percent),
+          Text(_resultMsg(pct),
               style: const TextStyle(
                   color: Colors.white,
                   fontSize: 22,
@@ -63,7 +64,7 @@ class ResultScreenState extends State<ResultScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
-              value: percent,
+              value: pct,
               minHeight: 7,
               backgroundColor: Colors.white24,
               valueColor: const AlwaysStoppedAnimation(Colors.white),
@@ -91,11 +92,11 @@ class ResultScreenState extends State<ResultScreen> {
         children: [
           Icon(icon, color: color, size: 22),
           const SizedBox(height: 6),
-          Text(value!,
+          Text(value ?? '',
               style: TextStyle(
                   fontSize: 22, fontWeight: FontWeight.w800, color: color)),
           const SizedBox(height: 2),
-          Text(label!,
+          Text(label ?? '',
               style: const TextStyle(
                   fontSize: 12,
                   color: Colors.grey,
@@ -146,7 +147,7 @@ class ResultScreenState extends State<ResultScreen> {
       decoration: BoxDecoration(
         color: color?.withOpacity(0.1),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color!.withOpacity(0.3)),
+        border: Border.all(color: (color ?? Colors.grey).withOpacity(0.3)),
       ),
       child: Text('Lv.$level',
           style: TextStyle(
@@ -363,7 +364,7 @@ class ResultScreenState extends State<ResultScreen> {
       child: OutlinedButton.icon(
         onPressed: onTap,
         icon: Icon(icon, size: 17),
-        label: Text(label!,
+        label: Text(label ?? '',
             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.kBlue,

@@ -12,10 +12,7 @@ class AppRouter {
     router.define(Routes.splash, handler: splashHandler);
     router.define(Routes.home, handler: homeHandler);
     router.define(Routes.profile, handler: profileHandler);
-    router.define(Routes.splash, handler: splashHandler);
-
-    // TODO: thêm route mới ở đây
-    // router.define(Routes.game, handler: gameHandler);
+    router.define(Routes.learningHistory, handler: learningHistoryHandler);
   }
 
   /// Navigate tới route mới

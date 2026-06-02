@@ -205,9 +205,9 @@ class _TestingScreenState extends State<TestingScreen> {
           ),
 
           if (q.pronunciationDisplay != null &&
-              q.pronunciationDisplay!.isNotEmpty) ...[
+              (q.pronunciationDisplay ?? '').isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(q.pronunciationDisplay!,
+            Text(q.pronunciationDisplay ?? '',
                 style: const TextStyle(fontSize: 16, color: Colors.grey)),
           ],
           const SizedBox(height: 22),

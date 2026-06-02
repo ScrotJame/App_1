@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,6 +28,7 @@ class _StreakPageState extends State<StreakPage>
   late final Animation<double> _fadeAnim;
   late final Animation<double> _scaleAnim;
   late final Animation<Offset> _slideAnim;
+  StreamSubscription<String>? _messageSub;
 
   static const double headerHeight = 310;
 
@@ -34,6 +36,17 @@ class _StreakPageState extends State<StreakPage>
   void initState() {
     super.initState();
     _cubit = StreakCubit(context.read<UserRepository>());
+    _messageSub = _cubit.messageController.stream.listen((message) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
     _cubit.loadProfile();
 
     _animController = AnimationController(
@@ -62,6 +75,7 @@ class _StreakPageState extends State<StreakPage>
 
   @override
   void dispose() {
+    _messageSub?.cancel();
     _cubit.close();
     _animController.dispose();
     super.dispose();

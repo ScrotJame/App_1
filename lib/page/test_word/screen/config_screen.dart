@@ -349,7 +349,7 @@ class ConfigScreenState extends State<ConfigScreen> {
                 if (s.loadStatus == LOADSTATUS.FAILED && s.errorMessage != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildErrorBanner(s.errorMessage!),
+                    child: _buildErrorBanner(s.errorMessage ?? ''),
                   ),
                 buildPrimaryButton(
                   label: 'Bắt đầu kiểm tra',

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/components/popup_dialog.dart';
+import 'package:test_abc/repository/learning_history_repository.dart';
 import '../../../commons/enums.dart';
 import '../../../repository/companion_repository.dart';
 import '../../../repository/vocabulary_repository.dart';
@@ -23,19 +26,33 @@ class FlashCardPage extends StatefulWidget {
 
 class _FlashCardPageState extends State<FlashCardPage> {
   late FlashCardCubit _cubit;
+  StreamSubscription<String>? _messageSubscription;
 
   @override
   void initState() {
     super.initState();
     _cubit = FlashCardCubit(
         context.read<VocabularyRepository>(),
-        context.read<CompanionRepository>()
+        context.read<CompanionRepository>(),
+        context.read<LearningHistoryRepository>()
     );
+    _messageSubscription = _cubit.messageController.stream.listen((message) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
     _cubit.start();
   }
 
   @override
   void dispose() {
+    _messageSubscription?.cancel();
     _cubit.close();
     super.dispose();
   }
@@ -98,11 +115,16 @@ class _FlashCardPageState extends State<FlashCardPage> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        // _RatingSection(
-                        //   selected: state.pendingRating,
-                        //   onRated: _cubit.rate,
-                        // ),
-                        _nextButton(_cubit.nextCard),
+                        if (state.isFlipped)
+                          _RatingSection(
+                            selected: state.pendingRating,
+                            onRated: _cubit.rateCard,
+                          )
+                        else
+                          SizedBox(
+                            width: double.infinity,
+                            child: _flipButton(_cubit.flipCard),
+                          ),
                         const SizedBox(height: 20),
                       ],
                     ),
@@ -305,6 +327,27 @@ class _FlashCardPageState extends State<FlashCardPage> {
           borderRadius: BorderRadius.circular(16),
         ),
         elevation: 0,
+      ),
+    );
+  }
+
+  Widget _flipButton(VoidCallback onTap) {
+    return ElevatedButton.icon(
+      onPressed: onTap,
+      icon: const Icon(Icons.flip_camera_android_rounded, size: 20, color: Colors.white),
+      label: const Text(
+        'FLIP CARD TO REVIEW',
+        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 1.2),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF42C8F5),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        elevation: 4,
+        shadowColor: const Color(0xFF42C8F5).withOpacity(0.4),
       ),
     );
   }
