@@ -50,6 +50,7 @@ class LearningCubit extends Cubit<LearningState> {
       final phase = switch (state.config.learningType) {
         LearningType.flashCard => LearningPhase.flashCard,
         LearningType.wordMatching => LearningPhase.wordMatching,
+        LearningType.comingSoon => LearningPhase.comingSoon
       };
 
       emit(state.copyWith(

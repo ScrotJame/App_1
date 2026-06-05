@@ -108,32 +108,43 @@ class LearningConfigScreen extends StatelessWidget {
   Widget _buildBody(BuildContext context, LearningState state) {
     final cubit = context.read<LearningCubit>();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Banner card (style GradientCard của config_screen) ──
-          _buildBannerCard(context, state),
-          const SizedBox(height: 24),
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Banner card (style GradientCard của config_screen) ──
+                _buildBannerCard(context, state),
+                const SizedBox(height: 24),
 
-          // ── Section: chọn kiểu học ──────────────────────────────
-          _sectionTitle('Kiểu học', Icons.school_rounded),
-          const SizedBox(height: 12),
-          _buildLearningTypeGrid(context, state, cubit),
-          const SizedBox(height: 32),
+                // ── Section: chọn kiểu học ──────────────────────────────
+                _sectionTitle('Kiểu học', Icons.school_rounded),
+                const SizedBox(height: 12),
+                _buildLearningTypeGrid(context, state, cubit),
+                const SizedBox(height: 32),
 
-          // ── Error banner ────────────────────────────────────────
-          if (state.loadStatus == LOADSTATUS.FAILED &&
-              state.errorMessage != null) ...[
-            _buildErrorBanner(state.errorMessage ?? ''),
-            const SizedBox(height: 12),
-          ],
+                // ── Error banner ────────────────────────────────────────
+                if (state.loadStatus == LOADSTATUS.FAILED &&
+                    state.errorMessage != null) ...[
+                  _buildErrorBanner(state.errorMessage ?? ''),
+                  const SizedBox(height: 12),
+                ],
 
-          // ── Start button ────────────────────────────────────────
-          _buildStartButton(context, state, cubit),
-        ],
-      ),
+              ],
+            ),
+          ),
+        ),
+
+        // ── Start button ────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: _buildStartButton(context, state, cubit),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 
@@ -354,6 +365,20 @@ const _learningTypeItems = [
     subtitle: 'Nối từ và nghĩa',
     accentColor: Color(0xFF4CAF50),
   ),
+  _LearningTypeItem(
+    type: LearningType.comingSoon,
+    icon: Icons.extension_rounded,
+    title: 'Word Matching',
+    subtitle: 'Nối từ và nghĩa',
+    accentColor: Color(0xFF4CAF50),
+  ),
+  _LearningTypeItem(
+    type: LearningType.comingSoon,
+    icon: Icons.extension_rounded,
+    title: 'Coming Soon',
+    subtitle: '',
+    accentColor: Color(0xFF4CAF50),
+  ),
 ];
 
 // ─── Learning Type Card (style InventoryItemCard) ────────────────
@@ -457,11 +482,9 @@ class _LearningTypeCard extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                if (isSelected) ...[
-                  const SizedBox(height: 6),
-                  Icon(Icons.check_circle_rounded,
-                      color: item.accentColor, size: 18),
-                ],
+                // if (isSelected) ...[
+                //   const SizedBox(height: 6),
+                // ],
               ],
             ),
           ),

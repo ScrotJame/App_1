@@ -74,6 +74,7 @@ class _LearningView extends StatelessWidget {
           LearningPhase.config    => const LearningConfigScreen(),
           LearningPhase.flashCard => const _FlashCardPhase(),
           LearningPhase.wordMatching => const _WordMatchingPhase(),
+          LearningPhase.comingSoon => throw UnimplementedError(),
         };
       },
     );
@@ -121,6 +122,23 @@ class _WordMatchingPhase extends StatelessWidget {
         }
       },
       child: const WordMatchingPage(),
+    );
+  }
+}
+
+class _ComingSoonPhase extends StatelessWidget {
+  const _ComingSoonPhase();
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          context.read<LearningCubit>().goToConfig();
+        }
+      },
+      child: const SizedBox(),
     );
   }
 }
