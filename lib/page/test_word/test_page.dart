@@ -2,15 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/page/test_word/screen/result_screen.dart';
 import 'package:test_abc/page/test_word/screen/test_screen.dart';
-import 'package:test_abc/page/test_word/widgets/app_bar_widget.dart';
-import 'package:test_abc/page/test_word/widgets/button_widget.dart';
-import 'package:test_abc/page/test_word/widgets/card_widget.dart';
 import 'package:test_abc/page/test_word/screen/config_screen.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
+import 'package:test_abc/repository/learning_history_repository.dart';
 
-import '../../commons/app_colors.dart';
-import '../../commons/enums.dart';
-import '../../database/app_db.dart';
 import '../test_word/test_cubit.dart';
 import '../widgets/avatar/xp_cubit.dart';
 
@@ -29,7 +24,10 @@ class _TestPageState extends State<TestPage> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => TestCubit(context.read<VocabularyRepository>()),
+      create: (_) => TestCubit(
+        context.read<VocabularyRepository>(),
+        context.read<LearningHistoryRepository>(),
+      ),
       child: const _TestView(),
     );
   }

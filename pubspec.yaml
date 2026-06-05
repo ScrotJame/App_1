@@ -71,6 +71,8 @@ dependencies:
   google_mlkit_language_id: ^0.13.1
   rxdart: ^0.28.0
   flutter_tts: ^4.2.5
+  flame: ^1.37.0
+  flame_audio: ^2.12.1
 
 dev_dependencies:
   flutter_test:
@@ -101,6 +103,8 @@ flutter:
     - assets/avatar/
     - assets/images/
     - assets/vector/
+    - assets/animator/main/
+    - assets/animator/dummy/
   # fonts:
   #   - family: Schyler
   #     fonts:

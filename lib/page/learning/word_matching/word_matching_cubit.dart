@@ -29,8 +29,6 @@ class WordMatchingCubit extends Cubit<WordMatchingState> {
 
   Timer? _timer;
 
-  // ── _allVocab đã được xóa: vocab giờ sống trong state.allVocab ──
-
   WordMatchingCubit(
     this._repo,
     this._repoCompanion,
@@ -305,21 +303,6 @@ class WordMatchingCubit extends Cubit<WordMatchingState> {
   Future<void> _completeSession() async {
     _stopTimer();
     emit(state.copyWith(gameStatus: WordMatchingGameStatus.completed));
-
-    try {
-      final futures = state.leftItems.map((item) {
-        return _repoHistory.logWordLearned(
-          userKey: userKey,
-          wordId: item.id,
-          wordLevelSnapshot: 1,
-          sessionType: 'WordMatching',
-          isCorrect: true,
-        );
-      });
-      await Future.wait(futures);
-    } catch (_) {
-      // safe fallback
-    }
   }
 
   Future<void> earnFood(double wordsCount) async {

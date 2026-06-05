@@ -366,18 +366,18 @@ const _learningTypeItems = [
     accentColor: Color(0xFF4CAF50),
   ),
   _LearningTypeItem(
-    type: LearningType.comingSoon,
-    icon: Icons.extension_rounded,
-    title: 'Word Matching',
-    subtitle: 'Nối từ và nghĩa',
-    accentColor: Color(0xFF4CAF50),
+    type: LearningType.quizGame,
+    icon: Icons.quiz_rounded,
+    title: 'Quiz Game',
+    subtitle: 'Trắc nghiệm từ vựng',
+    accentColor: Color(0xFF7C3AED),
   ),
   _LearningTypeItem(
     type: LearningType.comingSoon,
-    icon: Icons.extension_rounded,
+    icon: Icons.more_horiz_rounded,
     title: 'Coming Soon',
-    subtitle: '',
-    accentColor: Color(0xFF4CAF50),
+    subtitle: 'Sắp ra mắt',
+    accentColor: Color(0xFF9E9E9E),
   ),
 ];
 

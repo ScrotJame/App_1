@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'flash_card/flash_card_page.dart';
 import 'learning_cubit.dart';
+import 'quiz_game/quiz_game_page.dart';
 import 'word_matching/word_matching_page.dart';
 import 'widgets/learning_config_screen.dart';
 
@@ -74,6 +75,7 @@ class _LearningView extends StatelessWidget {
           LearningPhase.config    => const LearningConfigScreen(),
           LearningPhase.flashCard => const _FlashCardPhase(),
           LearningPhase.wordMatching => const _WordMatchingPhase(),
+          LearningPhase.quizGame => const _QuizGamePhase(),
           LearningPhase.comingSoon => throw UnimplementedError(),
         };
       },
@@ -139,6 +141,27 @@ class _ComingSoonPhase extends StatelessWidget {
         }
       },
       child: const SizedBox(),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// QUIZ GAME PHASE WRAPPER
+// ═══════════════════════════════════════════════════════════════
+
+class _QuizGamePhase extends StatelessWidget {
+  const _QuizGamePhase();
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          context.read<LearningCubit>().goToConfig();
+        }
+      },
+      child: const QuizGamePage(),
     );
   }
 }

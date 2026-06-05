@@ -194,16 +194,6 @@ class FlashCardCubit extends Cubit<FlashCardState> {
         nextReview: sm2.nextReview,
       );
 
-      // Save study history log to Drift database
-      final isCorrect = rating != DifficultyRating.again;
-      await _repoHistory.logWordLearned(
-        userKey: userKey,
-        wordId: card.word.id,
-        wordLevelSnapshot: sm2.repetitions,
-        sessionType: 'Flashcard',
-        isCorrect: isCorrect,
-      );
-
       // Save local session results for display
       final cardModel = FlashcardModel(
         id: card.word.id.toString(),

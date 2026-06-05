@@ -5,24 +5,25 @@ import 'package:test_abc/models/entity/learning_history_entity.dart';
 import '../database/app_db.dart';
 
 abstract class ILearningHistoryRepository {
-  /// Ghi log sau mỗi lần user trả lời 1 từ
+  /// Ghi log sau mỗi lần user trả lời 1 từ (trong Test)
   Future<void> logWordLearned({
-    required String userKey,
-    required int wordId,
-    required int wordLevelSnapshot,
-    required String sessionType,
-    required bool isCorrect,
+    String? userKey,
+    int? wordId,
+    int? wordLevelSnapshot,
+    String? sessionType,
+    bool? isCorrect,
+    bool? isLeveledUp,
   });
 
   /// Lấy danh sách ngày đã học (để render calendar/heatmap)
-  Future<List<DateTime>> getActiveDates({required String userKey});
+  Future<List<DateTime>> getActiveDates({String? userKey});
 
   /// Lấy chi tiết các từ đã học trong 1 ngày cụ thể
   Future<List<LearningHistoryEntity>> getHistoryByDate({
-    required String userKey,
-    required DateTime date,
-    required int page,
-    required int pageSize,
+    String? userKey,
+    DateTime? date,
+    int? page,
+    int? pageSize,
   });
 }
 
@@ -32,29 +33,30 @@ class LearningHistoryRepository implements ILearningHistoryRepository {
 
   @override
   Future<void> logWordLearned({
-    required String userKey,
-    required int wordId,
-    required int wordLevelSnapshot,
-    required String sessionType,
-    required bool isCorrect,}) async {
+    String? userKey,
+    int? wordId,
+    int? wordLevelSnapshot,
+    String? sessionType,
+    bool? isCorrect,
+    bool? isLeveledUp,
+  }) async {
     await _db.into(_db.learningHistoryLogs).insert(
       LearningHistoryLogsCompanion.insert(
-        userKey: userKey,
-        wordId: wordId,
-        wordLevelSnapshot:
-        wordLevelSnapshot,
-        sessionType: sessionType,
-        isCorrect: Value(isCorrect),
-        learnedDate: DateTime.utc(DateTime.now().year, DateTime.now().month, DateTime.now().day,),
+        userKey: userKey ?? '',
+        wordId: wordId ?? 0,
+        wordLevelSnapshot: wordLevelSnapshot ?? 0,
+        sessionType: sessionType ?? '',
+        isCorrect: Value(isCorrect ?? false),
+        learnedDate: DateTime.utc(DateTime.now().year, DateTime.now().month, DateTime.now().day),
       ),
     );
   }
 
   @override
-  Future<List<DateTime>> getActiveDates({required String userKey}) {
+  Future<List<DateTime>> getActiveDates({String? userKey}) {
     return (_db.selectOnly(_db.learningHistoryLogs)
       ..addColumns([_db.learningHistoryLogs.learnedDate])
-      ..where(_db.learningHistoryLogs.userKey.equals(userKey))
+      ..where(_db.learningHistoryLogs.userKey.equals(userKey ?? ''))
       ..groupBy([_db.learningHistoryLogs.learnedDate]))
         .map((row) => row.read(_db.learningHistoryLogs.learnedDate)!)
         .get();
@@ -62,12 +64,15 @@ class LearningHistoryRepository implements ILearningHistoryRepository {
 
   @override
   Future<List<LearningHistoryEntity>> getHistoryByDate({
-    required String userKey,
-    required DateTime date,
-    required int page,
-    required int pageSize,
+    String? userKey,
+    DateTime? date,
+    int? page,
+    int? pageSize,
   }) {
-    final startOfDay = DateTime.utc(date.year, date.month, date.day);
+    final safeDate = date ?? DateTime.now();
+    final safePage = page ?? 1;
+    final safePageSize = pageSize ?? 10;
+    final startOfDay = DateTime.utc(safeDate.year, safeDate.month, safeDate.day);
     return (_db.select(_db.learningHistoryLogs).join([
       innerJoin(
         _db.vocabularyEntries,
@@ -75,12 +80,12 @@ class LearningHistoryRepository implements ILearningHistoryRepository {
             .equalsExp(_db.learningHistoryLogs.wordId),
       )
     ])
-      ..where(_db.learningHistoryLogs.userKey.equals(userKey) &
+      ..where(_db.learningHistoryLogs.userKey.equals(userKey ?? '') &
       _db.learningHistoryLogs.learnedDate.equals(startOfDay))
       ..orderBy([
         OrderingTerm.desc(_db.learningHistoryLogs.createdAt)
       ])
-      ..limit(pageSize, offset: (page - 1) * pageSize))
+      ..limit(safePageSize, offset: (safePage - 1) * safePageSize))
         .map((row) => LearningHistoryEntity(
       word: row.readTable(_db.vocabularyEntries).word,
       meaning: row.readTable(_db.vocabularyEntries).meaning,

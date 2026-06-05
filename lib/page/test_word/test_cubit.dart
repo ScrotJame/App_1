@@ -10,16 +10,18 @@ import '../../commons/enums.dart';
 import '../../commons/user_sesion.dart';
 import '../../models/tag_vocab.dart';
 import '../../repository/vocabulary_repository.dart';
+import '../../repository/learning_history_repository.dart';
 import '../../service/alarm_service.dart';
 
 part 'test_state.dart';
 
 class TestCubit extends Cubit<TestState> {
   final VocabularyRepository _repo;
+  final LearningHistoryRepository _repoHistory;
   Timer? _timer;
   final _rng = Random();
 
-  TestCubit(this._repo) : super(const TestState()) {
+  TestCubit(this._repo, this._repoHistory) : super(const TestState()) {
     _loadConfigData();
   }
 
@@ -332,6 +334,28 @@ class TestCubit extends Cubit<TestState> {
 
     if (wordsToSchedule.isNotEmpty) {
       _scheduleIndividualNotifications(wordsToSchedule);
+    }
+
+    // ── Ghi log lịch sử học (Test) ──────────────────────────────────────────
+    try {
+      for (final entry in state.answerStatuses.entries) {
+        final vocabEntry = state.questions[entry.key].word.word;
+        final isCorrect = entry.value == AnswerStatus.correct;
+        final isLeveledUp = leveledUpWords.any((w) => w.id == vocabEntry.id);
+
+        await _repoHistory.logWordLearned(
+          userKey: userKey,
+          wordId: vocabEntry.id,
+          wordLevelSnapshot: vocabEntry.level,
+          sessionType: 'Test',
+          isCorrect: isCorrect,
+          /// true = từ đã được lên cấp (trả lời đúng + incrementWordLevel thành công)
+          /// false = từ chưa lên cấp (trả lời sai hoặc increment thất bại)
+          isLeveledUp: isLeveledUp,
+        );
+      }
+    } catch (_) {
+      // Không block flow chính nếu log history thất bại
     }
 
     emit(state.copyWith(

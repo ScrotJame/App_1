@@ -44,6 +44,18 @@ class AppImages {
   static final icLibraryAdd = 'assets/vector/ic_lib.svg';
   static final icUnitBook = 'assets/vector/ic_unit_book.svg';
 
+  // ── Asset paths ────────────────────────────
+  static const playerIdlePath = 'assets/animator/main/main_idle.png';
+  static const playerIdlePathJson = 'assets/animator/main/main_idle.json';
+
+  static const playerAtkPath = 'assets/animator/main/main_anim_atk.png';
+  static const playerAtkPathJson = 'assets/animator/main/main_anim_atk.json';
+
+  static const enemyIdlePath = 'assets/animator/dummy/idle_dummy.png';
+  static const enemyIdlePathJson = 'assets/animator/dummy/idle_dummy.json';
+
+  static const enemyHitPath = 'assets/animator/dummy/dummy_hit_Animation.png';
+  static const enemyHitPathJson = 'assets/animator/dummy/dummy_hit_Animation.json';
 }
 
 class AppLogoImages {

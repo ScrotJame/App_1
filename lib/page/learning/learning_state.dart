@@ -4,11 +4,12 @@ part of 'learning_cubit.dart';
 // ENUMS
 // ═══════════════════════════════════════════════════════════════
 
-enum LearningPhase { config, flashCard, wordMatching, comingSoon }
+enum LearningPhase { config, flashCard, wordMatching, quizGame, comingSoon }
 
 enum LearningType {
   flashCard, // Học bằng thẻ lật (FlashCard)
   wordMatching, // Nối từ (Word Matching)
+  quizGame, // Quiz Game
   comingSoon
 }
 
