@@ -304,6 +304,41 @@
   "achievement_complete_unit_5_title": "Chinh phục đơn vị",
   "achievement_complete_unit_5_desc": "Hoàn thành 5 đơn vị.",
   "achievement_night_owl_title": "Cú đêm",
-  "achievement_night_owl_desc": "Luyện tập vào đêm khuya."
+  "achievement_night_owl_desc": "Luyện tập vào đêm khuya.",
+
+  "select_mode": "Chế độ chọn",
+  "select_all": "Chọn tất cả",
+  "deselect_all": "Bỏ chọn",
+  "selected_count": "Đã chọn {count} từ",
+  "@selected_count": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "delete_selected": "Xóa đã chọn",
+  "confirm_batch_delete_title": "Xóa hàng loạt",
+  "confirm_batch_delete_msg": "Bạn có chắc muốn xóa {count} từ đã chọn?",
+  "@confirm_batch_delete_msg": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "batch_deleted_success": "Đã xóa {count} từ thành công",
+  "@batch_deleted_success": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "batch_add_manual": "Nhập hàng loạt",
+  "batch_add_manual_title": "Nhập hàng loạt từ vựng",
+  "batch_input_hint": "Nhập mỗi dòng một từ theo định dạng:\ntừ vựng - nghĩa\ntừ vựng | nghĩa\ntừ vựng : nghĩa",
+  "batch_preview": "Xem trước",
+  "batch_parse_error": "Không tìm thấy từ hợp lệ. Vui lòng kiểm tra định dạng.",
+  "batch_parsed_count": "Đã nhận diện {count} từ",
+  "@batch_parsed_count": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 
 }

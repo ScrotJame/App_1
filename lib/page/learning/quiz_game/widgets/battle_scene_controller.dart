@@ -214,7 +214,7 @@ class BattleSceneController extends ChangeNotifier {
   void _showDamagePopup({required bool correct}) {
     showDamage = true;
     isDamageCorrect = correct;
-    damageText = correct ? 'HIT!' : 'MISS!';
+    damageText = correct ? AppImages.txtHit : AppImages.txtMiss;
     notifyListeners();
     damagePopupController.forward(from: 0);
   }

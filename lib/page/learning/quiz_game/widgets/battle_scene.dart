@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_abc/commons/app_images.dart';
 
 import '../../../../commons/enums.dart';
 import '../quiz_game_cubit.dart';
@@ -43,7 +44,7 @@ class _BattleSceneState extends State<BattleScene>
       builder: (context, _) {
         if (!_controller.spritesLoaded) {
           return const SizedBox(
-            height: 220,
+            height: 330,
             child: Center(
               child: SizedBox(
                 width: 24,
@@ -55,11 +56,17 @@ class _BattleSceneState extends State<BattleScene>
         }
 
         return Container(
-          height: 275,
+          height: 330,
           width: double.infinity,
           child: ClipRRect(
             child: Stack(
               children: [
+                Image.asset(
+                  AppImages.bgTrain,
+                  width: double.infinity,
+                  height: 330,
+                  fit: BoxFit.cover,
+                ),
                 _buildEnemyWidget,
                 _buildPlayerWidget,
                 _buildEnemyHpBarWidget,
@@ -76,7 +83,7 @@ class _BattleSceneState extends State<BattleScene>
   Widget get _buildPlayerWidget {
     return Positioned(
       bottom: 16,
-      left: 16,
+      left: 96,
       child: SpriteAnimator(
         key: const ValueKey('player_sprite'),
         controller: _controller.playerCtrl,
@@ -89,7 +96,7 @@ class _BattleSceneState extends State<BattleScene>
 
   Widget get _buildEnemyWidget {
     return Positioned(
-      top: 20,
+      top: 40,
       right: 20,
       child: AnimatedBuilder(
         animation: _controller.enemyFaintController,
@@ -240,6 +247,7 @@ class _BattleSceneState extends State<BattleScene>
   }
 
   Widget get _buildDamagePopupWidget {
+    if (_controller.damageText.isEmpty) return const SizedBox.shrink();
     return AnimatedBuilder(
       animation: _controller.damagePopupController,
       builder: (context, child) {
@@ -249,30 +257,15 @@ class _BattleSceneState extends State<BattleScene>
 
         return Positioned(
           top: 50 + yOffset,
-          right: 60,
+          right: 20,
           child: Opacity(
             opacity: opacity,
             child: Transform.scale(
               scale: 0.8 + (progress * 0.4),
-              child: Text(
+              child: Image.asset(
                 _controller.damageText,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  color: _controller.isDamageCorrect
-                      ? const Color(0xFF16A34A)
-                      : const Color(0xFFDC2626),
-                  shadows: const [
-                    Shadow(
-                      color: Colors.white,
-                      blurRadius: 4,
-                    ),
-                    Shadow(
-                      color: Colors.white,
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
+                width: 80,
+                fit: BoxFit.contain,
               ),
             ),
           ),

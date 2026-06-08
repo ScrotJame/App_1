@@ -519,14 +519,22 @@ class _LearningConfigBottomSheetContentState
   bool _isLoading = true;
   List<String> _languages = [];
   List<dynamic> _units = [];
+  final TextEditingController _limitController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _selectedLimit = widget.initialConfig.limitWords;
+    _selectedLimit = widget.initialConfig.limitWords ?? 10;
     _selectedLanguage = widget.initialConfig.language;
     _selectedUnitId = widget.initialConfig.unitId;
+    _limitController.text = _selectedLimit!.toString();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _limitController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -646,46 +654,128 @@ class _LearningConfigBottomSheetContentState
   }
 
   Widget _buildLimitRow() {
-    final limits = [
-      (label: 'Tất cả', value: null),
-      (label: '5 từ', value: 5),
-      (label: '10 từ', value: 10),
-      (label: '20 từ', value: 20),
-      (label: '50 từ', value: 50),
-    ];
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: limits.map((item) {
-          final isSelected = _selectedLimit == item.value;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(item.label),
-              selected: isSelected,
-              selectedColor: _kAccent.withOpacity(0.2),
-              backgroundColor: _kCard,
-              labelStyle: GoogleFonts.balooBhai2(
-                color: isSelected ? _kAccent : _kDark,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                fontSize: 13,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: isSelected ? _kAccent : Colors.transparent,
-                  width: 1.5,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: _kCard,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Số lượng từ (tối đa 50):',
+                style: GoogleFonts.balooBhai2(
+                  fontSize: 13,
+                  color: _kDark.withOpacity(0.7),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              onSelected: (_) {
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      final currentVal = int.tryParse(_limitController.text) ?? 10;
+                      if (currentVal > 1) {
+                        final newVal = currentVal - 1;
+                        setState(() {
+                          _selectedLimit = newVal;
+                          _limitController.text = newVal.toString();
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.remove_circle_outline, color: _kAccent),
+                  ),
+                  SizedBox(
+                    width: 50,
+                    child: TextField(
+                      controller: _limitController,
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.balooBhai2(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: _kDark,
+                      ),
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 4),
+                        border: UnderlineInputBorder(
+                          borderSide: BorderSide(color: _kAccent),
+                        ),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: _kAccent, width: 2),
+                        ),
+                      ),
+                      onChanged: (val) {
+                        final parsed = int.tryParse(val);
+                        if (parsed != null) {
+                          final clamped = parsed.clamp(1, 50);
+                          setState(() {
+                            _selectedLimit = clamped;
+                          });
+                          if (clamped != parsed) {
+                            _limitController.text = clamped.toString();
+                            _limitController.selection = TextSelection.fromPosition(
+                              TextPosition(offset: _limitController.text.length),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      final currentVal = int.tryParse(_limitController.text) ?? 10;
+                      if (currentVal < 50) {
+                        final newVal = currentVal + 1;
+                        setState(() {
+                          _selectedLimit = newVal;
+                          _limitController.text = newVal.toString();
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.add_circle_outline, color: _kAccent),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: _kAccent,
+              inactiveTrackColor: _kAccent.withOpacity(0.2),
+              thumbColor: _kAccent,
+              overlayColor: _kAccent.withOpacity(0.12),
+              valueIndicatorColor: _kAccent,
+              valueIndicatorTextStyle: const TextStyle(color: Colors.white),
+            ),
+            child: Slider(
+              value: (_selectedLimit ?? 10).toDouble().clamp(1.0, 50.0),
+              min: 1,
+              max: 50,
+              divisions: 49,
+              label: _selectedLimit?.toString(),
+              onChanged: (value) {
+                final val = value.round();
                 setState(() {
-                  _selectedLimit = item.value;
+                  _selectedLimit = val;
+                  _limitController.text = val.toString();
                 });
               },
             ),
-          );
-        }).toList(),
+          ),
+        ],
       ),
     );
   }
@@ -804,7 +894,8 @@ class _LearningConfigBottomSheetContentState
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () {
-          widget.onApply(_selectedLimit, _selectedLanguage, _selectedUnitId);
+          final limit = (_selectedLimit ?? 10).clamp(1, 50);
+          widget.onApply(limit, _selectedLanguage, _selectedUnitId);
           Navigator.pop(context);
         },
         icon: const Icon(Icons.check_rounded, size: 20),

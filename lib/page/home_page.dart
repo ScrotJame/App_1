@@ -62,7 +62,7 @@ class _HomePageState extends State<HomePage>
       pageBuilder: (_) => ListUnitPage(),
     ),
     IslandItem(
-      label: (ctx) => S.of(ctx).flash_card.capitalizeWords(),
+      label: (ctx) => S.of(ctx).training.capitalizeWords(),
       primaryColor: const Color(0xFF5B9EF5),
       secondaryColor: const Color(0xFF2A62C0),
       imagePath: AppImages.imgTrainLand,

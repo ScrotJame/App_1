@@ -6,17 +6,6 @@ import 'package:flutter/services.dart';
 import '../../../../models/sprite_sheet_models.dart';
 import 'sprite_animation_controller.dart';
 
-// ═══════════════════════════════════════════════════════════════
-// SPRITE ANIMATOR — Pure display widget
-// Nhận SpriteAnimationController từ ngoài, chỉ render frame.
-// Không tự quản lý AnimationController, không dùng ValueKey dynamic.
-//
-// Zero frame gap khi swap animation vì:
-//   - Widget không bị destroy/recreate
-//   - Controller.play() update frame ngay lập tức
-//   - Image đã preload trong cache → render synchronous
-// ═══════════════════════════════════════════════════════════════
-
 class SpriteAnimator extends StatefulWidget {
   final SpriteAnimationController controller;
 

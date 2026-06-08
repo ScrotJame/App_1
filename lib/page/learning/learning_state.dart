@@ -20,7 +20,7 @@ enum LearningType {
 class LearningConfig extends Equatable {
   const LearningConfig({
     this.learningType = LearningType.flashCard,
-    this.limitWords,
+    this.limitWords = 10,
     this.language,
     this.unitId,
   });

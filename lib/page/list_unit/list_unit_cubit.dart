@@ -18,7 +18,6 @@ class ListUnitCubit extends Cubit<ListUnitState> {
   Future<void> loadUnits() async {
     emit(state.copyWith(loadStatus: LOADSTATUS.LOADING));
     try {
-      await _repo.fixNullTimestamps();
       final units = await _repo.watchAllUnitsWithWords().first;
       emit(state.copyWith(
         allUnits: units,
@@ -225,5 +224,6 @@ class ListUnitCubit extends Cubit<ListUnitState> {
       ));
     }
   }
+
 
 }

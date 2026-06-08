@@ -10,6 +10,8 @@ class ListWordState extends Equatable {
   final LOADSTATUS loadstatus;
   final String? errorMessage;
   final int unitWordCount;
+  final bool isSelectionMode;
+  final Set<int> selectedWordIds;
 
   const ListWordState({
     this.allWords = const [],
@@ -21,9 +23,13 @@ class ListWordState extends Equatable {
     this.loadstatus = LOADSTATUS.INITAL,
     this.errorMessage,
     this.unitWordCount = 0,
+    this.isSelectionMode = false,
+    this.selectedWordIds = const {},
   });
 
   int get totalCount => allWords.length;
+  int get selectedCount => selectedWordIds.length;
+  bool isWordSelected(int id) => selectedWordIds.contains(id);
 
   ListWordState copyWith({
     List<VocabularyWithTags>? allWords,
@@ -36,6 +42,8 @@ class ListWordState extends Equatable {
     LOADSTATUS? loadstatus,
     String? errorMessage,
     int? unitWordCount,
+    bool? isSelectionMode,
+    Set<int>? selectedWordIds,
   }) {
     return ListWordState(
       allWords: allWords ?? this.allWords,
@@ -47,6 +55,8 @@ class ListWordState extends Equatable {
       loadstatus: loadstatus ?? this.loadstatus,
       errorMessage: errorMessage ?? this.errorMessage,
       unitWordCount: unitWordCount ?? this.unitWordCount,
+      isSelectionMode: isSelectionMode ?? this.isSelectionMode,
+      selectedWordIds: selectedWordIds ?? this.selectedWordIds,
     );
   }
 
@@ -61,5 +71,7 @@ class ListWordState extends Equatable {
     loadstatus,
     errorMessage,
     unitWordCount,
+    isSelectionMode,
+    selectedWordIds,
   ];
-}
+}

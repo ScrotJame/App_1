@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../repository/vocabulary_repository.dart';
 import 'flash_card/flash_card_page.dart';
 import 'learning_cubit.dart';
 import 'quiz_game/quiz_game_page.dart';
@@ -27,7 +28,7 @@ class _LearningPageState extends State<LearningPage> {
   @override
   void initState() {
     super.initState();
-    _cubit = LearningCubit();
+    _cubit = LearningCubit(context.read<VocabularyRepository>());
     // Lắng nghe side-effect lỗi (PublishSubject) → hiện SnackBar
     _messageSubscription = _cubit.messageController.stream.listen((message) {
       if (mounted) {

@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:test_abc/database/app_db.dart';
+import 'package:test_abc/database/table/unit_entity.dart';
 
 import '../models/unit_entity.dart';
 
@@ -13,6 +14,13 @@ abstract class IUnitRepository {
   Future<void> addWordToUnit({required int wordId, required int unitId});
   Future<void> removeWordFromUnit({required int wordId});
   Future<List<VocabularyEntry>> getWordsNotInAnyUnit();
+
+  Future<List<UnitsEntry>> getAllUnits();
+
+  Future<int> addWordsToUnit({
+    required int unitId,
+    required List<int> wordIds,
+  });
 }
 
 class UnitRepository implements IUnitRepository {
@@ -20,22 +28,31 @@ class UnitRepository implements IUnitRepository {
 
   UnitRepository(this._db);
 
+
   @override
   Stream<List<UnitWithWords>> watchAllUnitsWithWords() {
-    final unitsStream = _db.select(_db.unitsEntries).watch();
+    try {
+      final unitsStream = _db.select(_db.unitsEntries).watch();
 
-    return unitsStream.asyncMap((units) async {
-      final result = <UnitWithWords>[];
+      return unitsStream.asyncMap((units) async {
+        final result = <UnitWithWords>[];
 
-      for (final unit in units) {
-        final words = await (_db.select(_db.vocabularyEntries)
-          ..where((v) => v.unitId.equals(unit.id)))
-            .get();
-        result.add(UnitWithWords(unit: unit, words: words));
-      }
+        for (final unit in units) {
+          try {
+            final words = await (_db.select(_db.vocabularyEntries)
+              ..where((v) => v.unitId.equals(unit.id)))
+                .get();
+            result.add(UnitWithWords(unit: unit, words: words));
+          } catch (e, stackTrace) {
+            rethrow;
+          }
+        }
 
-      return result;
-    });
+        return result;
+      });
+    } catch (e, stackTrace) {
+      rethrow;
+    }
   }
 
   @override
@@ -83,5 +100,21 @@ class UnitRepository implements IUnitRepository {
       ..where((v)=> v.id.equals(wordId)))
         .write((VocabularyEntriesCompanion(unitId: Value(null)))
     );
+  }
+
+  @override
+  Future<List<UnitsEntry>> getAllUnits() =>
+      _db.select(_db.unitsEntries).get();
+
+  @override
+  Future<int> addWordsToUnit({
+    required int unitId,
+    required List<int> wordIds,
+  }) async {
+    if (wordIds.isEmpty) return 0;
+
+    return (_db.update(_db.vocabularyEntries)
+      ..where((t) => t.id.isIn(wordIds)))
+        .write(VocabularyEntriesCompanion(unitId: Value(unitId)));
   }
 }

@@ -55,7 +55,12 @@ class AppImages {
   static const enemyIdlePathJson = 'assets/animator/dummy/idle_dummy.json';
 
   static const enemyHitPath = 'assets/animator/dummy/dummy_hit_Animation.png';
-  static const enemyHitPathJson = 'assets/animator/dummy/dummy_hit_Animation.json';
+  static const enemyHitPathJson = 'assets/animator/dummy/dummy_hit_Animation.json'; //background_train.png
+
+  // ── Asset image background paths ────────────────────────────
+  static final bgTrain= 'assets/images/background_train.png';
+  static final txtMiss= 'assets/images/miss.png';
+  static final txtHit= 'assets/images/hit.png';
 }
 
 class AppLogoImages {

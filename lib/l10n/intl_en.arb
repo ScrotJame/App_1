@@ -303,5 +303,41 @@
   "achievement_complete_unit_5_title": "Unit Conqueror",
   "achievement_complete_unit_5_desc": "Complete 5 units.",
   "achievement_night_owl_title": "Night Owl",
-  "achievement_night_owl_desc": "Practice late at night."
+  "achievement_night_owl_desc": "Practice late at night.",
+
+  "select_mode": "Selection mode",
+  "select_all": "Select all",
+  "deselect_all": "Deselect all",
+  "selected_count": "{count} selected",
+  "@selected_count": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "delete_selected": "Delete selected",
+  "confirm_batch_delete_title": "Batch delete",
+  "confirm_batch_delete_msg": "Are you sure you want to delete {count} selected words?",
+  "@confirm_batch_delete_msg": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "batch_deleted_success": "Successfully deleted {count} words",
+  "@batch_deleted_success": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "batch_add_manual": "Batch input",
+  "batch_add_manual_title": "Batch add vocabulary",
+  "batch_input_hint": "Enter one word per line in format:\nword - meaning\nword | meaning\nword : meaning",
+  "batch_preview": "Preview",
+  "batch_parse_error": "No valid words found. Please check the format.",
+  "batch_parsed_count": "Parsed {count} words",
+  "@batch_parsed_count": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
+
 }

@@ -223,6 +223,90 @@ class ListWordCubit extends Cubit<ListWordState> {
     return result;
   }
 
+  // ─── Selection Mode ────────────────────────────────────────
+
+  void toggleSelectionMode() {
+    if (state.isSelectionMode) {
+      // Thoát chế độ chọn → clear selection
+      emit(state.copyWith(isSelectionMode: false, selectedWordIds: const {}));
+    } else {
+      emit(state.copyWith(isSelectionMode: true));
+    }
+  }
+
+  void toggleWordSelection(int id) {
+    final current = Set<int>.from(state.selectedWordIds);
+    if (current.contains(id)) {
+      current.remove(id);
+    } else {
+      current.add(id);
+    }
+    // Nếu bỏ chọn hết → tự thoát selection mode
+    if (current.isEmpty) {
+      emit(state.copyWith(isSelectionMode: false, selectedWordIds: const {}));
+    } else {
+      emit(state.copyWith(selectedWordIds: current));
+    }
+  }
+
+  void selectAll() {
+    final allIds = state.filteredWords.map((w) => w.word.id).toSet();
+    emit(state.copyWith(selectedWordIds: allIds));
+  }
+
+  void deselectAll() {
+    emit(state.copyWith(selectedWordIds: const {}));
+  }
+
+  Future<int> deleteSelectedWords() async {
+    if (state.selectedWordIds.isEmpty) return 0;
+
+    final ids = state.selectedWordIds.toList();
+    try {
+      final count = await _repo.deleteWords(ids);
+      emit(state.copyWith(isSelectionMode: false, selectedWordIds: const {}));
+      if (_unitId != null) {
+        await reloadUnit();
+      } else {
+        await loadWords();
+      }
+      return count;
+    } catch (e) {
+      emit(state.copyWith(
+        loadstatus: LOADSTATUS.FAILED,
+        errorMessage: 'Xóa hàng loạt thất bại: $e',
+      ));
+      return 0;
+    }
+  }
+
+  Future<int> addSelectedToUnit(int unitId) async {
+    if (state.selectedWordIds.isEmpty) return 0;
+    final repo = _unitRepo;
+    if (repo == null) return 0;
+
+    final ids = state.selectedWordIds.toList();
+    try {
+      final count = await repo.addWordsToUnit(
+        unitId: unitId,
+        wordIds: ids,
+      );
+      emit(state.copyWith(isSelectionMode: false, selectedWordIds: const {}));
+      await reloadUnit();
+      return count;
+    } catch (e) {
+      emit(state.copyWith(
+        loadstatus: LOADSTATUS.FAILED,
+        errorMessage: 'Thêm vào unit thất bại: $e',
+      ));
+      return 0;
+    }
+  }
+
+  void exitSelectionAfterBatchAdd() {
+    emit(state.copyWith(isSelectionMode: false, selectedWordIds: const {}));
+  }
+
   @override
   Future<void> close() {
     _unitStreamSub?.cancel();

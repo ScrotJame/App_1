@@ -19,6 +19,8 @@ abstract class IVocabularyRepository {
 
   Future<int> deleteWord(int id);
 
+  Future<int> deleteWords(List<int> ids);
+
   Future<bool> updateWord({
     required int id,
     required String word,
@@ -105,6 +107,18 @@ class VocabularyRepository implements IVocabularyRepository {
   @override
   Future<int> deleteWord(int id) =>
       (_db.delete(_db.vocabularyEntries)..where((t) => t.id.equals(id))).go();
+
+  @override
+  Future<int> deleteWords(List<int> ids) async {
+    if (ids.isEmpty) return 0;
+    // Xóa tags liên kết trước
+    await (_db.delete(_db.vocabularyTags)
+      ..where((t) => t.wordId.isIn(ids)))
+        .go();
+    return (_db.delete(_db.vocabularyEntries)
+      ..where((t) => t.id.isIn(ids)))
+        .go();
+  }
 
   @override
   Future<bool> updateWord({
