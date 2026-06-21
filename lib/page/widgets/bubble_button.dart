@@ -10,10 +10,21 @@ class BubbleButton extends StatefulWidget {
   final String? label;
   final double? width;
   final double? height;
+  final double? widthIcon;
+  final double? heightIcon;
   final Color? colorButton;
   final VoidCallback onTap;
 
-  const BubbleButton({super.key, required this.onTap, this.icon, this.label, this.colorButton, this.width, this.height});
+  const BubbleButton({
+    super.key,
+    required this.onTap,
+    this.icon,
+    this.label,
+    this.colorButton,
+    this.width,
+    this.height,
+    this.widthIcon,
+    this.heightIcon});
 
   @override
   State<BubbleButton> createState() => BubbleButtonState();
@@ -78,63 +89,64 @@ class BubbleButtonState extends State<BubbleButton>
 
   // ─── BUBBLE ───────────────────────────────────────────────
   Widget _buildBubble() {
-    return Container(
-      width: 70,
-      height: 70,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF6DD85E), Color(0xFF2E7D32)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1B5E20).withOpacity(0.8),
-            blurRadius: 0,
-            offset: const Offset(0, 5),
+    return
+        Container(
+        width: widget.width ?? 70,
+        height: widget.height ?? 70,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF6DD85E), Color(0xFF2E7D32)],
           ),
-          BoxShadow(
-            color: const Color(0xFF43A047).withOpacity(0.45),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
-        border: Border.all(
-          color: Colors.white.withOpacity(0.25),
-          width: 2,
-        ),
-      ),
-      child: Stack(
-        children: [
-          _buildHighlight(),
-
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SvgPicture.asset(
-                  widget.icon ?? '',
-                  width: widget.width !=null ? widget.width : 25,
-                ),
-
-
-                if(widget.label != null)...[
-                  const SizedBox(height: 4),
-                  Text(
-                  widget.label ?? '',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),]
-              ],
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1B5E20).withOpacity(0.8),
+              blurRadius: 0,
+              offset: const Offset(0, 5),
             ),
+            BoxShadow(
+              color: const Color(0xFF43A047).withOpacity(0.45),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+          border: Border.all(
+            color: Colors.white.withOpacity(0.25),
+            width: 2,
           ),
-        ],
-      ),
+        ),
+        child: Stack(
+          children: [
+            _buildHighlight(),
+
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SvgPicture.asset(
+                    widget.icon ?? '',
+                    width: widget.widthIcon !=null ? widget.widthIcon : 25,
+                  ),
+
+
+                  if(widget.label != null)...[
+                    const SizedBox(height: 4),
+                    Text(
+                    widget.label ?? '',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),]
+                ],
+              ),
+            ),
+          ],
+        ),
     );
   }
 

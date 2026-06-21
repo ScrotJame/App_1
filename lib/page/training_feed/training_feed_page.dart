@@ -4,7 +4,13 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_abc/commons/app_images.dart';
+import 'package:test_abc/commons/user_sesion.dart';
+import 'package:test_abc/models/entity/active_companion_entity.dart';
+import 'package:test_abc/page/companion/companion_page.dart';
 import 'package:test_abc/page/training_feed/widgets/rail_button_widget.dart';
+import 'package:test_abc/page/widgets/bubble_button.dart';
+import 'package:test_abc/repository/companion_repository.dart';
 
 import '../../commons/app_colors.dart';
 import '../../commons/enums.dart';
@@ -29,6 +35,7 @@ class TrainingFeedPage extends StatelessWidget {
       create: (context) => TrainingFeedCubit(
         context.read<VocabularyRepository>(),
         context.read<XpCubit>(),
+        context.read<CompanionRepository>(),
       )..load(),
       child: _TrainingFeedView(isEmbedInHome: isEmbedInHome),
     );
@@ -57,6 +64,56 @@ class _TrainingFeedViewState extends State<_TrainingFeedView>
   StreamSubscription<String>? _messageSubscription;
   StreamSubscription<int>? _confettiSubscription;
 
+  String? _companionMessage;
+  bool _companionBubbleVisible = false;
+  Timer? _companionBubbleTimer;
+
+  void _showCompanionBubble(String msg) {
+    _companionBubbleTimer?.cancel();
+    setState(() {
+      _companionMessage = msg;
+      _companionBubbleVisible = true;
+    });
+    _companionBubbleTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() => _companionBubbleVisible = false);
+      }
+    });
+  }
+
+  void _maybeTriggerCompanionBubble(ActiveCompanionEntity? companion) {
+    if (companion == null) return;
+
+    // 30% chance to show
+    final random = Random();
+    if (random.nextDouble() > 0.3) return;
+
+    final isPlant = companion.definition?.type == 'plant';
+    final plantMessages = [
+      'Tưới nước cho tớ bằng cách học từ nhé! 💧',
+      'Mỗi từ mới là một giọt nước mát lành! 🌱',
+      'Tớ đang lớn thêm một chút rồi nè! 🌸',
+      'Cùng phát triển mỗi ngày nhé! ☀️',
+      'Hãy học thêm từ vựng để tớ ra hoa nha! 🌼',
+    ];
+    final petMessages = [
+      'Cho tớ ăn bằng cách học từ mới nha! 🍖',
+      'Tớ đói rồi, cùng học từ vựng nào! 🐾',
+      'Gâu gâu! Bạn hôm nay tuyệt vời quá! 🐶',
+      'Chơi cùng tớ bằng cách học bài nhé! ⚽',
+      'Tớ luôn đồng hành cùng bạn! ❤️',
+      'Đừng quên ôn lại từ vựng nhé! 🧠',
+    ];
+
+    final pool = isPlant ? plantMessages : petMessages;
+    final msg = pool[random.nextInt(pool.length)];
+
+    final emoji = companion.definition?.iconKey ?? '🐾';
+    final name = companion.displayName;
+
+    _showCompanionBubble('$emoji $name: $msg');
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -74,6 +131,7 @@ class _TrainingFeedViewState extends State<_TrainingFeedView>
     _pageController.dispose();
     _messageSubscription?.cancel();
     _confettiSubscription?.cancel();
+    _companionBubbleTimer?.cancel();
     super.dispose();
   }
 
@@ -81,7 +139,9 @@ class _TrainingFeedViewState extends State<_TrainingFeedView>
     if (_scrollHintVisible) {
       setState(() => _scrollHintVisible = false);
     }
-    context.read<TrainingFeedCubit>().onPageChanged(index);
+    final cubit = context.read<TrainingFeedCubit>();
+    cubit.onPageChanged(index);
+    _maybeTriggerCompanionBubble(cubit.state.activeCompanion);
   }
 
   void _showToast(String msg) {
@@ -103,8 +163,20 @@ class _TrainingFeedViewState extends State<_TrainingFeedView>
   Widget build(BuildContext context) {
     final feedContent = DecoratedBox(
       decoration: const BoxDecoration(gradient: AppColors.mainGradient),
-      child: BlocBuilder<TrainingFeedCubit, TrainingFeedState>(
-        builder: (context, state) {
+      child: BlocListener<TrainingFeedCubit, TrainingFeedState>(
+        listenWhen: (previous, current) {
+          return (previous.loadStatus != current.loadStatus && current.loadStatus == LOADSTATUS.SUCCESS) ||
+              (previous.activeCompanion == null && current.activeCompanion != null);
+        },
+        listener: (context, state) {
+          Future.delayed(const Duration(milliseconds: 800), () {
+            if (mounted) {
+              _maybeTriggerCompanionBubble(state.activeCompanion);
+            }
+          });
+        },
+        child: BlocBuilder<TrainingFeedCubit, TrainingFeedState>(
+          builder: (context, state) {
           if (state.loadStatus == LOADSTATUS.LOADING) {
             return const Center(
               child: CircularProgressIndicator(
@@ -148,8 +220,39 @@ class _TrainingFeedViewState extends State<_TrainingFeedView>
               // ── Top bar ──
               if (!widget.isEmbedInHome) _TopBar(state: state),
 
-
-
+              Positioned(
+                bottom: 115,
+                left: 20,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    BubbleButton(
+                      width: 45,
+                      height: 45,
+                      icon: AppImages.icCompanion,
+                      onTap: () {
+                        final userKey = UserSession.instance.userKey;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CompanionPage(userKey: userKey),
+                          ),
+                        );
+                      },
+                    ),
+                    if (state.activeCompanion != null && _companionBubbleVisible && _companionMessage != null)
+                      Positioned(
+                        bottom: 60,
+                        left: 0,
+                        child: AnimatedOpacity(
+                          opacity: _companionBubbleVisible ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 300),
+                          child: _SpeechBubble(message: _companionMessage!),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
               // ── Scroll hint ──
               if (_scrollHintVisible) const _ScrollHint(),
 
@@ -165,7 +268,8 @@ class _TrainingFeedViewState extends State<_TrainingFeedView>
           );
         },
       ),
-    );
+    ),
+  );
 
     if (widget.isEmbedInHome) {
       return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -1514,4 +1618,88 @@ class _FeedMessage extends StatelessWidget {
       ),
     );
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPANION SPEECH BUBBLE
+// ═══════════════════════════════════════════════════════════════
+
+class _SpeechBubble extends StatelessWidget {
+  final String message;
+
+  const _SpeechBubble({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          constraints: const BoxConstraints(maxWidth: 220),
+          decoration: BoxDecoration(
+            color: const Color(0xF014111E),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.xoayLine, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.25),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Text(
+            message,
+            style: const TextStyle(
+              color: AppColors.xoayPaper,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              height: 1.4,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 18),
+          child: CustomPaint(
+            size: const Size(12, 6),
+            painter: _BubbleTrianglePainter(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BubbleTrianglePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xF014111E)
+      ..style = PaintingStyle.fill;
+
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..lineTo(size.width, 0)
+      ..close();
+
+    canvas.drawPath(path, paint);
+
+    final borderPaint = Paint()
+      ..color = AppColors.xoayLine
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    final borderPath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..lineTo(size.width, 0);
+
+    canvas.drawPath(borderPath, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

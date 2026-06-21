@@ -9,6 +9,7 @@ class TrainingFeedState extends Equatable {
     this.xpEarned = 0,
     this.gemsEarned = 0,
     this.errorMessage,
+    this.activeCompanion,
   });
 
   final LOADSTATUS loadStatus;
@@ -18,6 +19,7 @@ class TrainingFeedState extends Equatable {
   final int xpEarned;
   final int gemsEarned;
   final String? errorMessage;
+  final ActiveCompanionEntity? activeCompanion;
 
   TrainingFeedCard? get currentCard {
     if (cards.isEmpty || currentIndex >= cards.length) return null;
@@ -32,6 +34,7 @@ class TrainingFeedState extends Equatable {
     int? xpEarned,
     int? gemsEarned,
     Object? errorMessage = _sentinel,
+    ActiveCompanionEntity? activeCompanion,
   }) {
     return TrainingFeedState(
       loadStatus: loadStatus ?? this.loadStatus,
@@ -43,6 +46,7 @@ class TrainingFeedState extends Equatable {
       errorMessage: errorMessage == _sentinel
           ? this.errorMessage
           : errorMessage as String?,
+      activeCompanion: activeCompanion ?? this.activeCompanion,
     );
   }
 
@@ -55,6 +59,7 @@ class TrainingFeedState extends Equatable {
         xpEarned,
         gemsEarned,
         errorMessage,
+        activeCompanion,
       ];
 }
 

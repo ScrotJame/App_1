@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:rxdart/rxdart.dart';
 
 import '../../commons/enums.dart';
 import '../../commons/user_sesion.dart';
+import '../../models/entity/active_companion_entity.dart';
+import '../../repository/companion_repository.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../widgets/avatar/xp_cubit.dart';
 import 'widgets/training_feed_card.dart';
@@ -14,23 +18,35 @@ part 'training_feed_state.dart';
 class TrainingFeedCubit extends Cubit<TrainingFeedState> {
   TrainingFeedCubit(
     this._vocabularyRepository,
-    this._xpCubit, {
+    this._xpCubit,
+    this._companionRepository, {
     TrainingFeedEngine? engine,
   })  : _engine = engine ?? TrainingFeedEngine(),
         super(const TrainingFeedState());
 
   final VocabularyRepository _vocabularyRepository;
   final XpCubit _xpCubit;
+  final CompanionRepository _companionRepository;
   final TrainingFeedEngine _engine;
 
   final PublishSubject<String> messageController = PublishSubject();
   final PublishSubject<int> confettiController = PublishSubject();
+
+  StreamSubscription<ActiveCompanionEntity?>? _companionSub;
 
   Future<void> load() async {
     emit(state.copyWith(
       loadStatus: LOADSTATUS.LOADING,
       errorMessage: null,
     ));
+
+    await _companionSub?.cancel();
+    final userKey = UserSession.instance.userKey;
+    if (userKey.isNotEmpty) {
+      _companionSub = _companionRepository.watchActiveCompanion(userKey).listen((activeCompanion) {
+        emit(state.copyWith(activeCompanion: activeCompanion));
+      });
+    }
 
     try {
       final words = await _vocabularyRepository.watchAllWordsWithTags().first;
@@ -195,6 +211,7 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
 
   @override
   Future<void> close() {
+    _companionSub?.cancel();
     messageController.close();
     confettiController.close();
     return super.close();
