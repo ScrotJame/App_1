@@ -15,7 +15,6 @@ class QuizGameState extends Equatable {
     this.selectedAnswerId,
     this.correctCount = 0,
     this.wrongCount = 0,
-    this.remainingSeconds = 45,
     this.errorMessage,
     this.battleAnimState = BattleAnimState.idle,
   });
@@ -27,7 +26,6 @@ class QuizGameState extends Equatable {
   final String? selectedAnswerId;
   final int correctCount;
   final int wrongCount;
-  final int remainingSeconds;
   final String? errorMessage;
   final BattleAnimState battleAnimState;
 
@@ -51,12 +49,6 @@ class QuizGameState extends Equatable {
         .any((o) => o.id == selectedAnswerId && o.isCorrect);
   }
 
-  String get timerDisplay {
-    final minutes = (remainingSeconds ~/ 60).toString().padLeft(2, '0');
-    final seconds = (remainingSeconds % 60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
-  }
-
   // ── copyWith ────────────────────────────────
   QuizGameState copyWith({
     LOADSTATUS? loadStatus,
@@ -66,7 +58,6 @@ class QuizGameState extends Equatable {
     Object? selectedAnswerId = _sentinel,
     int? correctCount,
     int? wrongCount,
-    int? remainingSeconds,
     Object? errorMessage = _sentinel,
     BattleAnimState? battleAnimState,
   }) {
@@ -80,7 +71,6 @@ class QuizGameState extends Equatable {
           : selectedAnswerId as String?,
       correctCount: correctCount ?? this.correctCount,
       wrongCount: wrongCount ?? this.wrongCount,
-      remainingSeconds: remainingSeconds ?? this.remainingSeconds,
       errorMessage: errorMessage == _sentinel
           ? this.errorMessage
           : errorMessage as String?,
@@ -97,7 +87,6 @@ class QuizGameState extends Equatable {
         selectedAnswerId,
         correctCount,
         wrongCount,
-        remainingSeconds,
         errorMessage,
         battleAnimState,
       ];

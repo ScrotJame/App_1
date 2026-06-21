@@ -119,6 +119,7 @@ class StreakCubit extends Cubit<StreakState> {
   Future<void> loadProfile() async {
     emit(state.copyWith(loadStatus: LOADSTATUS.INITAL));
     try {
+      await _userRepository.syncStreak();
       final user = await _userRepository.getCurrentUser();
       if (user == null) {
         emit(state.copyWith(

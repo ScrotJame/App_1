@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../commons/user_sesion.dart';
 import '../database/app_db.dart';
-import '../models/entity/user_entity.dart';
 
 abstract class IUserRepository {
   Future<UsersEntrieData?> getCurrentUser();
@@ -13,6 +12,7 @@ abstract class IUserRepository {
   Future<bool> updateUser(UsersEntrieCompanion user);
   Future<void> linkAccount(String serverId);
   Future<void> deleteLocalUser();
+  Future<void> syncStreak();
 }
 
 class UserRepository implements IUserRepository {
@@ -129,5 +129,69 @@ class UserRepository implements IUserRepository {
     final localKey = await _getLocalKey();
     if (localKey == null) return;
     await (_db.update(_db.usersEntrie)..where((t) => t.keyOpen.equals(localKey))).write(UsersEntrieCompanion(totalLearned: Value(4)));
+  }
+
+  @override
+  Future<void> syncStreak() async {
+    final user = await getCurrentUser();
+    if (user == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList('streak_marked_dates') ?? [];
+    var markedDates = list.toSet();
+
+    if (markedDates.isEmpty &&
+        user.currentStreak > 0 &&
+        user.lastActiveDate != null) {
+      final end = DateTime(user.lastActiveDate!.year, user.lastActiveDate!.month, user.lastActiveDate!.day);
+      final generated = <String>{};
+      for (int i = 0; i < user.currentStreak; i++) {
+        final d = end.subtract(Duration(days: i));
+        final key = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+        generated.add(key);
+      }
+      markedDates = generated;
+      await prefs.setStringList('streak_marked_dates', markedDates.toList());
+    }
+
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final todayKey = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    final startCursor = markedDates.contains(todayKey)
+        ? today
+        : yesterday;
+
+    int currentStreak = 0;
+    DateTime cursor = startCursor;
+
+    while (true) {
+      final key = '${cursor.year}-${cursor.month.toString().padLeft(2, '0')}-${cursor.day.toString().padLeft(2, '0')}';
+      if (markedDates.contains(key)) {
+        currentStreak++;
+        cursor = cursor.subtract(const Duration(days: 1));
+      } else {
+        break;
+      }
+    }
+
+    final longestStreak = currentStreak > user.longestStreak ? currentStreak : user.longestStreak;
+    final lastActiveDate = currentStreak > 0 ? (user.lastActiveDate ?? DateTime.now()) : null;
+
+    bool needsDbUpdate = false;
+    if (user.currentStreak != currentStreak) needsDbUpdate = true;
+    if (user.longestStreak != longestStreak) needsDbUpdate = true;
+    if (user.lastActiveDate == null && lastActiveDate != null) needsDbUpdate = true;
+    if (user.lastActiveDate != null && lastActiveDate == null) needsDbUpdate = true;
+
+    if (needsDbUpdate) {
+      await updateUser(
+        UsersEntrieCompanion(
+          currentStreak: Value(currentStreak),
+          longestStreak: Value(longestStreak),
+          lastActiveDate: Value(lastActiveDate),
+        ),
+      );
+    }
   }
 }

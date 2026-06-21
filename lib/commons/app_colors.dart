@@ -49,6 +49,17 @@ class AppColors {
     end: Alignment.bottomCenter,
     colors: [Color(0xFFFF8C42), Color(0xFFFF5722)],
   );
+
+  /// Xoay Từ training feed theme
+  static const Color xoaySurface = Color(0xFF181426);
+  static const Color xoaySurface2 = Color(0xFF1E1730);
+  static const Color xoayGold = Color(0xFFFFC94D);
+  static const Color xoayGoldDeep = Color(0xFFFF9F1C);
+  static const Color xoayMagenta = Color(0xFFFF3D7F);
+  static const Color xoayCyan = Color(0xFF3DF2D8);
+  static const Color xoayPaper = Color(0xFFF5EFE3);
+  static const Color xoayPaperDim = Color(0x94F5EFE3);
+  static const Color xoayLine = Color(0x1AF5EFE3);
 }
 
 class AppCommonColors {

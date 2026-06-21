@@ -20,9 +20,6 @@ class QuizGameCubit extends Cubit<QuizGameState> {
 
   final PublishSubject<String> messageController = PublishSubject();
 
-  Timer? _timer;
-  static const int _defaultTimerSeconds = 45;
-
   QuizGameCubit(
     this._repo, {
     this.config,
@@ -79,8 +76,6 @@ class QuizGameCubit extends Cubit<QuizGameState> {
         wrongCount: 0,
         selectedAnswerId: null,
       ));
-
-      _startTimer();
     } catch (e) {
       final errMsg = ErrorUtils.networkErrorToMessage(e);
       emit(state.copyWith(
@@ -136,45 +131,13 @@ class QuizGameCubit extends Cubit<QuizGameState> {
     return questions;
   }
 
-  // ─── Timer ──────────────────────────────────────────
 
-  void _startTimer() {
-    _timer?.cancel();
-    emit(state.copyWith(remainingSeconds: _defaultTimerSeconds));
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (state.remainingSeconds <= 1) {
-        timer.cancel();
-        _onTimeUp();
-        return;
-      }
-      emit(state.copyWith(remainingSeconds: state.remainingSeconds - 1));
-    });
-  }
-
-  void _pauseTimer() {
-    _timer?.cancel();
-  }
-
-  void _onTimeUp() {
-    if (state.quizStatus == QuizStatus.answered) return;
-    // Tự động chuyển câu nếu hết giờ
-    emit(state.copyWith(
-      wrongCount: state.wrongCount + 1,
-      quizStatus: QuizStatus.answered,
-      battleAnimState: BattleAnimState.hurt,
-    ));
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (!isClosed) nextQuestion();
-    });
-  }
 
   // ─── Answer ──────────────────────────────────────────
 
   void selectAnswer(String answerId) {
     if (state.quizStatus == QuizStatus.answered) return;
     if (state.currentQuestion == null) return;
-
-    _pauseTimer();
 
     final isCorrect = state.currentQuestion!.options
         .any((o) => o.id == answerId && o.isCorrect);
@@ -210,7 +173,6 @@ class QuizGameCubit extends Cubit<QuizGameState> {
   void nextQuestion() {
     final next = state.currentIndex + 1;
     if (next >= state.totalQuestions) {
-      _pauseTimer();
       emit(state.copyWith(
         quizStatus: QuizStatus.completed,
         currentIndex: next,
@@ -222,7 +184,6 @@ class QuizGameCubit extends Cubit<QuizGameState> {
         selectedAnswerId: null,
         battleAnimState: BattleAnimState.idle,
       ));
-      _startTimer();
     }
   }
 
@@ -232,7 +193,6 @@ class QuizGameCubit extends Cubit<QuizGameState> {
 
   @override
   Future<void> close() {
-    _timer?.cancel();
     messageController.close();
     return super.close();
   }

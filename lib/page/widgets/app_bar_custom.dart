@@ -30,7 +30,7 @@ class AppBarCustom extends StatelessWidget
 
   @override
   Size get preferredSize => Size.fromHeight(
-    bottomActions != null ? 190 : 56,
+    bottomActions != null ? 190 : 60,
   );
 
   Color get _bgColor =>
@@ -43,8 +43,6 @@ class AppBarCustom extends StatelessWidget
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Container(
-        height: preferredSize.height +
-            MediaQuery.of(context).padding.top,
         padding: EdgeInsets.only(
           top: MediaQuery.of(context).padding.top,
         ),
@@ -160,12 +158,8 @@ class _AppBarIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-        ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
         child: IconTheme(
           data: IconThemeData(color: foregroundColor, size: 18),
           child: Center(child: child),
@@ -177,22 +171,52 @@ class _AppBarIconButton extends StatelessWidget {
 
 class AppBarAction extends StatelessWidget {
   final String? icon;
-  final VoidCallback onTap;
+  final String? label;
+  final VoidCallback? onTap;
   final Color? color;
 
   const AppBarAction({
     super.key,
     required this.icon,
-    required this.onTap,
+    this.onTap,
     this.color,
+    this.label,
   });
 
   @override
   Widget build(BuildContext context) {
-    return _AppBarIconButton(
-      foregroundColor: color ?? Colors.white,
+    return GestureDetector(
       onTap: onTap,
-      child: Image.asset(icon!),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Image.asset(
+                icon!,
+                width: 18,
+                height: 18,
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label ?? '',
+              style: TextStyle(
+                color: color ?? Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

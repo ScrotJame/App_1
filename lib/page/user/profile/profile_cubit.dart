@@ -34,6 +34,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   Future<void> loadProfile() async {
     emit(state.copyWith(status: ProfileStatus.loading));
     try {
+      await _userRepository.syncStreak();
       final user = await _userRepository.getCurrentUser();
 
       if (user == null) {

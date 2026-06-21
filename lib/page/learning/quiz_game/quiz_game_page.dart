@@ -174,47 +174,6 @@ class _QuizGamePageState extends State<QuizGamePage>
               ],
             ),
           ),
-          const SizedBox(width: 12),
-
-          // Timer
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: state.remainingSeconds <= 10
-                  ? const Color(0xFFFEE2E2)
-                  : const Color(0xFFFFF7ED),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: state.remainingSeconds <= 10
-                    ? const Color(0xFFFCA5A5)
-                    : const Color(0xFFFED7AA),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.timer_outlined,
-                  size: 16,
-                  color: state.remainingSeconds <= 10
-                      ? AppColors.kRed
-                      : const Color(0xFFEA580C),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  state.timerDisplay,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: state.remainingSeconds <= 10
-                        ? AppColors.kRed
-                        : const Color(0xFFEA580C),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
