@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/commons/user_sesion.dart';
+import 'package:test_abc/helper/language_helper.dart';
 import 'package:test_abc/models/entity/active_companion_entity.dart';
 import 'package:test_abc/page/companion/companion_page.dart';
 import 'package:test_abc/page/training_feed/widgets/rail_button_widget.dart';
@@ -630,6 +631,56 @@ class _LearnCardState extends State<_LearnCard> {
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              AnimatedOpacity(
+                opacity: _showIpa ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 400),
+                child: Center(
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (word?.language != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.xoayCyan.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.xoayCyan.withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            LanguageHelper.getDetectedLanguageLabelTag(word?.language) ?? '',
+                            style: const TextStyle(
+                              color: AppColors.xoayCyan,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      if (widget.card.word?.tags != null)
+                        ...widget.card.word!.tags!.map((t) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.xoayGold.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.xoayGold.withOpacity(0.3)),
+                            ),
+                            child: Text(
+                              t.tagName,
+                              style: const TextStyle(
+                                color: AppColors.xoayGold,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          );
+                        }),
+                    ],
                   ),
                 ),
               ),
