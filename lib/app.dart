@@ -15,6 +15,7 @@ import 'package:test_abc/repository/unit_repository.dart';
 import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/router/router.dart';
+import 'package:test_abc/service/tts_service.dart';
 import 'components/side_bar.dart';
 import 'cubit/app_cubit.dart';
 import 'database/app_db.dart';
@@ -74,6 +75,10 @@ class _MyAppState extends State<MyApp> {
             create:(_) => AchievementRepository(_db)),
         RepositoryProvider<LearningHistoryRepository>(
             create:(_) => LearningHistoryRepository(_db)),
+        RepositoryProvider<TtsService>(
+          create: (_) => TtsService(),
+          dispose: (service) => service.dispose(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [

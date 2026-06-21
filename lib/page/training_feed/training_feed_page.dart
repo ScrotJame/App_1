@@ -16,6 +16,7 @@ import 'package:test_abc/repository/companion_repository.dart';
 import '../../commons/app_colors.dart';
 import '../../commons/enums.dart';
 import '../../repository/vocabulary_repository.dart';
+import '../../service/tts_service.dart';
 import '../add_word/add_word_page.dart';
 import '../list_word/list_word_page.dart';
 import '../shop/shop_page.dart';
@@ -37,6 +38,7 @@ class TrainingFeedPage extends StatelessWidget {
         context.read<VocabularyRepository>(),
         context.read<XpCubit>(),
         context.read<CompanionRepository>(),
+        context.read<TtsService>(),
       )..load(),
       child: _TrainingFeedView(isEmbedInHome: isEmbedInHome),
     );

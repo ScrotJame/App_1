@@ -6,9 +6,11 @@ import 'package:rxdart/rxdart.dart';
 
 import '../../commons/enums.dart';
 import '../../commons/user_sesion.dart';
+import '../../helper/language_helper.dart';
 import '../../models/entity/active_companion_entity.dart';
 import '../../repository/companion_repository.dart';
 import '../../repository/vocabulary_repository.dart';
+import '../../service/tts_service.dart';
 import '../widgets/avatar/xp_cubit.dart';
 import 'widgets/training_feed_card.dart';
 import 'training_feed_engine.dart';
@@ -17,16 +19,18 @@ part 'training_feed_state.dart';
 
 class TrainingFeedCubit extends Cubit<TrainingFeedState> {
   TrainingFeedCubit(
-    this._vocabularyRepository,
-    this._xpCubit,
-    this._companionRepository, {
-    TrainingFeedEngine? engine,
-  })  : _engine = engine ?? TrainingFeedEngine(),
+      this._vocabularyRepository,
+      this._xpCubit,
+      this._companionRepository,
+      this._ttsService, {
+        TrainingFeedEngine? engine,
+      })  : _engine = engine ?? TrainingFeedEngine(),
         super(const TrainingFeedState());
 
   final VocabularyRepository _vocabularyRepository;
   final XpCubit _xpCubit;
   final CompanionRepository _companionRepository;
+  final TtsService _ttsService;
   final TrainingFeedEngine _engine;
 
   final PublishSubject<String> messageController = PublishSubject();
@@ -94,7 +98,7 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
 
     try {
       await _vocabularyRepository.changeWordState(card.word!.word.id, 5, userKey);
-      messageController.add('❤️ Ghi nhớ');
+      messageController.add('Ghi nhớ');
       confettiController.add(10);
     } catch (e) {
       messageController.add('Lỗi ghi nhớ từ: $e');
@@ -110,17 +114,32 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
 
     try {
       await _vocabularyRepository.changeWordState(card.word!.word.id, 1, userKey);
-      messageController.add('🔖 Đã lưu để ôn lại');
+      messageController.add(' Đã lưu để ôn lại');
     } catch (e) {
       messageController.add('Lỗi lưu ôn lại: $e');
     }
   }
 
-  void pronounceCurrentWord() {
+  Future<void> pronounceCurrentWord() async {
     final card = state.currentCard;
     if (card == null || card.word == null) return;
 
-    messageController.add('🔊 Phát âm: ${card.word!.word.word}');
+    final word = card.word!.word;
+    final result = await _ttsService.speakWord(word.word, languageCode: word.language);
+
+    switch (result) {
+      case TtsSpeakResult.ok:
+        //messageController.add(' Phát âm: ${word.word}');
+        break;
+      case TtsSpeakResult.languageUnavailable:
+        messageController.add(
+          'Máy chưa có giọng đọc ${LanguageHelper.getDetectedLanguageLabelTag(word.language)}. Đang mở màn hình tải...',
+        );
+        await _ttsService.openVoiceDataInstaller();
+        break;
+      case TtsSpeakResult.empty:
+        break;
+    }
   }
 
   void answerCurrentQuiz(int selectedIndex) {

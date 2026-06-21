@@ -11,3 +11,4 @@ enum VocabTagJP { noun, verb, adjI, adjNa, adverb, expression}
 enum VocabLevelJP { N1, N2, N3, N4, N5 }
 enum QuizStatus { initial, inProgress, answered, completed }
 enum BattleAnimState { idle, attack, hurt, faint }
+enum TtsSpeakResult { ok, empty, languageUnavailable }
