@@ -42,7 +42,8 @@ class AppImages {
   static final icAddCircle = 'assets/vector/ic_add_circle.svg';
   static final icLibrary = 'assets/vector/ic_library.svg';
   static final icLibraryAdd = 'assets/vector/ic_lib.svg';
-  static final icUnitBook = 'assets/vector/ic_unit_book.svg';
+  static final icUnitBook = 'assets/vector/ic_unit_book.svg';//ic_add_square.svg
+  static final icAddSquare = 'assets/vector/ic_add_square.svg';
 
   // ── Asset paths ────────────────────────────
   static const playerIdlePath = 'assets/animator/main/main_idle.png';

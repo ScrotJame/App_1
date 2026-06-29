@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/commons/user_sesion.dart';
 import 'package:test_abc/database/app_db.dart';
@@ -16,7 +17,6 @@ import 'package:test_abc/repository/achievement_repository.dart';
 
 import '../../generated/l10n.dart';
 import '../../models/entity/achivement_entity.dart';
-import '../../router/app_router.dart';
 import '../../router/router.dart';
 import 'achievement_cubit.dart';
 
@@ -115,7 +115,7 @@ class _AchievementPageState extends State<AchievementPage> {
                       size: 22,
                     ),
                     onPressed: () {
-                        AppRouter.router.navigateTo(context, Routes.home);
+                        context.go(Routes.home);
                     },
                   ),
                 Text(

@@ -8,7 +8,6 @@ import 'package:test_abc/repository/learning_history_repository.dart';
 import '../../../commons/enums.dart';
 import '../../../repository/companion_repository.dart';
 import '../../../repository/vocabulary_repository.dart';
-import '../../../router/app_router.dart';
 import '../../../router/router.dart';
 import '../../widgets/avatar/xp_cubit.dart';
 import '../learning_cubit.dart';

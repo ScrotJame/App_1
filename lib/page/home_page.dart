@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:test_abc/commons/app_colors.dart';
 import 'package:test_abc/components/bager_widget.dart';
-import 'package:test_abc/page/streak/streak_page.dart';
 import 'package:test_abc/page/training_feed/training_feed_page.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/page/widgets/app_bar_custom.dart';
 
 import '../commons/app_images.dart';
 import '../helper/format_helper.dart';
-import '../router/app_router.dart';
 import '../router/router.dart';
 import 'widgets/avatar/avatar_widget.dart';
 
@@ -28,7 +27,7 @@ class HomePage extends StatelessWidget {
               return XpBarWidget(
                 avatarUrl: profileState.avatarPath ?? AppImages.icAvatar,
                 onTap: () {
-                  AppRouter.router.navigateTo(context, Routes.profile);
+                  context.push(Routes.profile);
                 },
               );
             },
@@ -57,12 +56,7 @@ class HomePage extends StatelessWidget {
               icon: AppImages.icFire,
               label: streak.toString(),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => StreakPage(),
-                  ),
-                );
+                context.push(Routes.streak);
               },
             ),
           ],

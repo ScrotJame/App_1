@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../router/app_router.dart';
 import '../router/router.dart';
 
 class PopUpDialog extends StatefulWidget {
@@ -144,10 +144,7 @@ class _PopUpDialogState extends State<PopUpDialog>
                             onPressed: ()
                             {
                               widget.onGetResult?.call();
-                              Navigator.of(context).pushNamedAndRemoveUntil(
-                                Routes.home,
-                                    (route) => false,
-                              );
+                              context.go(Routes.home);
                             },
                             style: buttonStyle.copyWith(
                               backgroundColor: WidgetStateProperty.all(Colors.grey[200]),

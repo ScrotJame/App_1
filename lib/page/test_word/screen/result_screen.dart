@@ -1,14 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/generated/l10n.dart';
-import 'package:test_abc/page/widgets/avatar/xp_cubit.dart';
 
 import '../../../commons/app_colors.dart';
 import '../../../database/app_db.dart';
 import '../../../repository/user_repository.dart';
-import '../../../router/app_router.dart';
 import '../../../router/router.dart';
 import '../test_cubit.dart';
 import '../widgets/app_bar_widget.dart';
@@ -343,7 +342,7 @@ class ResultScreenState extends State<ResultScreen> {
                 _buildOutlineButton(
                   label: 'Hoàn thành',
                   icon: Icons.home_outlined,
-                  onTap: ()=> AppRouter.router.navigateTo(context, Routes.home),
+                  onTap: ()=> context.go(Routes.home),
                 ),
               ],
             ),

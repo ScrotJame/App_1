@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/database/app_db.dart';
 import 'package:test_abc/helper/language_helper.dart';
@@ -12,11 +13,9 @@ import '../../models/tag_vocab.dart';
 import '../../models/unit_entity.dart';
 import '../../repository/unit_repository.dart';
 import '../../repository/vocabulary_repository.dart';
-import '../../router/app_router.dart';
 import '../../router/router.dart';
 import '../add_word/add_word_cubit.dart';
 import '../add_word/add_word_page.dart';
-import '../list_unit/list_unit_page.dart';
 import '../scan_vocab/scan_vocab_page.dart';
 import '../widgets/app_gradient_header.dart';
 import '../widgets/drop_down_widget.dart';
@@ -389,7 +388,7 @@ class _ListWordPageState extends State<ListWordPage> {
                       if (widget.unit != null) {
                         Navigator.pop(context);
                       } else{
-                        AppRouter.router.navigateTo(context, Routes.home);
+                        context.go(Routes.home);
                       }
                     }
                     ,
@@ -428,12 +427,7 @@ class _ListWordPageState extends State<ListWordPage> {
                 ),
                 InkWell(
                     onTap: (){
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ListUnitPage(),
-                        ),
-                      );
+                      context.push(Routes.listUnit);
                     },
                     child: SvgPicture.asset(AppImages.icLibraryAdd, width: 24, color: Colors.white,)),
                 const SizedBox(width: 16),

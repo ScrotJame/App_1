@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:test_abc/commons/app_images.dart';
 
@@ -8,7 +9,6 @@ import '../../commons/app_colors.dart';
 import '../../commons/enums.dart';
 import '../../generated/l10n.dart';
 import '../../repository/user_repository.dart';
-import '../../router/app_router.dart';
 import '../../router/router.dart';
 import '../../ultis/extension/label_extension.dart';
 import '../widgets/buble_stack.dart';
@@ -258,7 +258,7 @@ class _StreakPageState extends State<StreakPage>
                   left: -15,
                   child: InkWell(
                     onTap: () =>
-                        AppRouter.router.navigateTo(context, Routes.home),
+                        context.go(Routes.home),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 18, vertical: 5),

@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:test_abc/commons/app_colors.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/generated/l10n.dart';
-import 'package:test_abc/page/achievement/achievement_page.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/ultis/extension/label_extension.dart';
@@ -15,10 +15,7 @@ import 'package:test_abc/ultis/extension/label_extension.dart';
 import '../../../commons/user_sesion.dart';
 import '../../../cubit/app_cubit.dart';
 import '../../../database/app_db.dart';
-import '../../../router/app_router.dart';
 import '../../../router/router.dart';
-import '../../backup/backup_page.dart';
-import '../inventory/inventory_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -209,7 +206,7 @@ class _ProfilePageState extends State<ProfilePage> {
           top: 50,
           left: -15,
           child: InkWell(
-            onTap: () => AppRouter.router.navigateTo(context, Routes.home),
+            onTap: () => context.go(Routes.home),
             child: Container(
               padding:
               const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
@@ -442,9 +439,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   icon: AppImages.icBag,
                   label: S.current.my_inventory.capitalize(),
                   onTap: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(
-                            builder: (_) => const InventoryPage()));
+                    context.push(Routes.inventory);
                   }
               ),
               divider,
@@ -452,17 +447,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   icon:  AppImages.icLearnHistory,
                   label: S.current.learning_history.capitalize(),
                   onTap: () {
-                    AppRouter.router.navigateTo(context, Routes.learningHistory);
+                    context.push(Routes.learningHistory);
                   }),
               divider,
               settingsItem(
                   icon: AppImages.icBadge,
                   label: S.current.rewards.capitalize(),
                   onTap: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(
-                            builder: (_) => const AchievementPage()));
-                    //AchievementPage
+                    context.push(Routes.achievement);
                   }),
             ],
           ),
@@ -496,9 +488,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   icon: AppImages.icBackup,
                   label: S.current.save_data,
                   onTap: () {
-                    Navigator.push(context,
-                      MaterialPageRoute(
-                          builder: (_) => const BackupPage()));}),
+                    context.push(Routes.backup);
+                  }),
               divider,
               settingsItem(
                   icon: AppImages.icPrivacy,

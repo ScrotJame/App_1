@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/components/edit_dialog.dart';
@@ -9,7 +10,6 @@ import '../../database/app_db.dart';
 import '../../models/unit_entity.dart';
 import '../../repository/unit_repository.dart';
 import '../../repository/vocabulary_repository.dart';
-import '../../router/app_router.dart';
 import '../../router/router.dart';
 import '../list_word/list_word_page.dart';
 import '../widgets/app_gradient_header.dart';
@@ -104,7 +104,7 @@ class _ListUnitPageState extends State<ListUnitPage> {
               children: [
                 if(!state.isSearching)...[
                   InkWell(
-                    onTap: () => AppRouter.router.navigateTo(context, Routes.home),
+                    onTap: () => context.go(Routes.home),
                     child: Icon(Icons.arrow_back_ios_new, color: Colors.white,)
                   ),
                 ],
@@ -137,12 +137,7 @@ class _ListUnitPageState extends State<ListUnitPage> {
                 ),
                 InkWell(
                     onTap: (){
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ListWordPage(),
-                        ),
-                      );
+                      context.push(Routes.listWord);
                     },
                     child: SvgPicture.asset(AppImages.icLibraryAdd, width: 24, color: Colors.white,)),
                 const SizedBox(width: 16),

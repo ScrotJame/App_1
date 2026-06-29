@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/database/app_db.dart';
-import 'package:test_abc/page/backup/backup_page.dart';
 import 'package:test_abc/repository/tag_repository.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -12,8 +12,8 @@ import '../../helper/language_helper.dart';
 import '../../models/model_local/support_language_local.dart';
 import '../../repository/unit_repository.dart';
 import '../../repository/vocabulary_repository.dart';
+import '../../router/router.dart';
 import '../scan_vocab/scan_vocab_cubit.dart';
-import '../scan_vocab/scan_vocab_page.dart';
 import 'add_word_cubit.dart';
 
 class AddWordPage extends StatefulWidget {
@@ -187,9 +187,7 @@ class _AddWordPageState extends State<AddWordPage>
         ),
         InkWell(
           onTap: (){
-            Navigator.push(context,
-                MaterialPageRoute(
-                    builder: (_) => const ScanVocabPage()));
+            context.push(Routes.scanVocab);
           },
           child: SvgPicture.asset(AppImages.icScanFile,
             color: Color(0xFF6B7FD4),

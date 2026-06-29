@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:test_abc/page/list_unit/list_unit_cubit.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
@@ -14,14 +15,13 @@ import 'package:test_abc/repository/tag_repository.dart';
 import 'package:test_abc/repository/unit_repository.dart';
 import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
-import 'package:test_abc/router/router.dart';
 import 'package:test_abc/service/tts_service.dart';
 import 'components/side_bar.dart';
 import 'cubit/app_cubit.dart';
 import 'database/app_db.dart';
 import 'generated/l10n.dart';
 import 'page/widgets/avatar/xp_cubit.dart';
-import 'router/app_router.dart';
+import 'router/go_router_config.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -33,15 +33,17 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
 
   final _db = AppDatabase();
-  final _navigatorKey = GlobalKey<NavigatorState>();
+  late final GoRouter _router;
 
   @override
   void initState() {
     super.initState();
+    _router = createGoRouter();
   }
 
   @override
   void dispose() {
+    _router.dispose();
     _db.close();
     super.dispose();
   }
@@ -107,7 +109,7 @@ class _MyAppState extends State<MyApp> {
           listener: (context, xpState) {
             final xp = context.read<XpCubit>();
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              final overlay = _navigatorKey.currentState?.overlay;
+              final overlay = rootNavigatorKey.currentState?.overlay;
               if (overlay != null && overlay.mounted) {
                 SideBar.showOnOverlay(
                   overlay,
@@ -120,8 +122,8 @@ class _MyAppState extends State<MyApp> {
               xp.acknowledgeLevelUp();
             });
           },
-          child: MaterialApp(
-            navigatorKey: _navigatorKey,
+          child: MaterialApp.router(
+            routerConfig: _router,
             localizationsDelegates: const [
               S.delegate,
               GlobalMaterialLocalizations.delegate,
@@ -144,8 +146,6 @@ class _MyAppState extends State<MyApp> {
                 Theme.of(context).primaryTextTheme,
               ),
             ),
-            onGenerateRoute: AppRouter.router.generator,
-            initialRoute: Routes.splash,
             builder: (context, child) {
               return MediaQuery(
                 data: MediaQuery.of(context)
