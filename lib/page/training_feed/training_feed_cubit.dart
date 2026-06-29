@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 import '../../commons/enums.dart';
 import '../../commons/user_sesion.dart';
@@ -65,7 +66,7 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     } catch (e) {
       emit(state.copyWith(
         loadStatus: LOADSTATUS.FAILED,
-        errorMessage: 'Could not load training feed: $e',
+        errorMessage: S.current.error_load_feed(e.toString()),
       ));
     }
   }
@@ -98,10 +99,10 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
 
     try {
       await _vocabularyRepository.changeWordState(card.word!.word.id, 5, userKey);
-      messageController.add('Ghi nhớ');
+      messageController.add(S.current.memorized);
       confettiController.add(10);
     } catch (e) {
-      messageController.add('Lỗi ghi nhớ từ: $e');
+      messageController.add(S.current.error_remember_word(e.toString()));
     }
   }
 
@@ -114,9 +115,9 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
 
     try {
       await _vocabularyRepository.changeWordState(card.word!.word.id, 1, userKey);
-      messageController.add(' Đã lưu để ôn lại');
+      messageController.add(S.current.saved_for_review);
     } catch (e) {
-      messageController.add('Lỗi lưu ôn lại: $e');
+      messageController.add(S.current.error_save_review(e.toString()));
     }
   }
 
@@ -129,11 +130,11 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
 
     switch (result) {
       case TtsSpeakResult.ok:
-        //messageController.add(' Phát âm: ${word.word}');
+      //messageController.add(' Phát âm: ${word.word}');
         break;
       case TtsSpeakResult.languageUnavailable:
         messageController.add(
-          'Máy chưa có giọng đọc ${LanguageHelper.getDetectedLanguageLabelTag(word.language)}. Đang mở màn hình tải...',
+          S.current.tts_voice_unavailable(LanguageHelper.getDetectedLanguageLabelTag(word.language) ?? ''),
         );
         await _ttsService.openVoiceDataInstaller();
         break;
@@ -165,7 +166,37 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
       confettiController.add(14);
     } else {
       emit(state.copyWith(combo: 0));
-      messageController.add('Chưa đúng — xem nghĩa thật ở ô xanh nhé 👀');
+      messageController.add(S.current.quiz_incorrect_hint);
+    }
+  }
+
+  /// Trả lời quiz âm thanh ("nghe và chọn từ đúng"). Tách riêng khỏi
+  /// [answerCurrentQuiz] vì khác loại card, dù phần thưởng/combo tính
+  /// tương tự — gộp chung dễ nhầm khi 1 trong 2 luật thay đổi sau này.
+  void answerAudioQuiz(int selectedIndex) {
+    final card = state.currentCard;
+    if (card == null ||
+        card.type != TrainingFeedCardType.audioQuiz ||
+        card.isAnswered) {
+      return;
+    }
+
+    final answered = card.copyWith(
+      selectedChoiceIndex: selectedIndex,
+      isCompleted: true,
+    );
+    final isCorrect = selectedIndex == card.correctChoiceIndex;
+
+    _replaceCurrentCard(answered);
+
+    if (isCorrect) {
+      final comboBonus = state.combo >= 3 ? 3 : 0;
+      _grantReward(card.xpPreview + comboBonus, card.gemsPreview);
+      emit(state.copyWith(combo: state.combo + 1));
+      confettiController.add(14);
+    } else {
+      emit(state.copyWith(combo: 0));
+      messageController.add(S.current.audio_quiz_incorrect_hint);
     }
   }
 
@@ -185,7 +216,7 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     if (card.gemsPreview > 0) {
       rewards.add('+${card.gemsPreview} Gems');
     }
-    messageController.add('🎉 Đã nhận: ${rewards.join(" và ")}');
+    messageController.add(S.current.claimed_rewards(rewards.join(S.current.and_connector)));
   }
 
   Future<void> _appendMoreCards() async {

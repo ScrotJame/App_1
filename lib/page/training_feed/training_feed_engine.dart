@@ -1,5 +1,8 @@
 import 'dart:math';
 
+import 'package:test_abc/generated/l10n.dart';
+import 'package:test_abc/page/training_feed/widgets/training_feed_audio_quizz.dart';
+
 import '../../models/tag_vocab.dart';
 import 'widgets/training_feed_card.dart';
 
@@ -21,12 +24,12 @@ class TrainingFeedEngine {
   }
 
   TrainingFeedCard nextCard(
-    List<VocabularyWithTags> words,
-    int currentIndex, {
-    TrainingFeedCardType? previousType,
-  }) {
+      List<VocabularyWithTags> words,
+      int currentIndex, {
+        TrainingFeedCardType? previousType,
+      }) {
     if (words.isEmpty) {
-      return _breakCard('No words yet', 'Add a few words to start the feed.');
+      return _breakCard(S.current.no_words_yet, S.current.add_words_to_start);
     }
 
     final bool blockSpecial = previousType == TrainingFeedCardType.reward ||
@@ -40,7 +43,7 @@ class TrainingFeedEngine {
 
     if (currentIndex > 0 && currentIndex % 11 == 0) {
       if (!blockSpecial) {
-        return _breakCard('Nice run', 'Stop here or swipe for one more drop.');
+        return _breakCard(S.current.nice_run, S.current.stop_or_swipe_more);
       }
     }
 
@@ -67,11 +70,18 @@ class TrainingFeedEngine {
     return switch (type) {
       TrainingFeedCardType.learn => _learnCard(selectedWord, event),
       TrainingFeedCardType.quiz => _quizCard(selectedWord, words, event),
+      TrainingFeedCardType.audioQuiz => buildAudioQuizCard(
+        idSeed: 'feed_${_sequence++}',
+        word: selectedWord,
+        allWords: words,
+        event: event,
+        random: _random,
+      ),
       TrainingFeedCardType.reward => _rewardCard(),
       TrainingFeedCardType.breakPoint => _breakCard(
-          'Take a breath',
-          'You can leave now with progress saved.',
-        ),
+        S.current.take_a_breath,
+        S.current.leave_with_progress_saved,
+      ),
     };
   }
 
@@ -85,7 +95,8 @@ class TrainingFeedEngine {
     }
 
     if (roll < 0.36) return TrainingFeedCardType.learn;
-    if (roll < 0.86) return TrainingFeedCardType.quiz;
+    if (roll < 0.66) return TrainingFeedCardType.quiz;
+    if (roll < 0.86) return TrainingFeedCardType.audioQuiz;
     if (roll < 0.94) return TrainingFeedCardType.reward;
     return TrainingFeedCardType.breakPoint;
   }
@@ -93,23 +104,23 @@ class TrainingFeedEngine {
   TrainingFeedEvent _rollEvent() {
     final roll = _random.nextDouble();
     if (roll < 0.08) {
-      return const TrainingFeedEvent(
+      return TrainingFeedEvent(
         type: TrainingFeedEventType.luckyWord,
-        title: 'Lucky word',
+        title: S.current.lucky_word,
         multiplier: 2.0,
       );
     }
     if (roll < 0.15) {
-      return const TrainingFeedEvent(
+      return TrainingFeedEvent(
         type: TrainingFeedEventType.comboBoost,
-        title: 'Combo boost',
+        title: S.current.combo_boost,
         multiplier: 1.5,
       );
     }
     if (roll < 0.23) {
-      return const TrainingFeedEvent(
+      return TrainingFeedEvent(
         type: TrainingFeedEventType.mysteryCard,
-        title: 'Mystery card',
+        title: S.current.mystery_card,
         multiplier: 1.25,
       );
     }
@@ -166,15 +177,15 @@ class TrainingFeedEngine {
   }
 
   TrainingFeedCard _learnCard(
-    VocabularyWithTags word,
-    TrainingFeedEvent event,
-  ) {
+      VocabularyWithTags word,
+      TrainingFeedEvent event,
+      ) {
     final baseXp = word.word.level == 0 ? 8 : 5;
     return TrainingFeedCard(
       id: 'feed_${_sequence++}',
       type: TrainingFeedCardType.learn,
       title: word.word.word,
-      subtitle: 'Swipe after you reveal the meaning.',
+      subtitle: S.current.swipe_after_reveal,
       word: word,
       event: event,
       xpPreview: (baseXp * event.multiplier).round(),
@@ -183,10 +194,10 @@ class TrainingFeedEngine {
   }
 
   TrainingFeedCard _quizCard(
-    VocabularyWithTags word,
-    List<VocabularyWithTags> allWords,
-    TrainingFeedEvent event,
-  ) {
+      VocabularyWithTags word,
+      List<VocabularyWithTags> allWords,
+      TrainingFeedEvent event,
+      ) {
     final others = allWords.where((item) => item.word.id != word.word.id).toList()
       ..shuffle(_random);
 
@@ -199,7 +210,7 @@ class TrainingFeedEngine {
       id: 'feed_${_sequence++}',
       type: TrainingFeedCardType.quiz,
       title: word.word.word,
-      subtitle: 'Choose the meaning.',
+      subtitle: S.current.choose_the_meaning,
       word: word,
       choices: choices,
       correctChoiceIndex: choices.indexOf(word.word.meaning),
@@ -230,8 +241,8 @@ class TrainingFeedEngine {
     return TrainingFeedCard(
       id: 'feed_${_sequence++}',
       type: TrainingFeedCardType.reward,
-      title: 'Bonus drop',
-      subtitle: 'A small reward for keeping momentum.',
+      title: S.current.bonus_drop,
+      subtitle: S.current.reward_for_momentum,
       xpPreview: xp,
       gemsPreview: gems,
     );

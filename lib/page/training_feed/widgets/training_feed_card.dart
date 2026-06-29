@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../models/tag_vocab.dart';
 
-enum TrainingFeedCardType { learn, quiz, reward, breakPoint }
+enum TrainingFeedCardType { learn, quiz, audioQuiz, reward, breakPoint }
 
 enum TrainingFeedEventType { none, luckyWord, comboBoost, mysteryCard }
 

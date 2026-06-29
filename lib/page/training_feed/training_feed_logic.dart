@@ -1,19 +1,6 @@
-// Pure logic for the Training Feed screen — no widget/build code here.
-//
-// Anything in this file should be testable without `pumpWidget`. The only
-// reason `dart:ui`'s `Color` shows up is because confetti carries a palette;
-// nothing here reads `BuildContext`, `State`, or does any layout. Business
-// logic that touches the repository/XP system lives in `TrainingFeedCubit`
-// and `TrainingFeedEngine` — this file is only the leftover bits of math
-// and animation-timing logic that used to live inside widget State classes.
-
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui' show Color;
-
-// ─────────────────────────────────────────────────────────────────────────
-// XP / LEVEL
-// ─────────────────────────────────────────────────────────────────────────
 
 /// Derives level + progress-bar percentage from a raw XP total.
 ///
@@ -30,10 +17,6 @@ class LevelProgress {
     return LevelProgress(level: level, xpPercent: xpPercent);
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// SLOT-MACHINE LETTER REVEAL
-// ─────────────────────────────────────────────────────────────────────────
 
 /// Drives the "slot reel" letter-lock animation used by the Learn card.
 ///
@@ -105,10 +88,6 @@ class SlotReelEngine {
 
   void dispose() => _timer?.cancel();
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// CONFETTI
-// ─────────────────────────────────────────────────────────────────────────
 
 /// One confetti particle's static (non-animated) properties.
 ///
