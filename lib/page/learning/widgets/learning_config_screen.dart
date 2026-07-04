@@ -6,7 +6,7 @@ import 'package:test_abc/helper/language_helper.dart';
 import '../../../commons/app_colors.dart';
 import '../../../commons/enums.dart';
 import '../../widgets/app_gradient_header.dart';
-import '../learning_cubit.dart';
+import '../learning_cubit.dart' hide LearningType;
 import '../../../repository/vocabulary_repository.dart';
 import '../../../repository/unit_repository.dart';
 

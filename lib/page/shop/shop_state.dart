@@ -1,7 +1,5 @@
 part of 'shop_cubit.dart';
 
-enum ShopStatus { initial, loading, success, error }
-
 class ShopState extends Equatable {
   final ShopStatus status;
   final List<ItemsEntity> items;

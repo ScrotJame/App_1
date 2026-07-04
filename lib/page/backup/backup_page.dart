@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../commons/enums.dart';
 import '../../components/login_bottom_sheet.dart';
 import '../../cubit/auth_cubit.dart';
 import '../../repository/backup_data_repository.dart';

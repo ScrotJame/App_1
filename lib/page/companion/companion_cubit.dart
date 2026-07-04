@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import '../../commons/enums.dart';
 import '../../models/entity/active_companion_entity.dart';
 import '../../models/entity/companion_definition_entity.dart';
 import '../../repository/companion_repository.dart';

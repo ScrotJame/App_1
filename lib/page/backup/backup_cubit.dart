@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
+import '../../commons/enums.dart';
 import '../../models/backup_entity.dart';
 import '../../repository/backup_data_repository.dart';
 
@@ -27,6 +28,32 @@ class BackupCubit extends Cubit<BackupState> {
         errorMessage: 'Chưa có backup key. Vui lòng thử lại sau.',
       ));
     }
+  }
+
+  /// Gọi ngay sau khi đăng nhập thành công (email/Google/Apple) — ví dụ từ
+  /// AuthCubit hoặc listener authStateChanges ở app.dart — để tự động tải
+  /// bản backup mới nhất trên Firestore về máy mới. Người dùng không cần
+  /// nhập secret key thủ công vì key giờ chính là uid của tài khoản.
+  ///
+  /// Chạy âm thầm: nếu tài khoản chưa từng backup (lần đầu dùng) hoặc mất
+  /// mạng thì bỏ qua, không làm phiền người dùng bằng dialog lỗi ngay lúc
+  /// họ vừa đăng nhập xong.
+  Future<void> autoSyncFromServer() async {
+    final key = await _repo.getBackupKey();
+    if (key == null) return; // chưa đăng nhập, không có gì để đồng bộ
+
+    emit(state.copyWith(status: BackupStatus.loading, backupKey: key));
+    final result = await _repo.autoSyncFromServer();
+
+    final isNoBackupYet =
+        !result.success && (result.error?.contains('Không tìm thấy') ?? false);
+    if (isNoBackupYet) {
+      // Tài khoản mới toanh, chưa từng export lên server -> không phải lỗi
+      emit(state.copyWith(status: BackupStatus.initial));
+      return;
+    }
+
+    _handleImportResult(result, silent: true);
   }
 
   Future<void> exportAndShare() async {
@@ -106,30 +133,27 @@ class BackupCubit extends Cubit<BackupState> {
     _handleImportResult(result);
   }
 
-  void _handleImportResult(ImportResult result) {
+  void _handleImportResult(ImportResult result, {bool silent = false}) {
     if (result.success) {
       final s = result.summary;
-      if (s == null) {
-        emit(state.copyWith(
-          status: BackupStatus.success,
-          successMessage: 'Import thành công!',
-        ));
-        return;
-      }
-      final msg = 'Import thành công!\n'
+      final msg = s == null
+          ? 'Import thành công!'
+          : 'Import thành công!\n'
           '• User: ${s.usersUpdated} bản ghi được thêm/cập nhật\n'
           '• ${s.vocabulariesAdded} từ vựng · ${s.tagsAdded} tag · ${s.vocabularyTagsAdded} gắn tag\n'
           '• ${s.unitsAdded} unit · ${s.activitiesAdded} hoạt động\n'
           '• ${s.wordProgressMerged} tiến độ word · ${s.userItemsMerged} items';
       emit(state.copyWith(
         status: BackupStatus.success,
-        successMessage: msg,
+        // Auto-sync ngầm sau khi đăng nhập thì không bật popup, tránh
+        // làm phiền người dùng ngay lúc họ vừa vào app.
+        successMessage: silent ? null : msg,
         importSummary: s,
       ));
     } else {
       emit(state.copyWith(
         status: BackupStatus.failed,
-        errorMessage: result.error ?? 'Lỗi không xác định',
+        errorMessage: silent ? null : (result.error ?? 'Lỗi không xác định'),
       ));
     }
   }

@@ -4,27 +4,6 @@ part of 'test_cubit.dart';
 // ENUMS
 // ═════════════════════════════════════════════════════════════════════════════
 
-enum TestPhase { config, testing, result }
-
-enum TimerMode {
-  total,    // Một mốc giờ cho cả bài
-  perWord,  // Reset giờ sau mỗi câu
-}
-
-enum QuestionType {
-  wordToMeaning,  // Hiện từ → chọn nghĩa
-  meaningToWord,  // Hiện nghĩa → chọn từ
-  random,         // Xáo trộn ngẫu nhiên cả hai
-}
-
-enum WordFilter {
-  all,        // Tất cả từ
-  learned,    // Đã thuộc (isFavorite == true)
-  notLearned, // Chưa thuộc (isFavorite != true)
-}
-
-enum AnswerStatus { unanswered, correct, incorrect }
-
 // ═════════════════════════════════════════════════════════════════════════════
 // TEST CONFIG
 // ═════════════════════════════════════════════════════════════════════════════

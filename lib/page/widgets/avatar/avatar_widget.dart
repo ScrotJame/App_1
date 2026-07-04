@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/generated/l10n.dart';
 import '../../../commons/app_images.dart';
+import '../../../commons/enums.dart';
 import 'xp_cubit.dart';
 
 class XpBarWidget extends StatelessWidget {

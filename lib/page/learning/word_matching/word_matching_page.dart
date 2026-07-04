@@ -11,7 +11,7 @@ import '../../../repository/companion_repository.dart';
 import '../../../repository/vocabulary_repository.dart';
 import '../../widgets/avatar/xp_cubit.dart';
 import '../learning_cubit.dart';
-import 'word_matching_cubit.dart';
+import 'word_matching_cubit.dart' hide WordMatchingItemStatus;
 
 const int _kXpBaseBonus = 10;
 

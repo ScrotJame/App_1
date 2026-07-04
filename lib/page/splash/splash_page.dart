@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../commons/enums.dart';
 import 'splash_cubit.dart';
 
 class SplashPage extends StatefulWidget {

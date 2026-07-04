@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../commons/enums.dart';
 import '../repository/user_repository.dart';
 import '../service/auth_service.dart';
 
@@ -143,13 +144,10 @@ class AuthCubit extends Cubit<AuthState> {
       // Link Firebase UID vào user local
       await _userRepository.linkAccount(user.uid);
 
-      // Đảm bảo có backupKey trên Firestore
-      final backupKey = await _authService.ensureBackupKey();
-
       emit(state.copyWith(
         status: AuthStatus.authenticated,
         firebaseUser: user,
-        backupKey: backupKey,
+        backupKey: user.uid,
         clearError: true,
       ));
     } catch (e) {

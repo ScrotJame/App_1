@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../commons/enums.dart';
 import '../cubit/auth_cubit.dart';
 
 class LoginBottomSheet extends StatefulWidget {

@@ -1,17 +1,5 @@
 part of 'word_matching_cubit.dart';
 
-enum WordMatchingItemStatus { idle, selected, correct, wrong }
-
-enum WordMatchingGameStatus {
-  initial,
-  loading,
-  playing,
-  wrongAnimation, // short delay to show shake red
-  roundComplete,
-  completed,
-  gameOver,
-}
-
 class WordMatchingItem extends Equatable {
   final int id;
   final String text;

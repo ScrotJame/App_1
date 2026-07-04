@@ -1,7 +1,5 @@
 part of 'xp_cubit.dart';
 
-enum Xp {xpTab, levelTab}
-
 class XpState extends Equatable {
   final int level;
   final int currentXp;

@@ -1,7 +1,5 @@
 part of 'add_word_cubit.dart';
 
-enum PageType { Add, Put }
-
 class AddWordState extends Equatable {
   AddWordState({
     this.vocabulary = '',

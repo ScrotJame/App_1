@@ -1,7 +1,5 @@
 part of 'list_unit_cubit.dart';
 
-enum UnitSortOrder { byId, byTitle, byWordCount }
-
 class ListUnitState extends Equatable {
   const ListUnitState({
     this.allUnits = const [],

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:test_abc/page/backup/backup_cubit.dart' hide AuthStatus;
 import 'package:test_abc/page/list_unit/list_unit_cubit.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/repository/achievement_repository.dart';
@@ -17,6 +18,7 @@ import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/service/auth_service.dart';
 import 'package:test_abc/service/tts_service.dart';
+import 'commons/enums.dart';
 import 'components/side_bar.dart';
 import 'cubit/app_cubit.dart';
 import 'cubit/auth_cubit.dart';
@@ -109,6 +111,9 @@ class _MyAppState extends State<MyApp> {
               ctx.read<UserRepository>(),
             )..init(),
           ),
+          BlocProvider<BackupCubit>(
+            create: (ctx) => BackupCubit(ctx.read<BackupRepository>()),
+          ),
         ],
         child: _buildMaterialApp(),
       ),
@@ -137,37 +142,51 @@ class _MyAppState extends State<MyApp> {
               xp.acknowledgeLevelUp();
             });
           },
-          child: MaterialApp.router(
-            routerConfig: _router,
-            localizationsDelegates: const [
-              S.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: S.delegate.supportedLocales,
-            locale: state.locale,
-            title: 'Floating Island',
-            debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-
-              textTheme: GoogleFonts.balooBhai2TextTheme(
-                Theme.of(context).textTheme,
-              ),
-
-              primaryTextTheme: GoogleFonts.balooBhai2TextTheme(
-                Theme.of(context).primaryTextTheme,
-              ),
-            ),
-            builder: (context, child) {
-              return MediaQuery(
-                data: MediaQuery.of(context)
-                    .copyWith(textScaler: TextScaler.linear(1.0)),
-                child: child!,
-              );
+          child: BlocListener<AuthCubit, AuthState>(
+            // Chỉ bắt đúng thời điểm CHUYỂN sang authenticated, tránh gọi
+            // lại autoSyncFromServer() mỗi khi AuthState rebuild vì lý do
+            // khác (ví dụ chỉ đổi errorMessage).
+            listenWhen: (previous, current) =>
+            previous.status != AuthStatus.authenticated &&
+                current.status == AuthStatus.authenticated,
+            listener: (context, authState) {
+              // Đăng nhập xong (kể cả trên máy mới) -> tự động tải bản
+              // backup mới nhất từ Firestore về, không cần người dùng
+              // nhập secret key thủ công.
+              context.read<BackupCubit>().autoSyncFromServer();
             },
+            child: MaterialApp.router(
+              routerConfig: _router,
+              localizationsDelegates: const [
+                S.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: S.delegate.supportedLocales,
+              locale: state.locale,
+              title: 'Floating Island',
+              debugShowCheckedModeBanner: false,
+              theme: ThemeData(
+                useMaterial3: true,
+                colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+
+                textTheme: GoogleFonts.balooBhai2TextTheme(
+                  Theme.of(context).textTheme,
+                ),
+
+                primaryTextTheme: GoogleFonts.balooBhai2TextTheme(
+                  Theme.of(context).primaryTextTheme,
+                ),
+              ),
+              builder: (context, child) {
+                return MediaQuery(
+                  data: MediaQuery.of(context)
+                      .copyWith(textScaler: TextScaler.linear(1.0)),
+                  child: child!,
+                );
+              },
+            ),
           ),
         );
       },

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/ultis/error_utils.dart';
 import '../../commons/user_sesion.dart';
 import '../../models/items_entity.dart';

@@ -6,6 +6,7 @@ import 'package:test_abc/page/test_word/screen/config_screen.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/repository/learning_history_repository.dart';
 
+import '../../commons/enums.dart';
 import '../test_word/test_cubit.dart';
 import '../widgets/avatar/xp_cubit.dart';
 

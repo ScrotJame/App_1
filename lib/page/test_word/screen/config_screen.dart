@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../commons/app_colors.dart';
 import '../../../commons/enums.dart';
 import '../../../database/app_db.dart';
-import '../test_cubit.dart';
+import '../test_cubit.dart' hide TimerMode, WordFilter, QuestionType;
 import '../widgets/app_bar_widget.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/card_widget.dart';

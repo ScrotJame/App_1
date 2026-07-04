@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../commons/enums.dart';
 import '../../models/model_local/support_language_local.dart';
 import '../batch_add_word/batch_add_word_page.dart';
 import 'scan_vocab_cubit.dart';

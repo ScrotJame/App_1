@@ -1,11 +1,5 @@
 part of 'backup_cubit.dart';
 
-enum BackupMode { file, server }
-
-enum BackupStatus { initial, loading, success, failed }
-
-enum AuthStatus { unauthenticated, authenticated, loading }
-
 const _absent = Object();
 
 class BackupState extends Equatable {

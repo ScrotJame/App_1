@@ -1,7 +1,5 @@
 part of 'splash_cubit.dart';
 
-enum SplashStatus { initial, loading, newUser, returning, error }
-
 const _absent = Object();
 
 class SplashState extends Equatable {

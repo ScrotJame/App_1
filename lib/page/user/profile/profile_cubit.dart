@@ -10,6 +10,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:test_abc/database/app_db.dart';
 
+import '../../../commons/enums.dart';
 import '../../../commons/user_sesion.dart';
 import '../../../repository/user_repository.dart';
 

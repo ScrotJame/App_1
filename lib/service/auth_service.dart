@@ -95,45 +95,14 @@ class AuthService {
   Future<void> signOut() => logout();
 
   // ─── Backup key ───────────────────────────────────────────────────────
+  //
+  // Không tự sinh uuid nữa. Dùng thẳng `uid` — Firebase Auth đã tự tạo sẵn,
+  // đảm bảo duy nhất toàn hệ thống, không cần round-trip Firestore để lấy
+  // hay tạo key riêng.
 
-  /// Lấy backupKey hiện có, hoặc tạo mới nếu chưa có.
-  Future<String?> ensureBackupKey() async {
-    final user = _auth.currentUser;
-    if (user == null) return null;
+  /// Backup key hiện tại = uid (null nếu chưa đăng nhập).
+  String? get backupKey => _auth.currentUser?.uid;
 
-    final ref = _db.collection('users_profile').doc(user.uid);
-    final doc = await ref.get();
-    final data = doc.data();
-
-    if (data == null) {
-      final newKey = const Uuid().v4();
-      await ref.set(
-        {
-          'email': user.email,
-          'displayName': user.displayName,
-          'backupKey': newKey,
-          'createdAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
-      return newKey;
-    }
-
-    final existing = data['backupKey'] as String?;
-    if (existing != null && existing.isNotEmpty) return existing;
-
-    // Tạo key mới
-    final newKey = const Uuid().v4();
-    await ref.update({'backupKey': newKey});
-    return newKey;
-  }
-
-  /// Lấy backupKey (read-only, không tạo mới)
-  Future<String?> getBackupKey() async {
-    final uid = _auth.currentUser?.uid;
-    if (uid == null) return null;
-
-    final doc = await _db.collection('users_profile').doc(uid).get();
-    return doc.data()?['backupKey'] as String?;
-  }
+  /// Giữ signature Future để không phải sửa chỗ gọi cũ (BackupRepository).
+  Future<String?> getBackupKey() async => _auth.currentUser?.uid;
 }

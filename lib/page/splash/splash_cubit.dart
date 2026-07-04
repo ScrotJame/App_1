@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/commons/user_sesion.dart';
 import 'package:test_abc/repository/user_repository.dart';
 

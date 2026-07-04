@@ -50,6 +50,12 @@ abstract class IBackupRepository {
   Future<ImportResult> importFromJsonString(String jsonStr);
 
   Future<String?> getBackupKey();
+
+  /// Tự động kiểm tra Firestore xem tài khoản hiện tại (theo uid) đã từng
+  /// backup chưa, và nếu có thì tải bản mới nhất về, merge theo từng bản
+  /// ghi (record nào có updatedAt mới hơn sẽ được giữ lại). Gọi ngay sau
+  /// khi đăng nhập thành công trên thiết bị mới.
+  Future<ImportResult> autoSyncFromServer();
 }
 
 // ─── Implementation ────────────────────────────────────────────────────────────
@@ -230,6 +236,15 @@ class BackupRepository implements IBackupRepository {
   @override
   Future<String?> getBackupKey() => _authService.getBackupKey();
 
+  @override
+  Future<ImportResult> autoSyncFromServer() async {
+    final uid = await _authService.getBackupKey();
+    if (uid == null) {
+      return const ImportResult.fail('Chưa đăng nhập.');
+    }
+    return importFromServer(secretKey: uid);
+  }
+
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   String _buildFileNameWithoutExt() {
@@ -271,9 +286,9 @@ class BackupRepository implements IBackupRepository {
     final user = localKey == null
         ? await (_db.select(_db.usersEntrie)..limit(1)).getSingle()
         : await (_db.select(_db.usersEntrie)
-              ..where((u) => u.keyOpen.equals(localKey))
-              ..limit(1))
-            .getSingle();
+      ..where((u) => u.keyOpen.equals(localKey))
+      ..limit(1))
+        .getSingle();
 
     final activities = await (_db.select(_db.userActivitiesEntrie)
       ..where((t) => t.userKey.equals(user.keyOpen)))

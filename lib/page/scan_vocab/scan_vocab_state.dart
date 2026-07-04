@@ -1,9 +1,5 @@
 part of 'scan_vocab_cubit.dart';
 
-enum TokenRole { none, word, pronunciation, meaning, language }
-
-enum SCANSTATUS { idle, scanning, scanned, error }
-
 // ─── Danh sách ngôn ngữ hỗ trợ chọn thủ công ────────────────────────────────
 
 // ─── Một block văn bản từ OCR, có vị trí trên ảnh gốc ───────────────────────

@@ -8,6 +8,7 @@ import 'package:test_abc/page/companion/screen/companion_dialogs.dart';
 import 'package:test_abc/page/companion/screen/loading_error_screen.dart';
 import 'package:test_abc/page/companion/screen/main_screen.dart';
 import 'package:test_abc/ultis/extension/label_extension.dart';
+import '../../commons/enums.dart';
 import '../../generated/l10n.dart';
 import '../../repository/companion_repository.dart';
 import '../widgets/app_gradient_header.dart';

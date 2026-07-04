@@ -1,24 +1,5 @@
 part of 'companion_cubit.dart';
 
-enum CompanionStatus {
-  initial,
-  loading,
-
-  /// Chưa có companion → hiện màn chọn pet/plant
-  awaitingChoice,
-
-  /// Đang xem danh sách companion để chọn
-  browsing,
-
-  /// Có companion đang nuôi
-  active,
-
-  /// Dialog cảnh báo xóa companion cũ đang mở
-  confirmingDelete,
-
-  error,
-}
-
 class CompanionState extends Equatable {
   final CompanionStatus status;
 

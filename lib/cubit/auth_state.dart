@@ -1,7 +1,5 @@
 part of 'auth_cubit.dart';
 
-enum AuthStatus { unauthenticated, loading, authenticated, error }
-
 const _absent = Object();
 
 class AuthState extends Equatable {

@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:test_abc/repository/user_repository.dart';
 import 'dart:async';
 
+import '../../../commons/enums.dart';
 import '../../../database/app_db.dart';
 import '../../../helper/level_helper.dart';
 
