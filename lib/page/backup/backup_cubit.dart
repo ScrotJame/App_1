@@ -3,7 +3,6 @@ import 'package:equatable/equatable.dart';
 
 import '../../models/backup_entity.dart';
 import '../../repository/backup_data_repository.dart';
-import '../../service/auth_service.dart';
 
 part 'backup_state.dart';
 
@@ -63,12 +62,12 @@ class BackupCubit extends Cubit<BackupState> {
     }
   }
 
-  Future<void> exportToServer() async {
-    final key = state.backupKey ?? await _repo.getBackupKey();
-    if (key == null) {
+  Future<void> exportToServer({String? backupKey}) async {
+    final key = backupKey ?? state.backupKey ?? await _repo.getBackupKey();
+    if (key == null || key.isEmpty) {
       emit(state.copyWith(
         status: BackupStatus.failed,
-        errorMessage: 'Không lấy được backup key. Vui lòng thử lại.',
+        errorMessage: 'Không lấy được backup key. Vui lòng đăng nhập hoặc nhập key.',
       ));
       return;
     }
@@ -77,7 +76,7 @@ class BackupCubit extends Cubit<BackupState> {
     if (result.success) {
       emit(state.copyWith(
         status: BackupStatus.success,
-        successMessage: 'Đã upload backup lên server!',
+        successMessage: 'Đã upload backup lên cloud!',
       ));
     } else {
       emit(state.copyWith(
@@ -93,16 +92,17 @@ class BackupCubit extends Cubit<BackupState> {
     _handleImportResult(result);
   }
 
-  Future<void> importFromServer(String secretKey) async {
-    if (secretKey.trim().isEmpty) {
+  Future<void> importFromServer({String? backupKey, String? secretKey}) async {
+    final key = backupKey ?? secretKey ?? state.backupKey ?? await _repo.getBackupKey();
+    if (key == null || key.trim().isEmpty) {
       emit(state.copyWith(
         status: BackupStatus.failed,
-        errorMessage: 'Vui lòng nhập secret key',
+        errorMessage: 'Không lấy được backup key. Vui lòng đăng nhập.',
       ));
       return;
     }
     emit(state.copyWith(status: BackupStatus.loading));
-    final result = await _repo.importFromServer(secretKey: secretKey.trim());
+    final result = await _repo.importFromServer(secretKey: key.trim());
     _handleImportResult(result);
   }
 

@@ -12,8 +12,9 @@ import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/ultis/extension/label_extension.dart';
 
-import '../../../commons/user_sesion.dart';
+import '../../../components/login_bottom_sheet.dart';
 import '../../../cubit/app_cubit.dart';
+import '../../../cubit/auth_cubit.dart';
 import '../../../database/app_db.dart';
 import '../../../router/router.dart';
 
@@ -152,6 +153,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _buildAccountProgress(),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                      child: _buildCloudAccountSection(),
                     ),
                   ),
                   SliverToBoxAdapter(
@@ -462,6 +469,197 @@ class _ProfilePageState extends State<ProfilePage> {
       ],
     );
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // CLOUD ACCOUNT
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildCloudAccountSection() {
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, authState) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Tài khoản',
+              style: GoogleFonts.balooBhai2(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1A1A2E),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _card(
+              child: authState.isAuthenticated
+                  ? _buildConnectedAccount(authState)
+                  : _buildConnectAccount(authState),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildConnectAccount(AuthState authState) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1565C0).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.cloud_outlined,
+              color: Color(0xFF1565C0),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Chưa kết nối',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A2E),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Đăng nhập để backup dữ liệu lên cloud',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton(
+            onPressed: authState.isLoading
+                ? null
+                : () => LoginBottomSheet.show(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1565C0),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: authState.isLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text('Kết nối'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConnectedAccount(AuthState authState) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          _buildFirebaseAvatar(authState),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  authState.displayName.isEmpty
+                      ? 'Tài khoản đã kết nối'
+                      : authState.displayName,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A2E),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (authState.displayEmail != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    authState.displayEmail!,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          TextButton(
+            onPressed: authState.isLoading
+                ? null
+                : () => context.read<AuthCubit>().signOut(),
+            child: const Text(
+              'Đăng xuất',
+              style: TextStyle(
+                color: Color(0xFFE53935),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFirebaseAvatar(AuthState authState) {
+    final initial = authState.displayName.isNotEmpty
+        ? authState.displayName[0].toUpperCase()
+        : '?';
+
+    return Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1565C0).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: authState.photoUrl == null
+          ? Center(
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  color: Color(0xFF1565C0),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                ),
+              ),
+            )
+          : ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.network(
+                authState.photoUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Center(
+                  child: Text(
+                    initial,
+                    style: const TextStyle(
+                      color: Color(0xFF1565C0),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
   // ─────────────────────────────────────────────────────────────
   // ACCOUNT SETTINGS
   // ─────────────────────────────────────────────────────────────
@@ -477,7 +675,7 @@ class _ProfilePageState extends State<ProfilePage> {
           style: GoogleFonts.balooBhai2(
             fontSize: 17,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1A1A2E),
+            color: const Color(0xFF1A1A2E),
           ),
         ),
         const SizedBox(height: 12),
@@ -506,17 +704,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   icon: AppImages.icHelpAndSupport,
                   label: S.current.help_support,
                   onTap: () {}),
-              if(UserSession.instance.hasLinkedAccount) ...[
-              divider,
-              settingsItem(
-                icon: AppImages.icLogOut,
-                label: S.current.logout,
-                iconColor: const Color(0xFFE53935),
-                labelColor: const Color(0xFFE53935),
-                showArrow: false,
-                onTap: () {},
-              ),
-              ]
             ],
           ),
         ),

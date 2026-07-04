@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'app.dart';
 import 'firebase_options.dart';
+import 'service/pronunciation_service.dart';
 
 Future<void> _requestPermissions() async {
   if (await Permission.notification.isDenied) {
@@ -18,6 +19,9 @@ Future<void> _requestPermissions() async {
   }
 }
 
+/// Singleton instance — khởi tạo 1 lần, dùng chung cho toàn app
+final pronunciationService = PronunciationService();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -27,6 +31,9 @@ void main() async {
   );
   await GoogleSignIn.instance.initialize();
   await _requestPermissions();
+
+  // Khởi tạo dictionary cho pronunciation (kuromoji, pinyin) — chạy 1 lần
+  await pronunciationService.ensureInitialized();
 
   runApp(const MyApp());
 }

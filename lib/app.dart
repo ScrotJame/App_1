@@ -15,13 +15,17 @@ import 'package:test_abc/repository/tag_repository.dart';
 import 'package:test_abc/repository/unit_repository.dart';
 import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
+import 'package:test_abc/service/auth_service.dart';
 import 'package:test_abc/service/tts_service.dart';
 import 'components/side_bar.dart';
 import 'cubit/app_cubit.dart';
+import 'cubit/auth_cubit.dart';
 import 'database/app_db.dart';
 import 'generated/l10n.dart';
+import 'main.dart' show pronunciationService;
 import 'page/widgets/avatar/xp_cubit.dart';
 import 'router/go_router_config.dart';
+import 'service/pronunciation_service.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -77,9 +81,14 @@ class _MyAppState extends State<MyApp> {
             create:(_) => AchievementRepository(_db)),
         RepositoryProvider<LearningHistoryRepository>(
             create:(_) => LearningHistoryRepository(_db)),
+        RepositoryProvider<AuthService>(
+            create: (_) => AuthService()),
         RepositoryProvider<TtsService>(
           create: (_) => TtsService(),
           dispose: (service) => service.dispose(),
+        ),
+        RepositoryProvider<PronunciationService>.value(
+          value: pronunciationService,
         ),
       ],
       child: MultiBlocProvider(
@@ -93,6 +102,12 @@ class _MyAppState extends State<MyApp> {
           ),
           BlocProvider<ListUnitCubit>(
             create: (ctx) => ListUnitCubit(ctx.read<UnitRepository>(), ctx.read<VocabularyRepository>())
+          ),
+          BlocProvider<AuthCubit>(
+            create: (ctx) => AuthCubit(
+              ctx.read<AuthService>(),
+              ctx.read<UserRepository>(),
+            )..init(),
           ),
         ],
         child: _buildMaterialApp(),
