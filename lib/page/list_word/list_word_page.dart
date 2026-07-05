@@ -14,6 +14,7 @@ import '../../models/unit_entity.dart';
 import '../../repository/unit_repository.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../../router/router.dart';
+import '../../service/tts_service.dart';
 import '../add_word/add_word_cubit.dart';
 import '../add_word/add_word_page.dart';
 import '../scan_vocab/scan_vocab_page.dart';
@@ -43,12 +44,13 @@ class _ListWordPageState extends State<ListWordPage> {
     if (widget.unit != null) {
       _cubit = ListWordCubit.forUnit(
         context.read<VocabularyRepository>(),
+        context.read<TtsService>(),
         context.read<UnitRepository>(),
         widget.unit!.unit.id,
       );
       _cubit.watchUnit();
     } else {
-      _cubit = ListWordCubit(context.read<VocabularyRepository>());
+      _cubit = ListWordCubit(context.read<VocabularyRepository>(), context.read<TtsService>(),);
       _cubit.loadWords();
       _cubit.getLanguageTags();
     }
@@ -62,12 +64,19 @@ class _ListWordPageState extends State<ListWordPage> {
   }
 
   Future<void> _openEditPage(VocabularyEntry word) async {
-    await Navigator.push<bool>(
+    final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => AddWordPage(type: PageType.Put, initialEntry: word),
       ),
     );
+    if (result == true) {
+      if (widget.unit == null) {
+        _cubit.loadWords();
+      } else {
+        _cubit.reloadUnit();
+      }
+    }
   }
 
   @override
@@ -683,7 +692,7 @@ class _ListWordPageState extends State<ListWordPage> {
           label: 'Phát âm',
           icon: CupertinoIcons.volume_up,
           onTap: () {
-            // TODO: TTS
+            _cubit.pronounceWord(word);
           },
         ),
         DropDownItem(
@@ -788,7 +797,7 @@ class _ListWordPageState extends State<ListWordPage> {
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           onPressed: () {
-            // TODO: integrate TTS
+            _cubit.pronounceWord(word);
           },
         ),
         const SizedBox(height: 4),

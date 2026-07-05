@@ -2,9 +2,13 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:test_abc/database/app_db.dart';
+import 'package:test_abc/service/tts_service.dart';
 
 import '../../commons/enums.dart';
+import '../../generated/l10n.dart';
+import '../../helper/language_helper.dart';
 import '../../models/tag_vocab.dart';
 import '../../models/unit_entity.dart';
 import '../../repository/unit_repository.dart';
@@ -16,17 +20,19 @@ class ListWordCubit extends Cubit<ListWordState> {
   final VocabularyRepository _repo;
   final UnitRepository? _unitRepo;
   final int? _unitId; // non-null = đang xem list từ của unit cụ thể
+  final TtsService _ttsService;
 
+  final PublishSubject<String> messageController = PublishSubject();
   StreamSubscription<List<UnitWithWords>>? _unitStreamSub;
 
   /// Dùng khi xem toàn bộ từ vựng
-  ListWordCubit(this._repo)
+  ListWordCubit(this._repo, this._ttsService)
       : _unitRepo = null,
         _unitId = null,
         super(const ListWordState());
 
   /// Dùng khi xem từ vựng của một unit — tự watch stream DB
-  ListWordCubit.forUnit(this._repo, UnitRepository unitRepo, int unitId)
+  ListWordCubit.forUnit(this._repo, this._ttsService, UnitRepository unitRepo, int unitId)
       : _unitRepo = unitRepo,
         _unitId = unitId,
         super(const ListWordState());
@@ -305,6 +311,23 @@ class ListWordCubit extends Cubit<ListWordState> {
 
   void exitSelectionAfterBatchAdd() {
     emit(state.copyWith(isSelectionMode: false, selectedWordIds: const {}));
+  }
+
+  Future<void> pronounceWord(VocabularyEntry word) async {
+    final result = await _ttsService.speakWord(word.word, languageCode: word.language);
+
+    switch (result) {
+      case TtsSpeakResult.ok:
+        break;
+      case TtsSpeakResult.languageUnavailable:
+        messageController.add(
+          S.current.tts_voice_unavailable(LanguageHelper.getDetectedLanguageLabelTag(word.language) ?? ''),
+        );
+        await _ttsService.openVoiceDataInstaller();
+        break;
+      case TtsSpeakResult.empty:
+        break;
+    }
   }
 
   @override
