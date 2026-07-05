@@ -486,7 +486,7 @@ class _BackupPageState extends State<BackupPage> {
         title: 'Upload lên cloud',
         subtitle: 'Backup dữ liệu lên tài khoản của bạn',
         loading: state.isLoading,
-        onTap: () => _cubit.exportToServer(backupKey: authState.backupKey),
+        onTap: () => _cubit.exportToServer(),
       );
     }
 
@@ -526,7 +526,7 @@ class _BackupPageState extends State<BackupPage> {
         onTap: () => _confirmImport(
           context,
           onConfirmed: () =>
-              _cubit.importFromServer(backupKey: authState.backupKey),
+              _cubit.importFromServer(),
         ),
       );
     }

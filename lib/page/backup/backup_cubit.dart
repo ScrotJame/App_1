@@ -89,9 +89,10 @@ class BackupCubit extends Cubit<BackupState> {
     }
   }
 
-  Future<void> exportToServer({String? backupKey}) async {
-    final key = backupKey ?? state.backupKey ?? await _repo.getBackupKey();
+  Future<void> exportToServer() async {
+    final key = await _repo.getBackupKey();
     if (key == null || key.isEmpty) {
+      print('BackupCubit: exportToServer - Không lấy được backup key');
       emit(state.copyWith(
         status: BackupStatus.failed,
         errorMessage: 'Không lấy được backup key. Vui lòng đăng nhập hoặc nhập key.',
@@ -119,8 +120,8 @@ class BackupCubit extends Cubit<BackupState> {
     _handleImportResult(result);
   }
 
-  Future<void> importFromServer({String? backupKey, String? secretKey}) async {
-    final key = backupKey ?? secretKey ?? state.backupKey ?? await _repo.getBackupKey();
+  Future<void> importFromServer() async {
+    final key = await _repo.getBackupKey();
     if (key == null || key.trim().isEmpty) {
       emit(state.copyWith(
         status: BackupStatus.failed,

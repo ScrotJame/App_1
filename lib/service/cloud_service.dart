@@ -10,9 +10,11 @@ class CloudService {
         'data': jsonData,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+      //print('Upload backup thành công cho key: $backupKey');
       return true;
-    } catch (e) {
-      return false;
+    } catch (e, stackTrace) {
+      //print('Lỗi uploadBackup - $e\n$stackTrace');
+      rethrow;
     }
   }
 
@@ -20,10 +22,14 @@ class CloudService {
   Future<String?> downloadBackup(String backupKey) async {
     try {
       final doc = await _db.collection('backups').doc(backupKey).get();
-      if (!doc.exists) return null;
+      if (!doc.exists) {
+        //print(' Không tìm thấy document cho key: $backupKey');
+        return null;
+      }
       return (doc.data() as Map<String, dynamic>)['data'] as String?;
-    } catch (e) {
-      return null;
+    } catch (e, stackTrace) {
+      //print(' Lỗi downloadBackup - $e\n$stackTrace');
+      rethrow;
     }
   }
 }
