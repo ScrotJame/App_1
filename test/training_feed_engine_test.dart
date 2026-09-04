@@ -1,10 +1,16 @@
+import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:test_abc/database/app_db.dart';
+import 'package:test_abc/generated/l10n.dart';
 import 'package:test_abc/models/tag_vocab.dart';
 import 'package:test_abc/page/training_feed/training_feed_engine.dart';
 import 'package:test_abc/page/training_feed/widgets/training_feed_card.dart';
 
 void main() {
+  setUpAll(() async {
+    await S.load(const Locale('en'));
+  });
+
   group('TrainingFeedEngine Tests', () {
     late List<VocabularyWithTags> dummyWords;
 

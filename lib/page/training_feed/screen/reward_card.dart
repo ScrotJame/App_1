@@ -10,6 +10,7 @@ import 'package:test_abc/page/training_feed/widgets/widget_card_common.dart';
 
 class RewardCard extends StatelessWidget {
   const RewardCard({
+    super.key,
     required this.card,
   });
 

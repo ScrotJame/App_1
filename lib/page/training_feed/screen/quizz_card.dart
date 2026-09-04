@@ -10,6 +10,7 @@ import '../widgets/quiz_option.dart';
 
 class QuizCard extends StatelessWidget {
   const QuizCard({
+    super.key,
     required this.card,
   });
 
@@ -47,32 +48,60 @@ class QuizCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 6),
-          // ── 2x2 Grid ──
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 2.2,
-            ),
-            itemCount: card.choices.length,
-            itemBuilder: (context, index) {
-              return QuizOption(
-                label: card.choices[index],
-                isSelected: card.selectedChoiceIndex == index,
-                isCorrect: card.correctChoiceIndex == index,
-                isAnswered: card.isAnswered,
-                onTap: () {
-                  context.read<TrainingFeedCubit>().answerCurrentQuiz(index);
-                },
-              );
-            },
-          ),
+          const SizedBox(height: 14),
+          // ── 2x2 Options Layout ──
+          _buildQuizGrid(context),
         ],
       ),
+    );
+  }
+
+  Widget _buildQuizGrid(BuildContext context) {
+    final choices = card.choices;
+    if (choices.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Expanded(child: _buildQuizOption(context, 0)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: choices.length > 1
+                  ? _buildQuizOption(context, 1)
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+        if (choices.length > 2) ...[
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(child: _buildQuizOption(context, 2)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: choices.length > 3
+                    ? _buildQuizOption(context, 3)
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildQuizOption(BuildContext context, int index) {
+    if (index >= card.choices.length) return const SizedBox.shrink();
+    return QuizOption(
+      label: card.choices[index],
+      isSelected: card.selectedChoiceIndex == index,
+      isCorrect: card.correctChoiceIndex == index,
+      isAnswered: card.isAnswered,
+      onTap: () {
+        context.read<TrainingFeedCubit>().answerQuizCard(card.id, index);
+      },
     );
   }
 }

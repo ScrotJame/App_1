@@ -13,6 +13,7 @@ import '../training_feed_logic.dart';
 
 class LearnCard extends StatefulWidget {
   const LearnCard({
+    super.key,
     required this.card,
   });
 
@@ -23,30 +24,42 @@ class LearnCard extends StatefulWidget {
 }
 
 class _LearnCardState extends State<LearnCard> {
-  bool _showIpa = false;
-  bool _showMeaning = false;
-  bool _showExample = false;
-  bool _showMnemonic = false;
+  late bool _showIpa;
+  late bool _showMeaning;
+  late bool _showExample;
+  late bool _showMnemonic;
   bool _mnemonicOpen = false;
 
-  late final SlotReelEngine _reel;
+  SlotReelEngine? _reel;
+  final ValueNotifier<int> _reelTick = ValueNotifier(0);
 
   String get _wordText => widget.card.title;
 
   @override
   void initState() {
     super.initState();
-    _reel = SlotReelEngine(
-      word: _wordText,
-      onTick: () => setState(() {}),
-      onLetterLocked: (_) => HapticFeedback.lightImpact(),
-      onComplete: _revealSequence,
-    )..start();
+    final isAlreadyRevealed = widget.card.isRevealed || widget.card.isCompleted;
+    _showIpa = isAlreadyRevealed;
+    _showMeaning = isAlreadyRevealed;
+    _showExample = isAlreadyRevealed;
+    _showMnemonic = isAlreadyRevealed;
+
+    if (!isAlreadyRevealed) {
+      _reel = SlotReelEngine(
+        word: _wordText,
+        onTick: () {
+          if (mounted) _reelTick.value++;
+        },
+        onLetterLocked: (_) => HapticFeedback.lightImpact(),
+        onComplete: _revealSequence,
+      )..start();
+    }
   }
 
   @override
   void dispose() {
-    _reel.dispose();
+    _reel?.dispose();
+    _reelTick.dispose();
     super.dispose();
   }
 
@@ -67,9 +80,9 @@ class _LearnCardState extends State<LearnCard> {
     if (!mounted) return;
     setState(() => _showMnemonic = true);
 
-    // Auto-reveal
+    // Auto-reveal targeting card by ID
     if (!widget.card.isRevealed) {
-      context.read<TrainingFeedCubit>().revealCurrentCard();
+      context.read<TrainingFeedCubit>().revealCard(widget.card.id);
     }
   }
 
@@ -88,26 +101,39 @@ class _LearnCardState extends State<LearnCard> {
             children: [
               Eyebrow(label: S.of(context).new_word_eyebrow, dotColor: AppColors.xoayCyan),
               const SizedBox(height: 16),
-              // ── Word reel ──
+              // ── Word reel (isolated rebuild) ──
               Center(
-                child: Wrap(
-                  spacing: 1,
-                  children: List.generate(_wordText.length, (i) {
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 120),
-                      child: Text(
-                        _wordText[i] == ' ' ? '  ' : _reel.displayLetters[i],
-                        style: TextStyle(
-                          color: _reel.locked[i]
-                              ? AppColors.xoayPaper
-                              : AppColors.xoayPaper.withOpacity(0.4),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 38,
-                          height: 1.05,
-                        ),
-                      ),
+                child: ValueListenableBuilder<int>(
+                  valueListenable: _reelTick,
+                  builder: (context, _, __) {
+                    final isRevealed = widget.card.isRevealed || _reel == null;
+                    return Wrap(
+                      spacing: 1,
+                      children: List.generate(_wordText.length, (i) {
+                        final char = _wordText[i];
+                        final isSpace = char == ' ';
+                        final letter = isSpace
+                            ? '  '
+                            : (isRevealed ? char : _reel!.displayLetters[i]);
+                        final isLocked = isRevealed || _reel!.locked[i];
+
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 120),
+                          child: Text(
+                            letter,
+                            style: TextStyle(
+                              color: isLocked
+                                  ? AppColors.xoayPaper
+                                  : AppColors.xoayPaper.withOpacity(0.4),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 38,
+                              height: 1.05,
+                            ),
+                          ),
+                        );
+                      }),
                     );
-                  }),
+                  },
                 ),
               ),
               const SizedBox(height: 8),

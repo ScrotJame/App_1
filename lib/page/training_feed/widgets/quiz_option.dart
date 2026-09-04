@@ -34,6 +34,7 @@ class QuizOption extends StatelessWidget {
     }
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: isAnswered ? null : onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

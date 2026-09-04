@@ -7,7 +7,7 @@ import 'package:test_abc/page/training_feed/widgets/training_feed_card.dart';
 import 'package:test_abc/page/training_feed/widgets/widget_card_common.dart';
 
 class BreakCard extends StatelessWidget {
-  const BreakCard({required this.card});
+  const BreakCard({super.key, required this.card});
 
   final TrainingFeedCard card;
 

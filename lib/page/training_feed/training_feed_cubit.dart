@@ -79,15 +79,22 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     }
   }
 
-  void revealCurrentCard() {
-    final card = state.currentCard;
-    if (card == null || card.type != TrainingFeedCardType.learn) return;
+  void revealCard(String cardId) {
+    final index = state.cards.indexWhere((c) => c.id == cardId);
+    final card = index != -1 ? state.cards[index] : state.currentCard;
+    if (card == null || card.type != TrainingFeedCardType.learn || card.isRevealed) return;
 
-    _replaceCurrentCard(card.copyWith(
+    _replaceCard(card.copyWith(
       isRevealed: true,
       isCompleted: true,
     ));
     _grantReward(card.xpPreview, card.gemsPreview);
+  }
+
+  void revealCurrentCard() {
+    if (state.currentCard != null) {
+      revealCard(state.currentCard!.id);
+    }
   }
 
   Future<void> markCurrentCardAsLearned() async {
@@ -143,8 +150,9 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     }
   }
 
-  void answerCurrentQuiz(int selectedIndex) {
-    final card = state.currentCard;
+  void answerQuizCard(String cardId, int selectedIndex) {
+    final index = state.cards.indexWhere((c) => c.id == cardId);
+    final card = index != -1 ? state.cards[index] : state.currentCard;
     if (card == null ||
         card.type != TrainingFeedCardType.quiz ||
         card.isAnswered) {
@@ -157,7 +165,7 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     );
     final isCorrect = selectedIndex == card.correctChoiceIndex;
 
-    _replaceCurrentCard(answered);
+    _replaceCard(answered);
 
     if (isCorrect) {
       final comboBonus = state.combo >= 3 ? 3 : 0;
@@ -170,11 +178,15 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     }
   }
 
-  /// Trả lời quiz âm thanh ("nghe và chọn từ đúng"). Tách riêng khỏi
-  /// [answerCurrentQuiz] vì khác loại card, dù phần thưởng/combo tính
-  /// tương tự — gộp chung dễ nhầm khi 1 trong 2 luật thay đổi sau này.
-  void answerAudioQuiz(int selectedIndex) {
-    final card = state.currentCard;
+  void answerCurrentQuiz(int selectedIndex) {
+    if (state.currentCard != null) {
+      answerQuizCard(state.currentCard!.id, selectedIndex);
+    }
+  }
+
+  void answerAudioQuizCard(String cardId, int selectedIndex) {
+    final index = state.cards.indexWhere((c) => c.id == cardId);
+    final card = index != -1 ? state.cards[index] : state.currentCard;
     if (card == null ||
         card.type != TrainingFeedCardType.audioQuiz ||
         card.isAnswered) {
@@ -187,7 +199,7 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     );
     final isCorrect = selectedIndex == card.correctChoiceIndex;
 
-    _replaceCurrentCard(answered);
+    _replaceCard(answered);
 
     if (isCorrect) {
       final comboBonus = state.combo >= 3 ? 3 : 0;
@@ -200,12 +212,19 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     }
   }
 
-  void claimPassiveReward() {
-    final card = state.currentCard;
+  void answerAudioQuiz(int selectedIndex) {
+    if (state.currentCard != null) {
+      answerAudioQuizCard(state.currentCard!.id, selectedIndex);
+    }
+  }
+
+  void claimRewardCard(String cardId) {
+    final index = state.cards.indexWhere((c) => c.id == cardId);
+    final card = index != -1 ? state.cards[index] : state.currentCard;
     if (card == null || card.type != TrainingFeedCardType.reward) return;
     if (card.isCompleted) return;
 
-    _replaceCurrentCard(card.copyWith(isCompleted: true));
+    _replaceCard(card.copyWith(isCompleted: true));
     _grantReward(card.xpPreview, card.gemsPreview);
     confettiController.add(48);
 
@@ -217,6 +236,12 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
       rewards.add('+${card.gemsPreview} Gems');
     }
     messageController.add(S.current.claimed_rewards(rewards.join(S.current.and_connector)));
+  }
+
+  void claimPassiveReward() {
+    if (state.currentCard != null) {
+      claimRewardCard(state.currentCard!.id);
+    }
   }
 
   Future<void> _appendMoreCards() async {
@@ -241,11 +266,22 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     }
   }
 
-  void _replaceCurrentCard(TrainingFeedCard card) {
+  void _replaceCard(TrainingFeedCard card) {
+    final index = state.cards.indexWhere((c) => c.id == card.id);
+    if (index == -1) {
+      if (state.currentIndex < state.cards.length) {
+        final updated = [...state.cards];
+        updated[state.currentIndex] = card;
+        emit(state.copyWith(cards: updated));
+      }
+      return;
+    }
     final updated = [...state.cards];
-    updated[state.currentIndex] = card;
+    updated[index] = card;
     emit(state.copyWith(cards: updated));
   }
+
+  void _replaceCurrentCard(TrainingFeedCard card) => _replaceCard(card);
 
   Future<void> _grantReward(int xp, int gems) async {
     if (xp <= 0 && gems <= 0) return;
