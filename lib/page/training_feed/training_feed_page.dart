@@ -28,6 +28,7 @@ import '../widgets/avatar/xp_cubit.dart';
 import '../widgets/bottom_bar_custom.dart';
 import 'screen/quizz_card.dart';
 import 'widgets/training_feed_card.dart';
+import 'widgets/snappy_feed_scroll_physics.dart';
 import 'training_feed_cubit.dart';
 import 'training_feed_logic.dart';
 
@@ -60,7 +61,7 @@ class _TrainingFeedView extends StatefulWidget {
 class _TrainingFeedViewState extends State<_TrainingFeedView>
     with TickerProviderStateMixin {
   final _pageController = PageController();
-  bool _scrollHintVisible = true;
+  final _scrollHintVisible = ValueNotifier<bool>(true);
 
   // Toast
   final _toastKey = GlobalKey<_ToastOverlayState>();
@@ -68,19 +69,188 @@ class _TrainingFeedViewState extends State<_TrainingFeedView>
   // Confetti
   final _confettiKey = GlobalKey<_ConfettiOverlayState>();
 
+  // Companion Bubble
+  final _companionKey = GlobalKey<_CompanionBubbleButtonState>();
+
   StreamSubscription<String>? _messageSubscription;
   StreamSubscription<int>? _confettiSubscription;
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_messageSubscription == null) {
+      final cubit = context.read<TrainingFeedCubit>();
+      _messageSubscription = cubit.messageController.stream.listen(_showToast);
+      _confettiSubscription = cubit.confettiController.stream.listen((count) {
+        _showConfetti(count: count);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _scrollHintVisible.dispose();
+    _messageSubscription?.cancel();
+    _confettiSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _onPageChanged(int index) {
+    if (_scrollHintVisible.value) {
+      _scrollHintVisible.value = false;
+    }
+    final cubit = context.read<TrainingFeedCubit>();
+    cubit.onPageChanged(index);
+    _companionKey.currentState?.maybeTriggerBubble(cubit.state.activeCompanion);
+  }
+
+  void _showToast(String msg) {
+    _toastKey.currentState?.show(msg);
+  }
+
+  void _showConfetti({int count = 24, List<Color>? colors}) {
+    _confettiKey.currentState?.burst(
+      count: count,
+      colors: colors ??
+          const [
+            AppColors.xoayCyan,
+            AppColors.xoayGold,
+          ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final feedContent = DecoratedBox(
+      decoration: const BoxDecoration(gradient: AppColors.mainGradient),
+      child: BlocBuilder<TrainingFeedCubit, TrainingFeedState>(
+        buildWhen: (previous, current) =>
+            previous.loadStatus != current.loadStatus ||
+            previous.errorMessage != current.errorMessage,
+        builder: (context, state) {
+          if (state.loadStatus == LOADSTATUS.LOADING) {
+            return const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.xoayPaper,
+              ),
+            );
+          } else if (state.loadStatus == LOADSTATUS.FAILED) {
+            return FeedMessage(
+              title: S.of(context).feed_unavailable,
+              message: state.errorMessage ?? S.of(context).please_try_again,
+              actionLabel: S.of(context).retry,
+              onAction: () => context.read<TrainingFeedCubit>().load(),
+            );
+          }
+
+          return Stack(
+            children: [
+              // ── Feed PageView (Granular Rebuild Scope) ──
+              BlocBuilder<TrainingFeedCubit, TrainingFeedState>(
+                buildWhen: (previous, current) =>
+                    previous.cards.length != current.cards.length ||
+                    previous.loadStatus != current.loadStatus,
+                builder: (context, state) {
+                  if (state.cards.isEmpty) {
+                    return EmptyCard(isEmbedInHome: widget.isEmbedInHome);
+                  }
+
+                  return PageView.builder(
+                    controller: _pageController,
+                    scrollDirection: Axis.vertical,
+                    pageSnapping: false,
+                    physics: const SnappyFeedScrollPhysics(
+                      snapThreshold: 0.12,
+                      parent: BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
+                    ),
+                    itemCount: state.cards.length,
+                    onPageChanged: _onPageChanged,
+                    itemBuilder: (context, index) {
+                      return _TrainingFeedCardItem(
+                        key: ValueKey(state.cards[index].id),
+                        index: index,
+                        isEmbedInHome: widget.isEmbedInHome,
+                      );
+                    },
+                  );
+                },
+              ),
+
+              // ── Top bar (self-contained stats observer) ──
+              if (!widget.isEmbedInHome) const _TopBar(),
+
+              // ── Companion Bubble Button ──
+              Positioned(
+                bottom: 115,
+                left: 20,
+                child: _CompanionBubbleButton(key: _companionKey),
+              ),
+
+              // ── Scroll hint ──
+              ValueListenableBuilder<bool>(
+                valueListenable: _scrollHintVisible,
+                builder: (context, visible, _) {
+                  return visible ? const _ScrollHint() : const SizedBox.shrink();
+                },
+              ),
+
+              // ── Bottom nav bar (always visible) ──
+              const _BottomNavBar(),
+
+              // ── Toast ──
+              _ToastOverlay(key: _toastKey),
+
+              // ── Confetti ──
+              _ConfettiOverlay(key: _confettiKey),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (widget.isEmbedInHome) {
+      return AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: feedContent,
+      );
+    }
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        body: feedContent,
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPANION BUBBLE BUTTON
+// ═══════════════════════════════════════════════════════════════
+
+class _CompanionBubbleButton extends StatefulWidget {
+  const _CompanionBubbleButton({super.key});
+
+  @override
+  State<_CompanionBubbleButton> createState() => _CompanionBubbleButtonState();
+}
+
+class _CompanionBubbleButtonState extends State<_CompanionBubbleButton> {
   String? _companionMessage;
   bool _companionBubbleVisible = false;
   Timer? _companionBubbleTimer;
 
-  void _showCompanionBubble(String msg) {
+  void showBubble(String msg) {
     _companionBubbleTimer?.cancel();
-    setState(() {
-      _companionMessage = msg;
-      _companionBubbleVisible = true;
-    });
+    if (mounted) {
+      setState(() {
+        _companionMessage = msg;
+        _companionBubbleVisible = true;
+      });
+    }
     _companionBubbleTimer = Timer(const Duration(seconds: 5), () {
       if (mounted) {
         setState(() => _companionBubbleVisible = false);
@@ -88,10 +258,8 @@ class _TrainingFeedViewState extends State<_TrainingFeedView>
     });
   }
 
-  void _maybeTriggerCompanionBubble(ActiveCompanionEntity? companion) {
+  void maybeTriggerBubble(ActiveCompanionEntity? companion) {
     if (companion == null) return;
-
-    // 30% chance to show
     final random = Random();
     if (random.nextDouble() > 0.3) return;
 
@@ -114,172 +282,58 @@ class _TrainingFeedViewState extends State<_TrainingFeedView>
 
     final pool = isPlant ? plantMessages : petMessages;
     final msg = pool[random.nextInt(pool.length)];
-
     final emoji = companion.definition?.iconKey ?? '🐾';
     final name = companion.displayName;
 
-    _showCompanionBubble('$emoji $name: $msg');
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_messageSubscription == null) {
-      final cubit = context.read<TrainingFeedCubit>();
-      _messageSubscription = cubit.messageController.stream.listen(_showToast);
-      _confettiSubscription = cubit.confettiController.stream.listen((count) {
-        _showConfetti(count: count);
-      });
-    }
+    showBubble('$emoji $name: $msg');
   }
 
   @override
   void dispose() {
-    _pageController.dispose();
-    _messageSubscription?.cancel();
-    _confettiSubscription?.cancel();
     _companionBubbleTimer?.cancel();
     super.dispose();
   }
 
-  void _onPageChanged(int index) {
-    if (_scrollHintVisible) {
-      setState(() => _scrollHintVisible = false);
-    }
-    final cubit = context.read<TrainingFeedCubit>();
-    cubit.onPageChanged(index);
-    _maybeTriggerCompanionBubble(cubit.state.activeCompanion);
-  }
-
-  void _showToast(String msg) {
-    _toastKey.currentState?.show(msg);
-  }
-
-  void _showConfetti({int count = 24, List<Color>? colors}) {
-    _confettiKey.currentState?.burst(
-      count: count,
-      colors: colors ??
-          const [
-            AppColors.xoayCyan,
-            AppColors.xoayGold,
-          ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final feedContent = DecoratedBox(
-      decoration: const BoxDecoration(gradient: AppColors.mainGradient),
-      child: BlocListener<TrainingFeedCubit, TrainingFeedState>(
-        listenWhen: (previous, current) {
-          return (previous.loadStatus != current.loadStatus && current.loadStatus == LOADSTATUS.SUCCESS) ||
-              (previous.activeCompanion == null && current.activeCompanion != null);
-        },
-        listener: (context, state) {
-          Future.delayed(const Duration(milliseconds: 800), () {
-            if (mounted) {
-              _maybeTriggerCompanionBubble(state.activeCompanion);
-            }
-          });
-        },
-        child: BlocBuilder<TrainingFeedCubit, TrainingFeedState>(
-          builder: (context, state) {
-          return Stack(
-            children: [
-              // ── Main content ──
-              if (state.loadStatus == LOADSTATUS.LOADING)
-                const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.xoayPaper,
-                  ),
-                )
-              else if (state.loadStatus == LOADSTATUS.FAILED)
-                FeedMessage(
-                  title: S.of(context).feed_unavailable,
-                  message: state.errorMessage ?? S.of(context).please_try_again,
-                  actionLabel: S.of(context).retry,
-                  onAction: () => context.read<TrainingFeedCubit>().load(),
-                )
-              else if (state.cards.isEmpty)...[
-                  EmptyCard(isEmbedInHome: widget.isEmbedInHome)
-                ]
-              else ...[
-                // ── Feed ──
-                PageView.builder(
-                  controller: _pageController,
-                  scrollDirection: Axis.vertical,
-                  itemCount: state.cards.length,
-                  onPageChanged: _onPageChanged,
-                  itemBuilder: (context, index) {
-                    return _TrainingFeedCardView(
-                      card: state.cards[index],
-                      isEmbedInHome: widget.isEmbedInHome,
-                    );
-                  },
+    return BlocConsumer<TrainingFeedCubit, TrainingFeedState>(
+      listenWhen: (previous, current) =>
+          (previous.loadStatus != current.loadStatus && current.loadStatus == LOADSTATUS.SUCCESS) ||
+          (previous.activeCompanion == null && current.activeCompanion != null),
+      listener: (context, state) {
+        Future.delayed(const Duration(milliseconds: 800), () {
+          if (mounted) {
+            maybeTriggerBubble(state.activeCompanion);
+          }
+        });
+      },
+      buildWhen: (previous, current) => previous.activeCompanion != current.activeCompanion,
+      builder: (context, state) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            BubbleButton(
+              width: 45,
+              height: 45,
+              icon: AppImages.icCompanion,
+              onTap: () {
+                final userKey = UserSession.instance.userKey;
+                context.push(Routes.companionPath(userKey));
+              },
+            ),
+            if (state.activeCompanion != null && _companionBubbleVisible && _companionMessage != null)
+              Positioned(
+                bottom: 60,
+                left: 0,
+                child: AnimatedOpacity(
+                  opacity: _companionBubbleVisible ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: _SpeechBubble(message: _companionMessage!),
                 ),
-
-                // ── Top bar ──
-                if (!widget.isEmbedInHome) _TopBar(state: state),
-
-                Positioned(
-                  bottom: 115,
-                  left: 20,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      BubbleButton(
-                        width: 45,
-                        height: 45,
-                        icon: AppImages.icCompanion,
-                        onTap: () {
-                          final userKey = UserSession.instance.userKey;
-                          context.push(Routes.companionPath(userKey));
-                        },
-                      ),
-                      if (state.activeCompanion != null && _companionBubbleVisible && _companionMessage != null)
-                        Positioned(
-                          bottom: 60,
-                          left: 0,
-                          child: AnimatedOpacity(
-                            opacity: _companionBubbleVisible ? 1.0 : 0.0,
-                            duration: const Duration(milliseconds: 300),
-                            child: _SpeechBubble(message: _companionMessage!),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                // ── Scroll hint ──
-                if (_scrollHintVisible) const _ScrollHint(),
-              ],
-
-              // ── Bottom nav bar (always visible) ──
-              const _BottomNavBar(),
-
-              // ── Toast ──
-              _ToastOverlay(key: _toastKey),
-
-              // ── Confetti ──
-              _ConfettiOverlay(key: _confettiKey),
-            ],
-          );
-        },
-      ),
-    ),
-  );
-
-    if (widget.isEmbedInHome) {
-      return AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle.light,
-        child: feedContent,
-      );
-    }
-
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
-      child: Scaffold(
-        body: feedContent,
-      ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -289,16 +343,20 @@ class _TrainingFeedViewState extends State<_TrainingFeedView>
 // ═══════════════════════════════════════════════════════════════
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.state});
-
-  final TrainingFeedState state;
+  const _TopBar();
 
   @override
   Widget build(BuildContext context) {
-    final top = MediaQuery.of(context).padding.top;
-    final progress = LevelProgress.fromXp(state.xpEarned);
-    final xpPercent = progress.xpPercent;
-    final level = progress.level;
+    return BlocBuilder<TrainingFeedCubit, TrainingFeedState>(
+      buildWhen: (previous, current) =>
+          previous.xpEarned != current.xpEarned ||
+          previous.combo != current.combo ||
+          previous.gemsEarned != current.gemsEarned,
+      builder: (context, state) {
+        final top = MediaQuery.of(context).padding.top;
+        final progress = LevelProgress.fromXp(state.xpEarned);
+        final xpPercent = progress.xpPercent;
+        final level = progress.level;
 
     return Positioned(
       top: 0,
@@ -410,6 +468,8 @@ class _TopBar extends StatelessWidget {
         ),
       ),
     );
+      },
+    );
   }
 }
 
@@ -440,11 +500,41 @@ class _StatChip extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// CARD VIEW DISPATCHER
+// CARD ITEM & VIEW DISPATCHER
 // ═══════════════════════════════════════════════════════════════
+
+class _TrainingFeedCardItem extends StatelessWidget {
+  const _TrainingFeedCardItem({
+    super.key,
+    required this.index,
+    required this.isEmbedInHome,
+  });
+
+  final int index;
+  final bool isEmbedInHome;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<TrainingFeedCubit, TrainingFeedState, TrainingFeedCard?>(
+      selector: (state) =>
+          index < state.cards.length ? state.cards[index] : null,
+      builder: (context, card) {
+        if (card == null) return const SizedBox.shrink();
+        return RepaintBoundary(
+          child: _TrainingFeedCardView(
+            key: ValueKey('view_${card.id}'),
+            card: card,
+            isEmbedInHome: isEmbedInHome,
+          ),
+        );
+      },
+    );
+  }
+}
 
 class _TrainingFeedCardView extends StatelessWidget {
   const _TrainingFeedCardView({
+    super.key,
     required this.card,
     required this.isEmbedInHome,
   });
@@ -454,22 +544,23 @@ class _TrainingFeedCardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top;
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        20,
-        isEmbedInHome ? 12 : (MediaQuery.of(context).padding.top + 80),
-        20,
-        110,
+        16,
+        isEmbedInHome ? (topPadding + 68) : (topPadding + 80),
+        16,
+        105,
       ),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: switch (card.type) {
-            TrainingFeedCardType.learn => LearnCard(card: card),
-            TrainingFeedCardType.quiz => QuizCard(card: card),
-            TrainingFeedCardType.reward => RewardCard(card: card),
-            TrainingFeedCardType.breakPoint => BreakCard(card: card),
-            TrainingFeedCardType.audioQuiz => AudioQuizCard(card: card),
+            TrainingFeedCardType.learn => LearnCard(key: ValueKey('learn_${card.id}'), card: card),
+            TrainingFeedCardType.quiz => QuizCard(key: ValueKey('quiz_${card.id}'), card: card),
+            TrainingFeedCardType.reward => RewardCard(key: ValueKey('reward_${card.id}'), card: card),
+            TrainingFeedCardType.breakPoint => BreakCard(key: ValueKey('break_${card.id}'), card: card),
+            TrainingFeedCardType.audioQuiz => AudioQuizCard(key: ValueKey('audio_${card.id}'), card: card),
           },
         ),
       ),

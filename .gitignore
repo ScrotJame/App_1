@@ -18,6 +18,7 @@ script_run
 .cursor/
 .claude/
 .codegraph/
+.mcp.json
 .gemini/
 .agents/
 .codex/
