@@ -19,14 +19,15 @@ class EmptyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top;
     return InkWell(
       onTap: () =>context.push(Routes.addWord),
       child: Padding(
         padding: EdgeInsets.fromLTRB(
-          20,
-          isEmbedInHome ? 12 : (MediaQuery.of(context).padding.top + 80),
-          20,
-          110,
+          16,
+          isEmbedInHome ? (topPadding + 68) : (topPadding + 80),
+          16,
+          105,
         ),
         child: CardShell(
           shimmer: true,

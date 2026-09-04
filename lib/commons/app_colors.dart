@@ -1,7 +1,4 @@
-import 'dart:ui';
-
-import 'package:flutter/cupertino.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/material.dart';
 
 class AppColors {
   AppColors._();
@@ -60,6 +57,17 @@ class AppColors {
   static const Color xoayPaper = Color(0xFFF5EFE3);
   static const Color xoayPaperDim = Color(0x94F5EFE3);
   static const Color xoayLine = Color(0x1AF5EFE3);
+
+  /// Gacha & TikTok HUD Theme
+  static const Color gachaDarkBg = Color(0xFF0D0B18);
+  static const Color gachaGlassBg = Color(0xB31A162B);
+  static const Color gachaGlassBorder = Color(0x339F8FEF);
+  static const Color gachaNeonCyan = Color(0xFF00F2FE);
+  static const Color gachaGold = Color(0xFFFFD000);
+  static const Color gachaGoldAccent = Color(0xFFFF9500);
+  static const Color gachaFlameRed = Color(0xFFFF4500);
+  static const Color gachaFlameOrange = Color(0xFFFF8C00);
+  static const Color gachaMagenta = Color(0xFFFF2A85);
 }
 
 class AppCommonColors {

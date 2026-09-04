@@ -1,67 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:test_abc/commons/app_colors.dart';
-import 'package:test_abc/components/bager_widget.dart';
+import 'package:test_abc/page/home/widgets/tiktok_top_hud.dart';
 import 'package:test_abc/page/training_feed/training_feed_page.dart';
-import 'package:test_abc/page/user/profile/profile_cubit.dart';
-import 'package:test_abc/page/widgets/app_bar_custom.dart';
-
-import '../commons/app_images.dart';
-import '../helper/format_helper.dart';
-import '../router/router.dart';
-import 'widgets/avatar/avatar_widget.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
+      backgroundColor: AppColors.gachaDarkBg,
       extendBody: true,
-      appBar: AppBarCustom(
-        showBack: false,
-        topActions: [
-          BlocBuilder<ProfileCubit, ProfileState>(
-            builder: (context, profileState) {
-              return XpBarWidget(
-                avatarUrl: profileState.avatarPath ?? AppImages.icAvatar,
-                onTap: () {
-                  context.push(Routes.profile);
-                },
-              );
-            },
+      extendBodyBehindAppBar: true,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // ── 1. TikTok Vertical Learning Feed ──
+          RepaintBoundary(
+            child: TrainingFeedPage(isEmbedInHome: true),
           ),
-          _smallIcon()
+
+          // ── 2. Floating Glassmorphic Top HUD ──
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: RepaintBoundary(
+              child: TiktokTopHud(),
+            ),
+          ),
         ],
       ),
-      body: const TrainingFeedPage(isEmbedInHome: true),
-    );
-  }
-
-  Widget _smallIcon() {
-    return BlocBuilder<ProfileCubit, ProfileState>(
-      builder: (BuildContext context, ProfileState state) {
-        final gems = state.data?.gems ?? 0;
-        final streak = state.data?.currentStreak ?? 0;
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppBarAction(
-              icon: AppImages.imgGem,
-              label: FormatHelper.formatNumberPrice(gems),
-            ),
-            const SizedBox(width: 8),
-            AppBarAction(
-              icon: AppImages.icFire,
-              label: streak.toString(),
-              onTap: () {
-                context.push(Routes.streak);
-              },
-            ),
-          ],
-        );
-      },
     );
   }
 }
