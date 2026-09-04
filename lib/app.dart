@@ -17,6 +17,7 @@ import 'package:test_abc/repository/unit_repository.dart';
 import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/service/auth_service.dart';
+import 'package:test_abc/service/mission_service.dart';
 import 'package:test_abc/service/tts_service.dart';
 import 'commons/enums.dart';
 import 'components/side_bar.dart';
@@ -25,6 +26,9 @@ import 'cubit/auth_cubit.dart';
 import 'database/app_db.dart';
 import 'generated/l10n.dart';
 import 'main.dart' show pronunciationService;
+import 'page/daily_quest/daily_quest_cubit.dart';
+import 'page/daily_quest/data/daily_quest_repository.dart';
+import 'page/daily_quest/data/quest_local_data_source.dart';
 import 'page/widgets/avatar/xp_cubit.dart';
 import 'router/go_router_config.dart';
 import 'service/pronunciation_service.dart';
@@ -92,6 +96,21 @@ class _MyAppState extends State<MyApp> {
         RepositoryProvider<PronunciationService>.value(
           value: pronunciationService,
         ),
+        // ── Daily Quest DI chain ────────────────────────────
+        // Thứ tự QUAN TRỌNG: DataSource → Repository → Service
+        RepositoryProvider<QuestLocalDataSource>(
+          create: (_) => SharedPrefsQuestDataSource(),
+        ),
+        RepositoryProvider<DailyQuestRepository>(
+          create: (ctx) => DailyQuestRepository(
+            ctx.read<QuestLocalDataSource>(),
+          ),
+        ),
+        RepositoryProvider<MissionService>(
+          create: (ctx) => MissionService(
+            ctx.read<DailyQuestRepository>(),
+          ),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -113,6 +132,11 @@ class _MyAppState extends State<MyApp> {
           ),
           BlocProvider<BackupCubit>(
             create: (ctx) => BackupCubit(ctx.read<BackupRepository>()),
+          ),
+          BlocProvider<DailyQuestCubit>(
+            create: (ctx) => DailyQuestCubit(
+              ctx.read<MissionService>(),
+            )..initData(),
           ),
         ],
         child: _buildMaterialApp(),

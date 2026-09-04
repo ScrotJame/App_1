@@ -5,6 +5,7 @@ import 'package:test_abc/models/entity/learning_history_entity.dart';
 import 'package:test_abc/repository/learning_history_repository.dart';
 import 'package:intl/intl.dart';
 
+import '../daily_quest/widgets/daily_quest_card.dart';
 import 'learning_history_cubit.dart';
 
 class LearningHistoryPage extends StatefulWidget {
@@ -63,7 +64,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildPersonalizationBanner(state),
+                              const DailyQuestCard(),
                               const SizedBox(height: 20),
                               _buildCalendarCard(state),
                               const SizedBox(height: 24),
@@ -122,97 +123,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
     );
   }
 
-  Widget _buildPersonalizationBanner(LearningHistoryState state) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1D4ED8).withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.track_changes, color: Colors.white, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    'Daily Personalized Target',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  'Goal: ${state.dailyGoal}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: state.dailyProgress,
-              minHeight: 8,
-              backgroundColor: Colors.white.withOpacity(0.25),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${state.wordsStudied.length} / ${state.dailyGoal} words studied today',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                '${(state.dailyProgress * 100).toInt()}% completed',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildCalendarCard(LearningHistoryState state) {
     return Container(
