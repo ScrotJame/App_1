@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:test_abc/page/backup/backup_cubit.dart' hide AuthStatus;
+import 'package:test_abc/page/backup/backup_cubit.dart';
 import 'package:test_abc/page/list_unit/list_unit_cubit.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/repository/achievement_repository.dart';
@@ -136,6 +136,7 @@ class _MyAppState extends State<MyApp> {
           BlocProvider<DailyQuestCubit>(
             create: (ctx) => DailyQuestCubit(
               ctx.read<MissionService>(),
+              onStreakCompleted: () => ctx.read<UserRepository>().markTodayStreak(),
             )..initData(),
           ),
         ],
@@ -204,10 +205,18 @@ class _MyAppState extends State<MyApp> {
                 ),
               ),
               builder: (context, child) {
-                return MediaQuery(
-                  data: MediaQuery.of(context)
-                      .copyWith(textScaler: TextScaler.linear(1.0)),
-                  child: child!,
+                return Listener(
+                  behavior: HitTestBehavior.translucent,
+                  onPointerDown: (_) {
+                    try {
+                      context.read<DailyQuestCubit>().recordUserActivity();
+                    } catch (_) {}
+                  },
+                  child: MediaQuery(
+                    data: MediaQuery.of(context)
+                        .copyWith(textScaler: TextScaler.linear(1.0)),
+                    child: child!,
+                  ),
                 );
               },
             ),

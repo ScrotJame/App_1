@@ -10,6 +10,7 @@ enum QuestType {
   completeQuiz,
   studyMinutes,
   loginDaily,
+  feedQuiz,
 }
 
 /// ─── DAILY QUEST MODEL ──────────────────────────────────────────────

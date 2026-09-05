@@ -24,6 +24,8 @@ import '../../commons/enums.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../../router/router.dart';
 import '../../service/tts_service.dart';
+import '../daily_quest/daily_quest_cubit.dart';
+import '../daily_quest/models/daily_quest_model.dart';
 import '../widgets/avatar/xp_cubit.dart';
 import '../widgets/bottom_bar_custom.dart';
 import 'screen/quizz_card.dart';
@@ -44,6 +46,11 @@ class TrainingFeedPage extends StatelessWidget {
         context.read<XpCubit>(),
         context.read<CompanionRepository>(),
         context.read<TtsService>(),
+        onQuizAnswered: () {
+          try {
+            context.read<DailyQuestCubit>().onProgressByType(QuestType.feedQuiz);
+          } catch (_) {}
+        },
       )..load(),
       child: _TrainingFeedView(isEmbedInHome: isEmbedInHome),
     );

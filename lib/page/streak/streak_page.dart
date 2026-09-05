@@ -11,6 +11,7 @@ import '../../generated/l10n.dart';
 import '../../repository/user_repository.dart';
 import '../../router/router.dart';
 import '../../ultis/extension/label_extension.dart';
+import '../daily_quest/widgets/daily_quest_card.dart';
 import '../widgets/buble_stack.dart';
 import 'streak_cubit.dart';
 
@@ -235,7 +236,7 @@ class _StreakPageState extends State<StreakPage>
                           Padding(
                             padding:
                             const EdgeInsets.symmetric(horizontal: 24),
-                            child: _buildMarkTodayButton(state),
+                            child: const DailyQuestCard(),
                           ),
 
                           const SizedBox(height: 20),
@@ -562,61 +563,6 @@ class _StreakPageState extends State<StreakPage>
     );
   }
 
-  // ─── Mark Today button ────────────────────────────────────────────
-  Widget _buildMarkTodayButton(StreakState state) {
-    final isMarked = state.isTodayMarked;
-    return GestureDetector(
-      onTap: _cubit.markToday,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          gradient: isMarked ? null : AppColors.streakGradient,
-          color: isMarked ? Colors.white : null,
-          borderRadius: BorderRadius.circular(20),
-          border: isMarked
-              ? Border.all(color: const Color(0xFFFF6B35), width: 1.5)
-              : null,
-          boxShadow: [
-            BoxShadow(
-              color: isMarked
-                  ? Colors.black.withOpacity(0.04)
-                  : const Color(0xFFFF6B35).withOpacity(0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: Icon(
-                isMarked
-                    ? Icons.check_circle_rounded
-                    : Icons.local_fire_department_rounded,
-                key: ValueKey(isMarked),
-                size: 22,
-                color: isMarked ? const Color(0xFFFF6B35) : Colors.white,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              isMarked ? "Today's streak marked!" : 'Mark Today',
-              style: GoogleFonts.balooBhai2(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: isMarked ? const Color(0xFFFF6B35) : Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   // ─── Stats card ───────────────────────────────────────────────────
   Widget _buildStatsCard(StreakState state) {

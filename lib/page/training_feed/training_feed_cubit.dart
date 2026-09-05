@@ -19,12 +19,15 @@ import 'training_feed_engine.dart';
 part 'training_feed_state.dart';
 
 class TrainingFeedCubit extends Cubit<TrainingFeedState> {
+  final void Function()? onQuizAnswered;
+
   TrainingFeedCubit(
       this._vocabularyRepository,
       this._xpCubit,
       this._companionRepository,
       this._ttsService, {
         TrainingFeedEngine? engine,
+        this.onQuizAnswered,
       })  : _engine = engine ?? TrainingFeedEngine(),
         super(const TrainingFeedState());
 
@@ -166,6 +169,7 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     final isCorrect = selectedIndex == card.correctChoiceIndex;
 
     _replaceCard(answered);
+    onQuizAnswered?.call();
 
     if (isCorrect) {
       final comboBonus = state.combo >= 3 ? 3 : 0;
@@ -200,6 +204,7 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     final isCorrect = selectedIndex == card.correctChoiceIndex;
 
     _replaceCard(answered);
+    onQuizAnswered?.call();
 
     if (isCorrect) {
       final comboBonus = state.combo >= 3 ? 3 : 0;

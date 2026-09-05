@@ -13,6 +13,7 @@ abstract class IUserRepository {
   Future<void> linkAccount(String serverId);
   Future<void> deleteLocalUser();
   Future<void> syncStreak();
+  Future<int> markTodayStreak();
 }
 
 class UserRepository implements IUserRepository {
@@ -193,5 +194,26 @@ class UserRepository implements IUserRepository {
         ),
       );
     }
+  }
+
+  @override
+  Future<int> markTodayStreak() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList('streak_marked_dates') ?? [];
+    final markedDates = list.toSet();
+
+    final now = DateTime.now();
+    final todayKey =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+    if (!markedDates.contains(todayKey)) {
+      markedDates.add(todayKey);
+      await prefs.setStringList('streak_marked_dates', markedDates.toList());
+    }
+
+    await syncStreak();
+
+    final user = await getCurrentUser();
+    return user?.currentStreak ?? 0;
   }
 }

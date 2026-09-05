@@ -13,14 +13,13 @@ class MissionPool {
   MissionPool._(); // private constructor — không ai tạo instance được
 
   /// ─── MISSION MẶC ĐỊNH ──────────────────────────────────────
-  /// Auto-complete khi user ở trong app đủ 5 phút.
-  /// Cubit dùng Timer periodic (1 phút/tick) để cập nhật progress.
+  /// Auto-complete khi user ở trong app đủ 5 phút (có tương tác).
   static DailyQuestModel get defaultMission => const DailyQuestModel(
-        id: 'default_login',
+        id: 'default_active_time',
         type: QuestType.loginDaily,
-        title: 'Khởi động ngày mới',
-        description: 'Ở trong ứng dụng 5 phút',
-        icon: '☀️',
+        title: 'Sử dụng app 5 phút',
+        description: 'Tương tác trong ứng dụng 5 phút',
+        icon: '⏱️',
         targetValue: 5,
         isDefault: true,
         rewardGems: 5,
@@ -28,12 +27,13 @@ class MissionPool {
 
   /// ─── POOL RANDOM ───────────────────────────────────────────
   /// Mỗi entry là 1 factory function trả về instance mới.
+  /// Bốc ngẫu nhiên 2 nhiệm vụ từ các nhóm: Học từ mới, Bài kiểm tra, Training Feed.
   static final List<DailyQuestModel Function()> _randomPool = [
     () => const DailyQuestModel(
           id: 'learn_5',
           type: QuestType.learnWords,
           title: 'Học 5 từ mới',
-          description: 'Thêm 5 từ vựng mới vào kho từ',
+          description: 'Học thêm 5 từ vựng mới',
           icon: '📚',
           targetValue: 5,
           rewardGems: 10,
@@ -48,40 +48,31 @@ class MissionPool {
           rewardGems: 15,
         ),
     () => const DailyQuestModel(
-          id: 'review_5',
-          type: QuestType.reviewWords,
-          title: 'Ôn tập 5 từ',
-          description: 'Củng cố trí nhớ với 5 từ đã học',
-          icon: '🔄',
-          targetValue: 5,
-          rewardGems: 10,
-        ),
-    () => const DailyQuestModel(
-          id: 'review_10',
-          type: QuestType.reviewWords,
-          title: 'Ôn tập 10 từ',
-          description: 'Ôn luyện sâu với 10 từ cũ',
-          icon: '🧠',
-          targetValue: 10,
-          rewardGems: 15,
-        ),
-    () => const DailyQuestModel(
           id: 'quiz_1',
           type: QuestType.completeQuiz,
-          title: 'Hoàn thành 1 bài quiz',
-          description: 'Thử sức với 1 bài kiểm tra',
+          title: 'Hoàn thành 1 bài kiểm tra',
+          description: 'Vượt qua 1 bài kiểm tra từ vựng',
           icon: '🎯',
           targetValue: 1,
           rewardGems: 15,
         ),
     () => const DailyQuestModel(
-          id: 'study_10min',
-          type: QuestType.studyMinutes,
-          title: 'Học 10 phút',
-          description: 'Dành 10 phút học tập liên tục',
-          icon: '⏱️',
-          targetValue: 10,
+          id: 'feed_5',
+          type: QuestType.feedQuiz,
+          title: 'Luyện 5 câu trên Feed',
+          description: 'Trả lời 5 câu hỏi nhanh trên Feed',
+          icon: '🔥',
+          targetValue: 5,
           rewardGems: 10,
+        ),
+    () => const DailyQuestModel(
+          id: 'feed_10',
+          type: QuestType.feedQuiz,
+          title: 'Luyện 10 câu trên Feed',
+          description: 'Trả lời 10 câu hỏi nhanh trên Feed',
+          icon: '⚡',
+          targetValue: 10,
+          rewardGems: 15,
         ),
   ];
 

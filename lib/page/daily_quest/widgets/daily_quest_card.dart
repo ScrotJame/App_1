@@ -44,8 +44,8 @@ class DailyQuestCard extends StatelessWidget {
   // ─── MAIN CARD ─────────────────────────────────────────────
 
   Widget _buildCard(DailyQuestState state) {
-    // Gradient đổi màu khi hoàn thành tất cả
-    final gradientColors = state.allCompleted
+    final isDone = state.allCompleted;
+    final gradientColors = isDone
         ? [const Color(0xFF10B981), const Color(0xFF059669)] // Emerald green
         : [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)]; // Blue
 
@@ -75,7 +75,41 @@ class DailyQuestCard extends StatelessWidget {
           const SizedBox(height: 12),
           _buildOverallProgress(state),
           const SizedBox(height: 14),
-          ...state.quests.map((q) => _buildQuestItem(q)),
+          if (isDone) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.4),
+                  width: 1,
+                ),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Đã hoàn thành',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          Opacity(
+            opacity: isDone ? 0.55 : 1.0,
+            child: Column(
+              children: state.quests.map((q) => _buildQuestItem(q)).toList(),
+            ),
+          ),
         ],
       ),
     );
@@ -97,7 +131,7 @@ class DailyQuestCard extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               state.allCompleted
-                  ? 'Hoàn thành xuất sắc!'
+                  ? 'Đã hoàn thành'
                   : 'Nhiệm vụ hàng ngày',
               style: const TextStyle(
                 color: Colors.white,

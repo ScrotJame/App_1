@@ -5,7 +5,6 @@ import 'package:test_abc/models/entity/learning_history_entity.dart';
 import 'package:test_abc/repository/learning_history_repository.dart';
 import 'package:intl/intl.dart';
 
-import '../daily_quest/widgets/daily_quest_card.dart';
 import 'learning_history_cubit.dart';
 
 class LearningHistoryPage extends StatefulWidget {
@@ -64,8 +63,6 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const DailyQuestCard(),
-                              const SizedBox(height: 20),
                               _buildCalendarCard(state),
                               const SizedBox(height: 24),
                               _buildStatsSummary(state),

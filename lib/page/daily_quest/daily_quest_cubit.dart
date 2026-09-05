@@ -5,32 +5,37 @@ import 'package:equatable/equatable.dart';
 import 'package:rxdart/rxdart.dart';
 
 import '../../commons/enums.dart';
+import '../../service/active_time_tracker.dart';
 import '../../service/mission_service.dart';
 import 'models/daily_quest_model.dart';
 
 part 'daily_quest_state.dart';
 
 /// ─── DAILY QUEST CUBIT ──────────────────────────────────────────────
-/// Cubit "mỏng" — chỉ làm 2 việc:
-///   1. Gọi MissionService (delegate logic)
-///   2. Emit state mới (quản lý UI)
-///
-/// KHÔNG chứa: business logic, serialize, random, streak calculation.
-/// Tất cả nằm trong MissionService.
-///
-/// Timer periodic 1 phút để đếm thời gian user ở trong app
-/// → auto-complete quest mặc định "Ở trong app 5 phút".
+/// Quản lý UI state của Daily Quests:
+///   1. Gọi MissionService (load quests, update progress, random pool)
+///   2. Đếm thời gian sử dụng active (ActiveTimeTracker với idle threshold 30s)
+///   3. Tự động kích hoạt chuỗi khi cả 3 nhiệm vụ hoàn thành
 class DailyQuestCubit extends Cubit<DailyQuestState> {
   final MissionService _missionService;
+  final ActiveTimeTracker _activeTracker;
+  final Future<void> Function()? _onStreakCompleted;
 
   /// Stream side-effect: toast, snackbar, thông báo 1 lần.
-  /// UI lắng nghe qua StreamSubscription tại initState().
   final PublishSubject<String> messageController = PublishSubject();
 
-  /// Timer đếm phút — tick mỗi 1 phút để cập nhật quest mặc định.
-  Timer? _minuteTimer;
+  /// Timer kiểm tra tương tác & đếm thời gian active định kỳ
+  Timer? _activityTimer;
 
-  DailyQuestCubit(this._missionService) : super(const DailyQuestState());
+  DailyQuestCubit(
+    this._missionService, {
+    ActiveTimeTracker? activeTracker,
+    Future<void> Function()? onStreakCompleted,
+  })  : _activeTracker = activeTracker ?? ActiveTimeTracker(),
+        _onStreakCompleted = onStreakCompleted,
+        super(const DailyQuestState());
+
+  ActiveTimeTracker get activeTracker => _activeTracker;
 
   // ─── INIT ──────────────────────────────────────────────────
 
@@ -40,12 +45,20 @@ class DailyQuestCubit extends Cubit<DailyQuestState> {
     final result = await _missionService.getTodayQuests();
 
     if (result.success && result.data != null) {
+      final quests = result.data!;
       emit(state.copyWith(
         loadStatus: LOADSTATUS.SUCCESS,
-        quests: result.data,
+        quests: quests,
       ));
-      // Bắt đầu đếm phút sau khi load thành công
-      _startMinuteTimer();
+
+      // Khôi phục số giây từ quest mặc định (nếu đã tích lũy trước đó)
+      final defaultQuest = quests.where((q) => q.isDefault).firstOrNull;
+      if (defaultQuest != null && defaultQuest.currentValue > 0) {
+        _activeTracker.setActiveSeconds(defaultQuest.currentValue * 60);
+      }
+
+      // Bắt đầu timer đếm active time nếu quest mặc định chưa xong
+      _startActivityTimer();
     } else {
       emit(state.copyWith(
         loadStatus: LOADSTATUS.FAILED,
@@ -57,46 +70,51 @@ class DailyQuestCubit extends Cubit<DailyQuestState> {
     }
   }
 
-  // ─── TIMER ─────────────────────────────────────────────────
-  /// Mỗi 1 phút → gọi MissionService.onTimerTick()
-  /// → quest mặc định +1 progress (0→1→2→3→4→5 = done).
-  /// Timer tự dừng khi quest mặc định đã hoàn thành.
+  // ─── USER ACTIVITY TRACKING ─────────────────────────────────
 
-  void _startMinuteTimer() {
-    _minuteTimer?.cancel();
+  /// Ghi nhận người dùng vừa tương tác với màn hình (chạm/vuốt/gõ).
+  void recordUserActivity([DateTime? now]) {
+    _activeTracker.recordActivity(now ?? DateTime.now());
+  }
 
-    // Kiểm tra nếu default quest đã complete → không cần timer
+  void _startActivityTimer() {
+    _activityTimer?.cancel();
+
     final hasIncompleteDefault =
         state.quests.any((q) => q.isDefault && !q.isCompleted);
     if (!hasIncompleteDefault) return;
 
-    _minuteTimer = Timer.periodic(
-      const Duration(minutes: 1),
-      (_) => _onMinuteTick(),
+    // Chạy định kỳ mỗi 1 giây để theo dõi active/idle chính xác
+    _activityTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => onActivityTick(stepSeconds: 1),
     );
   }
 
-  Future<void> _onMinuteTick() async {
+  /// Xử lý 1 tick thời gian hoạt động
+  Future<void> onActivityTick({DateTime? now, int stepSeconds = 1}) async {
     if (state.loadStatus != LOADSTATUS.SUCCESS) return;
 
-    final result = await _missionService.onTimerTick(state.quests);
+    final defaultQuest =
+        state.quests.where((q) => q.isDefault && !q.isCompleted).firstOrNull;
+    if (defaultQuest == null) {
+      _activityTimer?.cancel();
+      return;
+    }
 
-    if (result.success && result.data != null) {
-      emit(state.copyWith(quests: result.data!.quests));
-      _handlePostUpdate(result.data!);
+    final currentTime = now ?? DateTime.now();
+    _activeTracker.tick(currentTime, step: Duration(seconds: stepSeconds));
 
-      // Dừng timer nếu default quest đã hoàn thành
-      final allDefaultDone =
-          result.data!.quests.where((q) => q.isDefault).every((q) => q.isCompleted);
-      if (allDefaultDone) {
-        _minuteTimer?.cancel();
-      }
+    // Quy đổi số giây active ra phút
+    final currentMinutes = (_activeTracker.activeSeconds ~/ 60)
+        .clamp(0, defaultQuest.targetValue);
+
+    if (currentMinutes > defaultQuest.currentValue) {
+      await updateProgress(defaultQuest.id, currentMinutes);
     }
   }
 
   // ─── UPDATE PROGRESS ───────────────────────────────────────
-  /// Gọi từ bên ngoài module khi user hoàn thành hành động.
-  /// Ví dụ: LearningCubit học xong 3 từ → gọi updateProgress('learn_5', 3)
 
   Future<void> updateProgress(String questId, int newValue) async {
     final result = await _missionService.updateProgress(
@@ -107,11 +125,19 @@ class DailyQuestCubit extends Cubit<DailyQuestState> {
 
     if (result.success && result.data != null) {
       emit(state.copyWith(quests: result.data!.quests));
-      _handlePostUpdate(result.data!);
+      await _handlePostUpdate(result.data!);
+
+      // Nếu quest mặc định đã xong thì hủy timer đếm giờ
+      final defaultDone = result.data!.quests
+          .where((q) => q.isDefault)
+          .every((q) => q.isCompleted);
+      if (defaultDone) {
+        _activityTimer?.cancel();
+      }
     }
   }
 
-  // ─── COMPLETE QUEST ────────────────────────────────────────
+  // ─── COMPLETE QUEST (SHORTCUT) ───────────────────────────────
 
   Future<void> completeQuest(String questId) async {
     final result = await _missionService.completeQuest(
@@ -121,29 +147,39 @@ class DailyQuestCubit extends Cubit<DailyQuestState> {
 
     if (result.success && result.data != null) {
       emit(state.copyWith(quests: result.data!.quests));
-      _handlePostUpdate(result.data!);
+      await _handlePostUpdate(result.data!);
+    }
+  }
+
+  /// Cập nhật tiến độ nhiệm vụ theo loại (QuestType).
+  /// Cho phép các màn hình khác (Learning, Quiz, Feed) gọi mà không cần biết questId cụ thể.
+  Future<void> onProgressByType(QuestType type, {int increment = 1}) async {
+    final matchingQuests = state.quests
+        .where((q) => q.type == type && !q.isCompleted)
+        .toList();
+    for (final q in matchingQuests) {
+      await updateProgress(q.id, q.currentValue + increment);
     }
   }
 
   // ─── PRIVATE ───────────────────────────────────────────────
 
-  /// Xử lý sau khi update thành công:
-  /// - Thông báo quest vừa hoàn thành
-  /// - Thông báo streak nếu tất cả xong
-  void _handlePostUpdate(QuestUpdateResult updateResult) {
+  Future<void> _handlePostUpdate(QuestUpdateResult updateResult) async {
     if (updateResult.newlyCompletedIds.isNotEmpty) {
       messageController.sink.add('✅ Hoàn thành nhiệm vụ!');
     }
 
     if (updateResult.shouldMarkStreak) {
       messageController.sink.add('🎉 Hoàn thành tất cả nhiệm vụ hôm nay!');
-      // TODO: Gọi StreakCubit.markToday() từ UI listener
+      if (_onStreakCompleted != null) {
+        await _onStreakCompleted!.call();
+      }
     }
   }
 
   @override
   Future<void> close() {
-    _minuteTimer?.cancel();
+    _activityTimer?.cancel();
     messageController.close();
     return super.close();
   }

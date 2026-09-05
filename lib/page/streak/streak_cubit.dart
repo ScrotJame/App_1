@@ -174,13 +174,16 @@ class StreakCubit extends Cubit<StreakState> {
 
   // ─── Mark today ───────────────────────────────────────────────────
 
-  Future<void> markToday() async {
+  Future<void> markToday({bool toggle = false}) async {
     final now = DateTime.now();
     final today = _dateOnly(now);
     final key = _dateKey(today);
     final updated = Set<String>.from(state.markedDates);
 
     final wasMarked = updated.contains(key);
+    if (wasMarked && !toggle) {
+      return;
+    }
     if (wasMarked) {
       updated.remove(key);
     } else {

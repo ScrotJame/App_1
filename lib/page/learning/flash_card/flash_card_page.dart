@@ -9,6 +9,8 @@ import '../../../commons/enums.dart';
 import '../../../repository/companion_repository.dart';
 import '../../../repository/vocabulary_repository.dart';
 import '../../../router/router.dart';
+import '../../daily_quest/daily_quest_cubit.dart';
+import '../../daily_quest/models/daily_quest_model.dart';
 import '../../widgets/avatar/xp_cubit.dart';
 import '../learning_cubit.dart';
 import 'flash_card_cubit.dart';
@@ -74,6 +76,13 @@ class _FlashCardPageState extends State<FlashCardPage> {
             final xpEarned = _kXpSessionBonus * count;
             final gemsEarned = count;
             final foodEarned = count / 100;
+
+            try {
+              context.read<DailyQuestCubit>().onProgressByType(
+                    QuestType.learnWords,
+                    increment: state.totalCards,
+                  );
+            } catch (_) {}
 
             _showResultDialog(context, state, xpEarned, gemsEarned, foodEarned);
           },

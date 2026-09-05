@@ -7,6 +7,8 @@ import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/repository/learning_history_repository.dart';
 
 import '../../commons/enums.dart';
+import '../daily_quest/daily_quest_cubit.dart';
+import '../daily_quest/models/daily_quest_model.dart';
 import '../test_word/test_cubit.dart';
 import '../widgets/avatar/xp_cubit.dart';
 
@@ -55,6 +57,10 @@ class _TestView extends StatelessWidget {
 
         await context.read<XpCubit>().addXp(xpEarned);
         await context.read<XpCubit>().addGems(gemsEarned);
+
+        try {
+          context.read<DailyQuestCubit>().onProgressByType(QuestType.completeQuiz);
+        } catch (_) {}
       },
       buildWhen: (p, c) => p.phase != c.phase,
       builder: (_, s) => switch (s.phase) {
