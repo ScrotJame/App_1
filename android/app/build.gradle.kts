@@ -37,6 +37,19 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    flavorDimensions += "default"
+
+    productFlavors {
+        create("dev") {
+            dimension = "default"
+            resValue("string", "app_name", "Dungeonary Dev")
+        }
+        create("prod") {
+            dimension = "default"
+            resValue("string", "app_name", "Dungeonary")
+        }
+    }
 }
 
 flutter {

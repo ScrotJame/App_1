@@ -23,6 +23,8 @@ script_run
 .agents/
 .codex/
 .env
+.env.dev
+.env.prod
 migrate_working_dir/
 
 # IntelliJ related

@@ -107,6 +107,8 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - .env
+    - .env.dev
+    - .env.prod
     - assets/avatar/
     - assets/images/
     - assets/vector/

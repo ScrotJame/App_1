@@ -1,9 +1,6 @@
 import 'config/app_config.dart';
 import 'main_common.dart';
 
-export 'main_common.dart' show pronunciationService;
-
-/// Fallback entry point (mặc định khởi chạy môi trường Dev)
 void main() async {
   final config = AppConfig(
     flavor: AppFlavor.dev,
