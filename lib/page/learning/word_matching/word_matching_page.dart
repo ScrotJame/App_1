@@ -241,7 +241,7 @@ class _WordMatchingPageState extends State<WordMatchingPage> {
                         borderRadius: BorderRadius.circular(15),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFFD600).withOpacity(0.3),
+                            color: const Color(0xFFFFD600).withValues(alpha: 0.3),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -301,7 +301,7 @@ class _WordMatchingPageState extends State<WordMatchingPage> {
                         child: LinearProgressIndicator(
                           value: ratio,
                           minHeight: 8,
-                          backgroundColor: Colors.white.withOpacity(0.2),
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
                           valueColor: AlwaysStoppedAnimation<Color>(
                             isLowTime ? Colors.redAccent : const Color(0xFFFFD600),
                           ),
@@ -345,7 +345,7 @@ class _WordMatchingPageState extends State<WordMatchingPage> {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white.withOpacity(opacity),
+          color: Colors.white.withValues(alpha: opacity),
         ),
       );
 
@@ -401,7 +401,7 @@ class _WordMatchingPageState extends State<WordMatchingPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   elevation: 6,
-                  shadowColor: const Color(0xFF4CAF50).withOpacity(0.4),
+                  shadowColor: const Color(0xFF4CAF50).withValues(alpha: 0.4),
                 ),
               ),
               const SizedBox(height: 12),
@@ -559,7 +559,7 @@ class _CardItem extends StatelessWidget {
 
     switch (status) {
       case WordMatchingItemStatus.selected:
-        cardBg = const Color(0xFFE8F5E9).withOpacity(0.4);
+        cardBg = const Color(0xFFE8F5E9).withValues(alpha: 0.4);
         borderCol = const Color(0xFF4CAF50);
         textCol = const Color(0xFF2E7D32);
         elevationVal = 0;
@@ -606,7 +606,7 @@ class _CardItem extends StatelessWidget {
             boxShadow: borderCol == Colors.transparent
                 ? [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),

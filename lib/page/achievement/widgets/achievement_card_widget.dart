@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:test_abc/commons/app_colors.dart';
 import 'package:test_abc/models/entity/achivement_entity.dart';
 import 'package:test_abc/ultis/extension/achievement_l10n_extension.dart';
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../models/entity/companion_definition_entity.dart';
-import '../../../repository/companion_repository.dart';
 import '../companion_cubit.dart';
 import '../companion_page.dart';
 
@@ -27,7 +26,7 @@ class CompanionBrowsingScreen extends StatelessWidget {
         if (state.hasActiveCompanion)
           Container(
             margin: const EdgeInsets.fromLTRB(16, 12, 16, 0), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(color: Colors.orange.withOpacity(0.9), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.9), borderRadius: BorderRadius.circular(12)),
             child: Text('⚠️ Chọn companion mới sẽ xóa hoàn toàn "${state.activeCompanion?.displayName}".', style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.4, fontWeight: FontWeight.bold)),
           ),
         const SizedBox(height: 12),
@@ -57,7 +56,7 @@ class CompanionBrowsingScreen extends StatelessWidget {
       child: AnimatedOpacity(
         opacity: onTap != null ? 1.0 : 0.3,
         duration: const Duration(milliseconds: 200),
-        child: Container(height: 36, padding: const EdgeInsets.symmetric(horizontal: 10), decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(18)), alignment: Alignment.center, child: child),
+        child: Container(height: 36, padding: const EdgeInsets.symmetric(horizontal: 10), decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(18)), alignment: Alignment.center, child: child),
       ),
     );
   }
@@ -83,7 +82,7 @@ class CompanionDefCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: isPending ? kGreenAccent : Colors.transparent, width: isPending ? 2 : 0), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: isPending ? kGreenAccent : Colors.transparent, width: isPending ? 2 : 0), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 4))]),
       child: Column(
         children: [
           GestureDetector(
@@ -168,7 +167,7 @@ class CompanionChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
       child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
     );
   }

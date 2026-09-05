@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -36,8 +37,8 @@ Future<void> mainCommon(AppConfig config) async {
   await GoogleSignIn.instance.initialize();
   await _requestPermissions();
 
-  // Khởi tạo dictionary cho pronunciation (kuromoji, pinyin) — chạy 1 lần
-  await pronunciationService.ensureInitialized();
+  // Khởi tạo dictionary cho pronunciation (kuromoji, pinyin) — chạy nền, không chặn cold-start
+  unawaited(pronunciationService.ensureInitialized());
 
   runApp(const MyApp());
 }

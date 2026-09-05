@@ -24,7 +24,7 @@ class CompanionTypeChoiceScreen extends StatelessWidget {
           ]),
           const Spacer(),
           Container(
-            padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Colors.black.withOpacity(0.15), borderRadius: BorderRadius.circular(14)),
+            padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(14)),
             child: Row(children: const [Icon(Icons.info_outline, color: Colors.white70, size: 16), SizedBox(width: 10), Expanded(child: Text('Đổi companion sẽ XÓA HOÀN TOÀN tiến trình hiện tại. Hãy chọn kỹ!', style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5)))]),
           ),
           const SizedBox(height: 28),
@@ -57,7 +57,7 @@ class CompanionTypeCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight),
-          borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: colors.last.withOpacity(0.45), blurRadius: 22, offset: const Offset(0, 8))],
+          borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: colors.last.withValues(alpha: 0.45), blurRadius: 22, offset: const Offset(0, 8))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,7 +66,7 @@ class CompanionTypeCard extends StatelessWidget {
             Text(title, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900)), const SizedBox(height: 12),
             ...bullets.map((b) => Padding(padding: const EdgeInsets.only(bottom: 5), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('• ', style: TextStyle(color: Colors.white60, fontSize: 12)), Expanded(child: Text(b, style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.4)))]))),
             const SizedBox(height: 16),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7), decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)), child: const Text('Chọn →', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13))),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7), decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)), child: const Text('Chọn →', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13))),
           ],
         ),
       ),

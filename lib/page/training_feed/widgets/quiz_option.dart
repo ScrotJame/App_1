@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import '../../../commons/app_colors.dart';
 
 class QuizOption extends StatelessWidget {
-  const QuizOption({
+  const QuizOption({super.key, 
     required this.label,
     required this.isSelected,
     required this.isCorrect,
@@ -24,11 +24,11 @@ class QuizOption extends StatelessWidget {
     Color textColor = AppColors.xoayPaper;
 
     if (isAnswered && isCorrect) {
-      bgColor = AppColors.xoayCyan.withOpacity(0.12);
+      bgColor = AppColors.xoayCyan.withValues(alpha: 0.12);
       borderColor = AppColors.xoayCyan;
       textColor = AppColors.xoayCyan;
     } else if (isAnswered && isSelected) {
-      bgColor = AppColors.xoayMagenta.withOpacity(0.12);
+      bgColor = AppColors.xoayMagenta.withValues(alpha: 0.12);
       borderColor = AppColors.xoayMagenta;
       textColor = AppColors.xoayMagenta;
     }

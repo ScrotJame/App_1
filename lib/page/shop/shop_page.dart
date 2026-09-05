@@ -154,7 +154,7 @@ class _ShopPageState extends State<ShopPage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -201,7 +201,7 @@ class _ShopPageState extends State<ShopPage> {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(10),
         ),
         child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
@@ -255,8 +255,13 @@ class _ShopPageState extends State<ShopPage> {
             physics: const BouncingScrollPhysics(),
             itemCount: state.filteredItems.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) =>
-                _ItemCard(item: state.filteredItems[index]),
+            itemBuilder: (context, index) {
+              final item = state.filteredItems[index];
+              return _ItemCard(
+                key: ValueKey(item.id ?? index.toString()),
+                item: item,
+              );
+            },
           ),
         );
       },
@@ -266,11 +271,19 @@ class _ShopPageState extends State<ShopPage> {
 
 class _ItemCard extends StatelessWidget {
   final ItemsEntity item;
-  const _ItemCard({required this.item});
+  const _ItemCard({super.key, required this.item});
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ShopCubit, ShopState>(
+      buildWhen: (previous, current) {
+        final wasTarget = previous.purchasedItemId == item.id;
+        final isTarget = current.purchasedItemId == item.id;
+        if (wasTarget || isTarget) {
+          return previous.status != current.status || previous.purchasedItemId != current.purchasedItemId;
+        }
+        return false;
+      },
       builder: (context, state) {
         final isLoading = state.status == ShopStatus.loading &&
             state.purchasedItemId == item.id;
@@ -280,10 +293,10 @@ class _ItemCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.6), width: 2),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),

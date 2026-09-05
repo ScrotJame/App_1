@@ -54,21 +54,52 @@ class LearningHistoryCubit extends Cubit<LearningHistoryState> {
   }
 
   Future<void> _loadHistoryForSelectedDate() async {
-    emit(state.copyWith(isLoadingHistory: true));
+    emit(state.copyWith(isLoadingHistory: true, page: 1));
     try {
+      final totalCount = await _historyRepo.getHistoryCountByDate(
+        userKey: _userKey,
+        date: state.selectedDate,
+      );
+      final totalPage = (totalCount / state.pageSize).ceil();
       final history = await _historyRepo.getHistoryByDate(
         userKey: _userKey,
         date: state.selectedDate,
         page: 1,
-        pageSize: 100,
+        pageSize: state.pageSize,
       );
       emit(state.copyWith(
         wordsStudied: history,
+        totalPage: totalPage,
+        page: 1,
         isLoadingHistory: false,
+        loadStatus: LOADSTATUS.SUCCESS,
       ));
     } catch (e) {
       debugPrint('Error loading history: $e');
-      emit(state.copyWith(isLoadingHistory: false));
+      emit(state.copyWith(isLoadingHistory: false, loadStatus: LOADSTATUS.FAILED));
+    }
+  }
+
+  /// Tải thêm trang tiếp theo theo chuẩn phân trang vô hạn
+  Future<void> onLoadMore() async {
+    if (state.page == state.totalPage) return; // Đã hết trang
+    if (state.loadStatus != LOADSTATUS.SUCCESS) return; // Tránh gửi request đè nhau khi đang load
+
+    final nextPage = state.page + 1;
+    try {
+      final moreHistory = await _historyRepo.getHistoryByDate(
+        userKey: _userKey,
+        date: state.selectedDate,
+        page: nextPage,
+        pageSize: state.pageSize,
+      );
+      emit(state.copyWith(
+        wordsStudied: [...state.wordsStudied, ...moreHistory],
+        page: nextPage,
+        loadStatus: LOADSTATUS.SUCCESS,
+      ));
+    } catch (e) {
+      debugPrint('Error loading more history: $e');
     }
   }
 

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'service/alarm_service.dart';
 
 class StudyDemoPage extends StatefulWidget {
+  const StudyDemoPage({super.key});
+
   @override
   _StudyDemoPageState createState() => _StudyDemoPageState();
 }
@@ -55,26 +57,26 @@ class _StudyDemoPageState extends State<StudyDemoPage> {
 
             // Nút Chưa thuộc
             ElevatedButton(
-              child: Text("CHƯA THUỘC (Nhắc lại sau 15p)"),
               onPressed: () => _handleSchedule( 10, "15 phút tới"),
               style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
                   foregroundColor: Colors.white,
                   minimumSize: Size(double.infinity, 50)
               ),
+              child: Text("CHƯA THUỘC (Nhắc lại sau 15p)"),
             ),
 
             SizedBox(height: 15),
 
             // Nút Đã thuộc
             ElevatedButton(
-              child: Text("ĐÃ THUỘC (Nhắc lại sau 2 giờ)"),
               onPressed: () => _handleSchedule(2 * 60 * 60, "2 giờ tới"),
               style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                   minimumSize: Size(double.infinity, 50)
               ),
+              child: Text("ĐÃ THUỘC (Nhắc lại sau 2 giờ)"),
             ),
 
             Padding(

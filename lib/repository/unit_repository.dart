@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart';
 import 'package:test_abc/database/app_db.dart';
-import 'package:test_abc/database/table/unit_entity.dart';
 
 import '../models/unit_entity.dart';
 
@@ -43,14 +42,14 @@ class UnitRepository implements IUnitRepository {
               ..where((v) => v.unitId.equals(unit.id)))
                 .get();
             result.add(UnitWithWords(unit: unit, words: words));
-          } catch (e, stackTrace) {
+          } catch (e) {
             rethrow;
           }
         }
 
         return result;
       });
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow;
     }
   }

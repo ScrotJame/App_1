@@ -99,7 +99,7 @@ class _BatchAddWordView extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF7B6FD4).withOpacity(0.12),
+                    color: const Color(0xFF7B6FD4).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -136,8 +136,8 @@ class _BatchAddWordView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: item.hasError ? Border.all(color: Colors.redAccent.withOpacity(0.5), width: 1.5) : null,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
+        border: item.hasError ? Border.all(color: Colors.redAccent.withValues(alpha: 0.5), width: 1.5) : null,
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 3))],
       ),
       child: Column(
         children: [
@@ -145,7 +145,7 @@ class _BatchAddWordView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF7B6FD4).withOpacity(0.06),
+              color: const Color(0xFF7B6FD4).withValues(alpha: 0.06),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Row(
@@ -354,7 +354,7 @@ class _BatchAddWordView extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: const LinearGradient(colors: [Color(0xFF7B6FD4), Color(0xFF5B8DEF)]),
-            boxShadow: [BoxShadow(color: const Color(0xFF6B7FD4).withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 6))],
+            boxShadow: [BoxShadow(color: const Color(0xFF6B7FD4).withValues(alpha: 0.4), blurRadius: 16, offset: const Offset(0, 6))],
           ),
           alignment: Alignment.center,
           child: isLoading

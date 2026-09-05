@@ -106,9 +106,11 @@ class ListUnitCubit extends Cubit<ListUnitState> {
       if (!isClosed) emit(state.copyWith(loadStatus: LOADSTATUS.LOADING));
       await _repo.deleteUnit(id);
       final current = Set<int>.from(state.expandedUnitIds)..remove(id);
-      if (!isClosed) emit(state.copyWith(
+      if (!isClosed) {
+        emit(state.copyWith(
           loadStatus: LOADSTATUS.SUCCESS,
           expandedUnitIds: current));
+      }
       await loadUnits();
     } catch (e) {
       emit(state.copyWith(

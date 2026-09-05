@@ -1,10 +1,9 @@
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:test_abc/commons/app_colors.dart';
 
 class XoayButton extends StatelessWidget {
-  const XoayButton({
+  const XoayButton({super.key, 
     required this.label,
     required this.icon,
     required this.onTap,
@@ -47,7 +46,7 @@ class XoayButton extends StatelessWidget {
 }
 
 class FeedMessage extends StatelessWidget {
-  const FeedMessage({
+  const FeedMessage({super.key, 
     required this.title,
     required this.message,
     this.actionLabel,
@@ -81,7 +80,7 @@ class FeedMessage extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: AppColors.xoayPaper.withOpacity(0.7),
+                color: AppColors.xoayPaper.withValues(alpha: 0.7),
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),

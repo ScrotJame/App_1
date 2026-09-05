@@ -362,7 +362,7 @@ class _StreakPageState extends State<StreakPage>
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFFF6B35).withOpacity(0.12),
+                  color: const Color(0xFFFF6B35).withValues(alpha: 0.12),
                   blurRadius: 30,
                   spreadRadius: 5,
                 ),
@@ -446,12 +446,12 @@ class _StreakPageState extends State<StreakPage>
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: enabled ? Colors.white : Colors.white.withOpacity(0.4),
+          color: enabled ? Colors.white : Colors.white.withValues(alpha: 0.4),
           shape: BoxShape.circle,
           boxShadow: enabled
               ? [
             BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 8,
                 offset: const Offset(0, 2))
           ]
@@ -475,7 +475,7 @@ class _StreakPageState extends State<StreakPage>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 20,
               offset: const Offset(0, 4)),
         ],
@@ -521,7 +521,7 @@ class _StreakPageState extends State<StreakPage>
               gradient: AppColors.streakGradient,
               boxShadow: [
                 BoxShadow(
-                    color: const Color(0xFFFF6B35).withOpacity(0.35),
+                    color: const Color(0xFFFF6B35).withValues(alpha: 0.35),
                     blurRadius: 10,
                     offset: const Offset(0, 4))
               ],
@@ -536,11 +536,11 @@ class _StreakPageState extends State<StreakPage>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: day.isToday
-                  ? const Color(0xFFFF6B35).withOpacity(0.08)
+                  ? const Color(0xFFFF6B35).withValues(alpha: 0.08)
                   : const Color(0xFFF5F5F5),
               border: day.isToday
                   ? Border.all(
-                  color: const Color(0xFFFF6B35).withOpacity(0.4),
+                  color: const Color(0xFFFF6B35).withValues(alpha: 0.4),
                   width: 1.5)
                   : null,
             ),
@@ -553,7 +553,7 @@ class _StreakPageState extends State<StreakPage>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: day.isToday
-                      ? const Color(0xFFFF6B35).withOpacity(0.5)
+                      ? const Color(0xFFFF6B35).withValues(alpha: 0.5)
                       : const Color(0xFFDDDDDD),
                 ),
               ),
@@ -573,7 +573,7 @@ class _StreakPageState extends State<StreakPage>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 20,
               offset: const Offset(0, 4)),
         ],
@@ -596,7 +596,7 @@ class _StreakPageState extends State<StreakPage>
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 20,
                     offset: const Offset(0, 4))
               ],

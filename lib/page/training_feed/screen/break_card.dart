@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:test_abc/generated/l10n.dart';
 import 'package:test_abc/commons/app_colors.dart';
@@ -39,7 +38,7 @@ class BreakCard extends StatelessWidget {
               card.subtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: AppColors.xoayPaper.withOpacity(0.7),
+                color: AppColors.xoayPaper.withValues(alpha: 0.7),
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),

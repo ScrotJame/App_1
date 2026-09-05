@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/generated/l10n.dart';
@@ -36,7 +35,7 @@ class RewardCard extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.xoayGold.withOpacity(0.35),
+                    color: AppColors.xoayGold.withValues(alpha: 0.35),
                     blurRadius: 24,
                   ),
                 ],
@@ -72,7 +71,7 @@ class RewardCard extends StatelessWidget {
                       Text(
                         S.of(context).bonus_xp,
                         style: TextStyle(
-                          color: AppColors.xoayPaper.withOpacity(0.58),
+                          color: AppColors.xoayPaper.withValues(alpha: 0.58),
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.5,
@@ -99,7 +98,7 @@ class RewardCard extends StatelessWidget {
                       Text(
                         S.of(context).gems_label,
                         style: TextStyle(
-                          color: AppColors.xoayCyan.withOpacity(0.85),
+                          color: AppColors.xoayCyan.withValues(alpha: 0.85),
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.5,

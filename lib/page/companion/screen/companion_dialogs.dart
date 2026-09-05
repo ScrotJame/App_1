@@ -58,7 +58,7 @@ void showDeleteDialog(BuildContext ctx, CompanionState state, CompanionCubit cub
             Row(children: [
               Container(
                 width: 44, height: 44,
-                decoration: BoxDecoration(color: Colors.red.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
                 child: const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 24),
               ),
               const SizedBox(width: 12),
@@ -68,9 +68,9 @@ void showDeleteDialog(BuildContext ctx, CompanionState state, CompanionCubit cub
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.08),
+                color: Colors.red.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red.withOpacity(0.3)),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

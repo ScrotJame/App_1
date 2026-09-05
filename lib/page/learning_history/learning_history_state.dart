@@ -10,6 +10,9 @@ class LearningHistoryState extends Equatable {
   final bool isLoadingActiveDates;
   final int dailyGoal;
   final String? errorMessage;
+  final int page;
+  final int pageSize;
+  final int totalPage;
 
   LearningHistoryState({
     this.loadStatus = LOADSTATUS.INITAL,
@@ -21,6 +24,9 @@ class LearningHistoryState extends Equatable {
     this.isLoadingActiveDates = false,
     this.dailyGoal = 20,
     this.errorMessage,
+    this.page = 1,
+    this.pageSize = 10,
+    this.totalPage = 0,
   })  : focusedMonth = focusedMonth ?? DateTime.now(),
         selectedDate = selectedDate ?? DateTime.now();
 
@@ -49,6 +55,9 @@ class LearningHistoryState extends Equatable {
     bool? isLoadingActiveDates,
     int? dailyGoal,
     String? errorMessage,
+    int? page,
+    int? pageSize,
+    int? totalPage,
   }) {
     return LearningHistoryState(
       loadStatus: loadStatus ?? this.loadStatus,
@@ -60,6 +69,9 @@ class LearningHistoryState extends Equatable {
       isLoadingActiveDates: isLoadingActiveDates ?? this.isLoadingActiveDates,
       dailyGoal: dailyGoal ?? this.dailyGoal,
       errorMessage: errorMessage ?? this.errorMessage,
+      page: page ?? this.page,
+      pageSize: pageSize ?? this.pageSize,
+      totalPage: totalPage ?? this.totalPage,
     );
   }
 
@@ -74,5 +86,9 @@ class LearningHistoryState extends Equatable {
         isLoadingActiveDates,
         dailyGoal,
         errorMessage,
+        page,
+        pageSize,
+        totalPage,
       ];
 }
+

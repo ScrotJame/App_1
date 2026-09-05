@@ -1,7 +1,7 @@
 part of 'add_word_cubit.dart';
 
 class AddWordState extends Equatable {
-  AddWordState({
+  const AddWordState({
     this.vocabulary = '',
     this.furigana = '',
     this.meaning = '',

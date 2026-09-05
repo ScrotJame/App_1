@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class BubbleBackground extends StatelessWidget {
@@ -21,6 +20,6 @@ Widget _bubble(double size, double opacity) => Container(
   height: size,
   decoration: BoxDecoration(
     shape: BoxShape.circle,
-    color: Colors.white.withOpacity(opacity),
+    color: Colors.white.withValues(alpha: opacity),
   ),
 );

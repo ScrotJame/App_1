@@ -90,7 +90,7 @@ class _BadgeItemWidget extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isUnlocked
-                    ? AppColors.primary.withOpacity(0.1)
+                    ? AppColors.primary.withValues(alpha: 0.1)
                     : Colors.grey.shade100,
                 border: Border.all(
                   color: isUnlocked ? AppColors.primary : Colors.grey.shade300,

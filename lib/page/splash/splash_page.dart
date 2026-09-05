@@ -206,12 +206,12 @@ class _SplashPageState extends State<SplashPage>
             color: const Color(0xFF1A1A1A),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFF6B35).withOpacity(0.3 * _pulse.value),
+                color: const Color(0xFFFF6B35).withValues(alpha: 0.3 * _pulse.value),
                 blurRadius: 40 * _pulse.value,
                 spreadRadius: 8 * _pulse.value,
               ),
               BoxShadow(
-                color: const Color(0xFFFF9A3C).withOpacity(0.15 * _pulse.value),
+                color: const Color(0xFFFF9A3C).withValues(alpha: 0.15 * _pulse.value),
                 blurRadius: 80 * _pulse.value,
                 spreadRadius: 16 * _pulse.value,
               ),
@@ -311,7 +311,7 @@ class _SplashPageState extends State<SplashPage>
                 gradient: RadialGradient(
                   colors: [
                     const Color(0xFFFF6B35)
-                        .withOpacity(0.08 * _pulse.value),
+                        .withValues(alpha: 0.08 * _pulse.value),
                     Colors.transparent,
                   ],
                 ),
@@ -333,7 +333,7 @@ class _SplashPageState extends State<SplashPage>
                 gradient: RadialGradient(
                   colors: [
                     const Color(0xFFFF9A3C)
-                        .withOpacity(0.06 * _pulse.value),
+                        .withValues(alpha: 0.06 * _pulse.value),
                     Colors.transparent,
                   ],
                 ),

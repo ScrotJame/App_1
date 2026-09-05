@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:test_abc/commons/app_colors.dart';
 
 class BagerWidget extends StatelessWidget {
   final String? avatarUrl;
@@ -56,7 +55,7 @@ class BagerWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double avatarDiameter = avatarRadius! * 2;
-    final double? totalWidth = avatarRadius! + barWidth!;
+    final double totalWidth = avatarRadius! + barWidth!;
 
     Widget buildAvatar() {
       return Container(

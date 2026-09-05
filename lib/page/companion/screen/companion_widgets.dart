@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../models/entity/active_companion_entity.dart';
-import '../../../repository/companion_repository.dart';
 
 // ── Scene Card ────────────────────────────────────────────────────────────────
 
@@ -23,7 +22,7 @@ class CompanionSceneCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.10),
+              color: Colors.black.withValues(alpha: 0.10),
               blurRadius: 20,
               offset: const Offset(0, 6))
         ],
@@ -66,7 +65,7 @@ class CompanionSceneCard extends StatelessWidget {
                   padding:
                   const EdgeInsets.symmetric(horizontal: 20, vertical: 7),
                   decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.35),
+                      color: Colors.black.withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(20)),
                   child: Text(companion.displayName,
                       style: const TextStyle(
@@ -119,9 +118,9 @@ class _BubbleData {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-              color: Colors.white.withOpacity(opacity! * 2), width: 2),
+              color: Colors.white.withValues(alpha: opacity! * 2), width: 2),
           gradient: RadialGradient(
-              colors: [Colors.white.withOpacity(opacity!), Colors.transparent],
+              colors: [Colors.white.withValues(alpha: opacity!), Colors.transparent],
               stops: const [0.0, 1.0]),
         ),
       ),
@@ -196,7 +195,7 @@ class CompanionStatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 3))
         ],
@@ -207,7 +206,7 @@ class CompanionStatCard extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.12),
+                color: iconColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10)),
             child: Icon(icon, color: iconColor, size: 18),
           ),
@@ -252,7 +251,7 @@ class CompanionFoodInventoryBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 3))
         ],
@@ -276,8 +275,8 @@ class CompanionFoodInventoryBar extends StatelessWidget {
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: isFull
-                      ? Colors.orange.withOpacity(0.15)
-                      : Colors.green.withOpacity(0.12),
+                      ? Colors.orange.withValues(alpha: 0.15)
+                      : Colors.green.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -401,7 +400,7 @@ class _FoodSlots extends StatelessWidget {
           height: 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: filled ? filledColor.withOpacity(0.15) : emptyColor,
+            color: filled ? filledColor.withValues(alpha: 0.15) : emptyColor,
             border: Border.all(
               color: filled ? filledColor : Colors.grey.shade300,
               width: 1.5,
@@ -442,7 +441,7 @@ class CompanionEvolutionBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 3))
         ],
@@ -496,7 +495,7 @@ class CompanionEvolutionBar extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                    color: const Color(0xFF1E88E5).withOpacity(0.12),
+                    color: const Color(0xFF1E88E5).withValues(alpha: 0.12),
                     shape: BoxShape.circle),
                 child: const Icon(Icons.local_dining_rounded,
                     color: Color(0xFF1E88E5), size: 18),

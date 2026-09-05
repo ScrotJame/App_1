@@ -1,20 +1,15 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/generated/l10n.dart';
 import 'package:test_abc/commons/app_colors.dart';
-import 'package:test_abc/page/training_feed/training_feed_cubit.dart';
-import 'package:test_abc/page/training_feed/widgets/shared_widgets.dart';
-import 'package:test_abc/page/training_feed/widgets/training_feed_card.dart';
 import 'package:test_abc/page/training_feed/widgets/widget_card_common.dart';
 import 'package:test_abc/router/router.dart';
 
 class EmptyCard extends StatelessWidget {
   final bool isEmbedInHome;
-  const EmptyCard({required this.isEmbedInHome});
+  const EmptyCard({super.key, required this.isEmbedInHome});
 
 
   @override
@@ -45,7 +40,7 @@ class EmptyCard extends StatelessWidget {
                 Text(S.of(context).add_words_first,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: AppColors.xoayPaper.withOpacity(0.7),
+                    color: AppColors.xoayPaper.withValues(alpha: 0.7),
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),

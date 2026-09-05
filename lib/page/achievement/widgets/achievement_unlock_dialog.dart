@@ -84,7 +84,7 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog>
                 height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   border: Border.all(color: AppColors.primary, width: 2.5),
                 ),
                 child: const Icon(

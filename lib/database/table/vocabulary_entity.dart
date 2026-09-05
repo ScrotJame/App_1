@@ -3,7 +3,7 @@ import 'package:test_abc/database/table/unit_entity.dart';
 
 class VocabularyEntries extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get word => text().withLength(min: 1, max: 225)();
+  TextColumn get word => text()();
   TextColumn get meaning => text()();
   TextColumn get example => text().nullable()();
   TextColumn get pronunciation => text().nullable()();

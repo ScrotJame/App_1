@@ -65,8 +65,7 @@ class _TrainingFeedView extends StatefulWidget {
   State<_TrainingFeedView> createState() => _TrainingFeedViewState();
 }
 
-class _TrainingFeedViewState extends State<_TrainingFeedView>
-    with TickerProviderStateMixin {
+class _TrainingFeedViewState extends State<_TrainingFeedView> {
   final _pageController = PageController();
   final _scrollHintVisible = ValueNotifier<bool>(true);
 
@@ -376,8 +375,8 @@ class _TopBar extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.black.withOpacity(0.6),
-              Colors.black.withOpacity(0.3),
+              Colors.black.withValues(alpha: 0.6),
+              Colors.black.withValues(alpha: 0.3),
               Colors.transparent,
             ],
           ),
@@ -396,7 +395,7 @@ class _TopBar extends StatelessWidget {
                     height: 34,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                     ),
                     child: const Icon(
                       Icons.arrow_back_ios_new_rounded,
@@ -422,7 +421,7 @@ class _TopBar extends StatelessWidget {
                     Text(
                       S.of(context).swipe_to_learn,
                       style: TextStyle(
-                        color: AppColors.xoayPaper.withOpacity(0.58),
+                        color: AppColors.xoayPaper.withValues(alpha: 0.58),
                         fontWeight: FontWeight.w500,
                         fontSize: 10,
                       ),
@@ -464,7 +463,7 @@ class _TopBar extends StatelessWidget {
                 height: 5,
                 child: LinearProgressIndicator(
                   value: xpPercent,
-                  backgroundColor: Colors.white.withOpacity(0.1),
+                  backgroundColor: Colors.white.withValues(alpha: 0.1),
                   valueColor: const AlwaysStoppedAnimation<Color>(
                     AppColors.xoayGold,
                   ),
@@ -689,7 +688,7 @@ class _ScrollHintState extends State<_ScrollHint>
             child: Text(
               '⌃',
               style: TextStyle(
-                color: AppColors.xoayPaper.withOpacity(0.58),
+                color: AppColors.xoayPaper.withValues(alpha: 0.58),
                 fontSize: 22,
               ),
             ),
@@ -698,7 +697,7 @@ class _ScrollHintState extends State<_ScrollHint>
           Text(
             S.of(context).swipe_up_to_continue,
             style: TextStyle(
-              color: AppColors.xoayPaper.withOpacity(0.58),
+              color: AppColors.xoayPaper.withValues(alpha: 0.58),
               fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
@@ -927,7 +926,7 @@ class _SpeechBubble extends StatelessWidget {
             border: Border.all(color: AppColors.xoayLine, width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.25),
+                color: Colors.black.withValues(alpha: 0.25),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),

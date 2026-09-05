@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/generated/l10n.dart';
@@ -54,7 +53,7 @@ class AudioQuizCard extends StatelessWidget {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.xoayMagenta.withOpacity(0.35),
+                      color: AppColors.xoayMagenta.withValues(alpha: 0.35),
                       blurRadius: 20,
                     ),
                   ],

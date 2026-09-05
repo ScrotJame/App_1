@@ -25,7 +25,7 @@ class Eyebrow extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: AppColors.xoayPaper.withOpacity(0.58),
+            color: AppColors.xoayPaper.withValues(alpha: 0.58),
             fontWeight: FontWeight.w500,
             fontSize: 11,
             letterSpacing: 1.4,

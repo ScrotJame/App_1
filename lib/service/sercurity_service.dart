@@ -1,16 +1,21 @@
-import 'dart:convert';
 import 'package:encrypt/encrypt.dart' as enc;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SecurityService {
-  static final String _envKey =
-      dotenv.env['BACKUP_SECRET_KEY'] ?? '';
+  static String get _envKey {
+    try {
+      if (dotenv.isInitialized) {
+        return dotenv.env['BACKUP_SECRET_KEY'] ?? '';
+      }
+    } catch (_) {}
+    return '';
+  }
 
-  static final _key =
-  enc.Key.fromUtf8(_envKey.padRight(32, '0').substring(0, 32));
+  static enc.Key get _key =>
+      enc.Key.fromUtf8(_envKey.padRight(32, '0').substring(0, 32));
 
   static final _legacyIv = enc.IV.fromLength(16);
-  static final _encrypter = enc.Encrypter(enc.AES(_key));
+  static enc.Encrypter get _encrypter => enc.Encrypter(enc.AES(_key));
 
   /// Mã hóa
   static String encryptData(String rawJson) {

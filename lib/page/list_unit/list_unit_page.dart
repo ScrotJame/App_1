@@ -284,7 +284,7 @@ class _ListUnitPageState extends State<ListUnitPage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -420,7 +420,7 @@ class _ListUnitPageState extends State<ListUnitPage> {
             width: 6,
             height: 6,
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.6),
+              color: accentColor.withValues(alpha: 0.6),
               shape: BoxShape.circle,
             ),
           ),
@@ -483,7 +483,7 @@ class _ListUnitPageState extends State<ListUnitPage> {
       child: OutlinedButton.icon(
         onPressed: () => _showAddWordToUnitDialog(unitId),
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: accentColor.withOpacity(0.4), width: 1.2),
+          side: BorderSide(color: accentColor.withValues(alpha: 0.4), width: 1.2),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           foregroundColor: accentColor,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

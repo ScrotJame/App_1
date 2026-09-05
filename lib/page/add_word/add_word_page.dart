@@ -8,13 +8,11 @@ import 'package:test_abc/repository/tag_repository.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../commons/app_colors.dart';
-import '../../helper/language_helper.dart';
 import '../../models/model_local/support_language_local.dart';
 import '../../repository/unit_repository.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../../router/router.dart';
 import '../../service/pronunciation_service.dart';
-import '../scan_vocab/scan_vocab_cubit.dart';
 import 'add_word_cubit.dart';
 
 class AddWordPage extends StatefulWidget {
@@ -240,7 +238,7 @@ class _AddWordPageState extends State<AddWordPage>
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF6B7FD4).withOpacity(0.35),
+                    color: const Color(0xFF6B7FD4).withValues(alpha: 0.35),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -252,7 +250,7 @@ class _AddWordPageState extends State<AddWordPage>
                   Text(
                     'Thẻ từ vựng',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.75),
+                      color: Colors.white.withValues(alpha: 0.75),
                       fontSize: 12,
                       letterSpacing: 0.5,
                     ),
@@ -273,14 +271,14 @@ class _AddWordPageState extends State<AddWordPage>
                   Text(
                     state.furigana.isNotEmpty ? state.furigana : 'Phát âm',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 16,
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     child: Divider(
-                        color: Colors.white.withOpacity(0.25), thickness: 1),
+                        color: Colors.white.withValues(alpha: 0.25), thickness: 1),
                   ),
                   Text(
                     state.meaning.isNotEmpty ? state.meaning : 'Nghĩa',
@@ -306,10 +304,10 @@ class _AddWordPageState extends State<AddWordPage>
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.5),
+                              color: Colors.white.withValues(alpha: 0.5),
                               width: 1,
                             ),
                           ),
@@ -388,13 +386,13 @@ class _AddWordPageState extends State<AddWordPage>
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: isManual
-                          ? const Color(0xFF6B7FD4).withOpacity(0.18)
-                          : const Color(0xFF6B7FD4).withOpacity(0.10),
+                          ? const Color(0xFF6B7FD4).withValues(alpha: 0.18)
+                          : const Color(0xFF6B7FD4).withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: isManual
-                            ? const Color(0xFF6B7FD4).withOpacity(0.7)
-                            : const Color(0xFF6B7FD4).withOpacity(0.35),
+                            ? const Color(0xFF6B7FD4).withValues(alpha: 0.7)
+                            : const Color(0xFF6B7FD4).withValues(alpha: 0.35),
                       ),
                     ),
                     child: Row(
@@ -430,7 +428,7 @@ class _AddWordPageState extends State<AddWordPage>
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
           ),
           child: BlocBuilder<AddWordCubit, AddWordState>(
             buildWhen: (p, c) => p.vocabulary != c.vocabulary,
@@ -518,7 +516,7 @@ class _AddWordPageState extends State<AddWordPage>
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                     decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.12),
+                      color: accentColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Row(
@@ -558,7 +556,7 @@ class _AddWordPageState extends State<AddWordPage>
                             ? []
                             : [
                                 BoxShadow(
-                                  color: accentColor.withOpacity(0.3),
+                                  color: accentColor.withValues(alpha: 0.3),
                                   blurRadius: 6,
                                   offset: const Offset(0, 2),
                                 ),
@@ -599,7 +597,7 @@ class _AddWordPageState extends State<AddWordPage>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 8, offset: const Offset(0, 2),
                   ),
                 ],
@@ -677,7 +675,7 @@ class _AddWordPageState extends State<AddWordPage>
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -815,7 +813,7 @@ class _AddWordPageState extends State<AddWordPage>
           boxShadow: isSelected
               ? [
             BoxShadow(
-              color: const Color(0xFF6B7FD4).withOpacity(0.25),
+              color: const Color(0xFF6B7FD4).withValues(alpha: 0.25),
               blurRadius: 8,
               offset: const Offset(0, 3),
             )
@@ -867,7 +865,7 @@ class _AddWordPageState extends State<AddWordPage>
                     color: (_isEditMode
                         ? const Color(0xFF1A4FA8)
                         : const Color(0xFF2A7A1C))
-                        .withOpacity(0.7),
+                        .withValues(alpha: 0.7),
                     blurRadius: 0,
                     offset: const Offset(0, 6),
                   ),
@@ -875,7 +873,7 @@ class _AddWordPageState extends State<AddWordPage>
                     color: (_isEditMode
                         ? const Color(0xFF4A8DEF)
                         : const Color(0xFF50C040))
-                        .withOpacity(0.4),
+                        .withValues(alpha: 0.4),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),

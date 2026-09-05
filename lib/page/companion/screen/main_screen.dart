@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_abc/commons/app_images.dart';
 import '../../../models/entity/active_companion_entity.dart';
-import '../../../repository/companion_repository.dart';
 import '../../widgets/app_gradient_header.dart';
 import '../../widgets/bubble_button.dart';
 import '../companion_cubit.dart';
@@ -82,8 +81,7 @@ class _FeedButton extends StatelessWidget {
   const _FeedButton({
     required this.companion,
     required this.canFeed,
-    this.onTap,
-  });
+  }) : onTap = null;
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +109,7 @@ class _FeedButton extends StatelessWidget {
                 color: (isPlant
                     ? const Color(0xFF1E88E5)
                     : const Color(0xFFE65100))
-                    .withOpacity(0.4),
+                    .withValues(alpha: 0.4),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               )

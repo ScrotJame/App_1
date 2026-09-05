@@ -1,18 +1,12 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/page/companion/screen/browsing_screen.dart';
 import 'package:test_abc/page/companion/screen/choice_screen.dart';
 import 'package:test_abc/page/companion/screen/companion_dialogs.dart';
 import 'package:test_abc/page/companion/screen/loading_error_screen.dart';
 import 'package:test_abc/page/companion/screen/main_screen.dart';
-import 'package:test_abc/ultis/extension/label_extension.dart';
 import '../../commons/enums.dart';
-import '../../generated/l10n.dart';
 import '../../repository/companion_repository.dart';
-import '../widgets/app_gradient_header.dart';
-import '../widgets/bubble_button.dart';
 import 'companion_cubit.dart';
 
 const kThemeColors = [Color(0xFF81C784), Color(0xFF4CAF50), Color(0xFF2E7D32)];

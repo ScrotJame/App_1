@@ -294,7 +294,7 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
         onPressed: state.isLoading ? null : _onSubmit,
         style: ElevatedButton.styleFrom(
           backgroundColor: _accent,
-          disabledBackgroundColor: _accent.withOpacity(0.5),
+          disabledBackgroundColor: _accent.withValues(alpha: 0.5),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           elevation: 0,

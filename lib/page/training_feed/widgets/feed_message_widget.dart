@@ -38,7 +38,7 @@ class FeedMessage extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: AppColors.xoayPaper.withOpacity(0.7),
+                color: AppColors.xoayPaper.withValues(alpha: 0.7),
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),

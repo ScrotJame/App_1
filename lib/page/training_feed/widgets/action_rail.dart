@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/page/training_feed/widgets/rail_button_widget.dart';
@@ -7,7 +6,7 @@ import '../../../commons/app_colors.dart';
 import '../training_feed_cubit.dart';
 
 class ActionRail extends StatelessWidget {
-  const ActionRail();
+  const ActionRail({super.key});
 
   @override
   Widget build(BuildContext context) {

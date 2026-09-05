@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_abc/commons/app_images.dart';
 
-import '../../../../commons/enums.dart';
 import '../quiz_game_cubit.dart';
 import 'battle_scene_controller.dart';
 import 'sprite_animator.dart';
@@ -55,7 +54,7 @@ class _BattleSceneState extends State<BattleScene>
           );
         }
 
-        return Container(
+        return SizedBox(
           height: 330,
           width: double.infinity,
           child: ClipRRect(

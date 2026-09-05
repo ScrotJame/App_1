@@ -8,7 +8,6 @@ import 'package:test_abc/repository/learning_history_repository.dart';
 import '../../../commons/enums.dart';
 import '../../../repository/companion_repository.dart';
 import '../../../repository/vocabulary_repository.dart';
-import '../../../router/router.dart';
 import '../../daily_quest/daily_quest_cubit.dart';
 import '../../daily_quest/models/daily_quest_model.dart';
 import '../../widgets/avatar/xp_cubit.dart';
@@ -208,7 +207,7 @@ class _FlashCardPageState extends State<FlashCardPage> {
                         borderRadius: BorderRadius.circular(15),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFFD600).withOpacity(0.3),
+                            color: const Color(0xFFFFD600).withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -258,7 +257,7 @@ class _FlashCardPageState extends State<FlashCardPage> {
                         child: LinearProgressIndicator(
                           value: state.progress,
                           minHeight: 10,
-                          backgroundColor: Colors.white.withOpacity(0.2),
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
                           valueColor: const AlwaysStoppedAnimation<Color>(
                               Color(0xFF4CAF50)),
                         ),
@@ -279,7 +278,7 @@ class _FlashCardPageState extends State<FlashCardPage> {
     height: size,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
-      color: Colors.white.withOpacity(opacity),
+      color: Colors.white.withValues(alpha: opacity),
     ),
   );
 
@@ -358,7 +357,7 @@ class _FlashCardPageState extends State<FlashCardPage> {
           borderRadius: BorderRadius.circular(16),
         ),
         elevation: 4,
-        shadowColor: const Color(0xFF42C8F5).withOpacity(0.4),
+        shadowColor: const Color(0xFF42C8F5).withValues(alpha: 0.4),
       ),
     );
   }
@@ -382,7 +381,7 @@ class _RatingSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 15,
               offset: const Offset(0, 5)),
         ],
@@ -425,7 +424,7 @@ class _RatingSection extends StatelessWidget {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isSelected ? color : color.withOpacity(0.1),
+              color: isSelected ? color : color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Text(emoji, style: const TextStyle(fontSize: 24)),

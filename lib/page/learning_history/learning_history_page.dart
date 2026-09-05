@@ -16,6 +16,7 @@ class LearningHistoryPage extends StatefulWidget {
 
 class _LearningHistoryPageState extends State<LearningHistoryPage> {
   late LearningHistoryCubit _cubit;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -24,10 +25,19 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
       context.read<LearningHistoryRepository>(),
     );
     _cubit.init();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _cubit.onLoadMore();
+    }
   }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _cubit.close();
     super.dispose();
   }
@@ -58,6 +68,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
                     child: BlocBuilder<LearningHistoryCubit, LearningHistoryState>(
                       builder: (context, state) {
                         return SingleChildScrollView(
+                          controller: _scrollController,
                           physics: const BouncingScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
                           child: Column(
@@ -129,7 +140,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -329,7 +340,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -340,7 +351,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 22),
@@ -388,15 +399,35 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
       return _buildEmptyState();
     }
 
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: state.wordsStudied.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final item = state.wordsStudied[index];
-        return _buildHistoryCard(item);
-      },
+    final hasMore = state.page < state.totalPage;
+    return Column(
+      children: [
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: state.wordsStudied.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final item = state.wordsStudied[index];
+            return _buildHistoryCard(item);
+          },
+        ),
+        if (hasMore) ...[
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFF2563EB),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -412,7 +443,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
         border: Border.all(color: Colors.white, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.015),
+            color: Colors.black.withValues(alpha: 0.015),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -472,7 +503,7 @@ class _LearningHistoryPageState extends State<LearningHistoryPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(

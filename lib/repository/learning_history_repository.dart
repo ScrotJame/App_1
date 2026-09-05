@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import 'package:flutter/material.dart';
 import 'package:test_abc/models/entity/learning_history_entity.dart';
 
 import '../database/app_db.dart';
@@ -25,6 +24,9 @@ abstract class ILearningHistoryRepository {
     int? page,
     int? pageSize,
   });
+
+  /// Đếm tổng số từ đã học trong 1 ngày cụ thể (để tính totalPage)
+  Future<int> getHistoryCountByDate({String? userKey, DateTime? date});
 }
 
 class LearningHistoryRepository implements ILearningHistoryRepository {
@@ -100,4 +102,17 @@ class LearningHistoryRepository implements ILearningHistoryRepository {
     ))
         .get();
   }
-}
+
+  @override
+  Future<int> getHistoryCountByDate({String? userKey, DateTime? date}) async {
+    final safeDate = date ?? DateTime.now();
+    final startOfDay = DateTime.utc(safeDate.year, safeDate.month, safeDate.day);
+    final countExp = _db.learningHistoryLogs.id.count();
+    final query = _db.selectOnly(_db.learningHistoryLogs)
+      ..addColumns([countExp])
+      ..where(_db.learningHistoryLogs.userKey.equals(userKey ?? '') &
+          _db.learningHistoryLogs.learnedDate.equals(startOfDay));
+    final result = await query.map((row) => row.read(countExp)).getSingle();
+    return result ?? 0;
+  }
+}

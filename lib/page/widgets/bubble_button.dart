@@ -1,8 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../commons/app_images.dart';
 
 
 class BubbleButton extends StatefulWidget {
@@ -102,18 +100,18 @@ class BubbleButtonState extends State<BubbleButton>
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1B5E20).withOpacity(0.8),
+              color: const Color(0xFF1B5E20).withValues(alpha: 0.8),
               blurRadius: 0,
               offset: const Offset(0, 5),
             ),
             BoxShadow(
-              color: const Color(0xFF43A047).withOpacity(0.45),
+              color: const Color(0xFF43A047).withValues(alpha: 0.45),
               blurRadius: 18,
               offset: const Offset(0, 6),
             ),
           ],
           border: Border.all(
-            color: Colors.white.withOpacity(0.25),
+            color: Colors.white.withValues(alpha: 0.25),
             width: 2,
           ),
         ),
@@ -127,7 +125,7 @@ class BubbleButtonState extends State<BubbleButton>
                 children: [
                   SvgPicture.asset(
                     widget.icon ?? '',
-                    width: widget.widthIcon !=null ? widget.widthIcon : 25,
+                    width: widget.widthIcon ?? 25,
                   ),
 
 
@@ -159,7 +157,7 @@ class BubbleButtonState extends State<BubbleButton>
         height: 10,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          color: Colors.white.withOpacity(0.35),
+          color: Colors.white.withValues(alpha: 0.35),
         ),
       ),
     );

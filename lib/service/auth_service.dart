@@ -1,11 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:uuid/uuid.dart';
 
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseAuth? _customAuth;
+  final FirebaseFirestore? _customDb;
+
+  AuthService({FirebaseAuth? auth, FirebaseFirestore? firestore})
+      : _customAuth = auth,
+        _customDb = firestore;
+
+  FirebaseAuth get _auth => _customAuth ?? FirebaseAuth.instance;
+  FirebaseFirestore get _db => _customDb ?? FirebaseFirestore.instance;
 
   // ─── Stream & getter ────────────────────────────────────────────────────
 

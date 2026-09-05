@@ -13,7 +13,6 @@ import '../../../commons/enums.dart';
 import '../../../commons/user_sesion.dart';
 import '../../../models/entity/active_companion_entity.dart';
 import '../../../models/tag_vocab.dart';
-import '../../../database/app_db.dart';
 import '../learning_cubit.dart';
 
 part 'word_matching_state.dart';

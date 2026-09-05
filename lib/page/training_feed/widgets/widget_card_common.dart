@@ -1,11 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:test_abc/page/training_feed/widgets/training_feed_card.dart';
 
 import '../../../commons/app_colors.dart';
 
 class CardShell extends StatelessWidget {
-  const CardShell({
+  const CardShell({super.key, 
     required this.child,
     this.event = const TrainingFeedEvent.none(),
     this.shimmer = false,
@@ -21,16 +20,16 @@ class CardShell extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: shimmer
-              ? AppColors.xoayGold.withOpacity(0.25)
-              : Colors.white.withOpacity(0.12),
+              ? AppColors.xoayGold.withValues(alpha: 0.25)
+              : Colors.white.withValues(alpha: 0.12),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.18),
+            color: Colors.black.withValues(alpha: 0.18),
             blurRadius: 24,
             offset: const Offset(0, 14),
           ),
@@ -54,7 +53,7 @@ class CardShell extends StatelessWidget {
 }
 
 class EventBadge extends StatelessWidget {
-  const EventBadge({required this.event});
+  const EventBadge({super.key, required this.event});
 
   final TrainingFeedEvent event;
 
@@ -82,7 +81,7 @@ class EventBadge extends StatelessWidget {
 
 
 class Eyebrow extends StatelessWidget {
-  const Eyebrow({required this.label, this.dotColor = AppColors.xoayCyan});
+  const Eyebrow({super.key, required this.label, this.dotColor = AppColors.xoayCyan});
 
   final String label;
   final Color dotColor;
@@ -101,7 +100,7 @@ class Eyebrow extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: AppColors.xoayPaper.withOpacity(0.58),
+            color: AppColors.xoayPaper.withValues(alpha: 0.58),
             fontWeight: FontWeight.w500,
             fontSize: 11,
             letterSpacing: 1.4,

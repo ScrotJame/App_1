@@ -28,6 +28,9 @@ class AchievementDefinitions extends Table {
   /// false = ẩn cho đến khi unlock (thành tựu bí ẩn)
   BoolColumn get isVisible =>
       boolean().withDefault(const Constant(true))();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 // ─────────────────────────────────────────────────────────────

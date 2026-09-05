@@ -12,11 +12,21 @@ class PronunciationService {
   /// Các ngôn ngữ hỗ trợ auto-pronunciation
   static const _supportedLanguages = {'ja', 'zh', 'ko', 'ru', 'ar', 'he'};
 
-  /// Khởi tạo dictionary (nặng, nên gọi 1 lần khi app start).
+  bool _isInitializing = false;
+  bool _isInitialized = false;
+
+  /// Khởi tạo dictionary (nặng, chạy ngầm hoặc on-demand).
   /// Bao gồm: Japanese tokenizer (kuromoji), Chinese pinyin dict.
   Future<void> ensureInitialized() async {
-    await TextRomanizer.ensureInitialized();
-    _japaneseTokenizer = await TokenizerBuilder().build();
+    if (_isInitialized || _isInitializing) return;
+    _isInitializing = true;
+    try {
+      await TextRomanizer.ensureInitialized();
+      _japaneseTokenizer = await TokenizerBuilder().build();
+      _isInitialized = true;
+    } finally {
+      _isInitializing = false;
+    }
   }
 
   /// Kiểm tra ngôn ngữ có hỗ trợ auto-pronunciation không

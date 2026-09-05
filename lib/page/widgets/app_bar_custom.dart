@@ -34,7 +34,7 @@ class AppBarCustom extends StatelessWidget
   );
 
   Color get _bgColor =>
-      backgroundColor ?? AppColors.mainTopSky.withOpacity(0.85);
+      backgroundColor ?? AppColors.mainTopSky.withValues(alpha: 0.85);
 
   Color get _fgColor => foregroundColor ?? Colors.white;
 
@@ -53,7 +53,7 @@ class AppBarCustom extends StatelessWidget
           border: Border(
             bottom: BorderSide(
               color: showBack
-                  ? Colors.white.withOpacity(0.12)
+                  ? Colors.white.withValues(alpha: 0.12)
                   : Colors.transparent,
               width: 0.5,
             ),
@@ -192,7 +192,7 @@ class AppBarAction extends StatelessWidget {
         height: 32,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.12),
+          color: Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(

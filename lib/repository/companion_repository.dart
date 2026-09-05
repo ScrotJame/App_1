@@ -134,6 +134,7 @@ class CompanionRepository implements ICompanionRepository {
     required String userKey,
     required double wordsLearned,
   }) async {
+    if (wordsLearned <= 0) return 0;
     return _db.transaction(() async {
       // 1. Đọc companion + definition
       final row = await (_db.select(_db.activeCompanions).join([

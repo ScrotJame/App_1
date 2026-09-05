@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:drift/drift.dart';
 import 'package:file_picker/file_picker.dart';
@@ -227,7 +226,7 @@ class BackupRepository implements IBackupRepository {
   @override
   Future<ImportResult> importFromJsonString(String jsonStr) async {
     try {
-      return _parseAndMerge(jsonStr);
+      return await _parseAndMerge(jsonStr);
     } catch (e) {
       return ImportResult.fail('Lỗi khi xử lý dữ liệu: $e');
     }
@@ -272,10 +271,19 @@ class BackupRepository implements IBackupRepository {
 
   Future<ImportResult> _parseAndMerge(String jsonStr) async {
     try {
-      final jsonMap = json.decode(jsonStr) as Map<String, dynamic>;
-      final backup = BackupData.fromJson(jsonMap);
-      return _mergeBackup(backup);
-    } on FormatException catch (e) {
+      final decoded = json.decode(jsonStr);
+      if (decoded is! Map<String, dynamic>) {
+        return const ImportResult.fail('Dữ liệu không hợp lệ: JSON phải là một đối tượng');
+      }
+      if (decoded['version'] == null &&
+          decoded['user'] == null &&
+          decoded['vocabularies'] == null &&
+          decoded['units'] == null) {
+        return const ImportResult.fail('Dữ liệu không hợp lệ: Không tìm thấy trường backup hợp lệ');
+      }
+      final backup = BackupData.fromJson(decoded);
+      return await _mergeBackup(backup);
+    } catch (e) {
       return ImportResult.fail('Dữ liệu không hợp lệ: $e');
     }
   }
@@ -415,46 +423,57 @@ class BackupRepository implements IBackupRepository {
 
     await _db.transaction(() async {
       // ── 1. User ────────────────────────────────────────────────
-      final existingUser = await (_db.select(_db.usersEntrie)
-        ..where((t) => t.keyOpen.equals(targetUserKey ?? '')))
-          .getSingleOrNull();
+      if (backup.user != null) {
+        final existingUser = await (_db.select(_db.usersEntrie)
+          ..where((t) => t.keyOpen.equals(targetUserKey ?? '')))
+            .getSingleOrNull();
 
-      if (existingUser == null) {
-        await _db.into(_db.usersEntrie).insert(
-          UsersEntrieCompanion.insert(
-            keyOpen: targetUserKey ?? '',
-            username: backup.user?.username ?? '',
+        final rawUsername = backup.user?.username ?? '';
+        final safeUsername = (rawUsername.isNotEmpty && rawUsername.length >= 3)
+            ? rawUsername
+            : (existingUser != null && existingUser.username.length >= 3
+                ? existingUser.username
+                : 'User');
+
+        final safeGems = (backup.user?.gems ?? 0).clamp(0, 1000000000);
+
+        if (existingUser == null) {
+          await _db.into(_db.usersEntrie).insert(
+            UsersEntrieCompanion.insert(
+              keyOpen: targetUserKey ?? '',
+              username: safeUsername,
+              currentStreak: Value(backup.user?.currentStreak ?? 0),
+              longestStreak: Value(backup.user?.longestStreak ?? 0),
+              totalLearned: Value(backup.user?.totalLearned ?? 0),
+              lastActiveDate: Value(backup.user?.lastActiveDate),
+              gems: Value(safeGems),
+              level: Value(backup.user?.level ?? 0),
+              experience: Value(backup.user?.experience ?? 0),
+              createdAt: Value(backup.user?.createdAt ?? DateTime.now()),
+              updatedAt: Value(backup.user?.updatedAt ?? DateTime.now()),
+            ).copyWith(
+              id: Value(backup.user?.id),
+            ),
+          );
+          usersUpdated++;
+        } else {
+          await (_db.update(_db.usersEntrie)
+            ..where((t) => t.keyOpen.equals(targetUserKey ?? '')))
+              .write(UsersEntrieCompanion(
+            id: Value(backup.user?.id),
+            username: Value(safeUsername),
             currentStreak: Value(backup.user?.currentStreak ?? 0),
             longestStreak: Value(backup.user?.longestStreak ?? 0),
             totalLearned: Value(backup.user?.totalLearned ?? 0),
             lastActiveDate: Value(backup.user?.lastActiveDate),
-            gems: Value(backup.user?.gems ?? 0),
-            level: Value(backup.user?.level ?? 0),
+            gems: Value(safeGems),
+            level: Value(backup.user?.level ?? 1),
             experience: Value(backup.user?.experience ?? 0),
-            createdAt: Value(backup.user?.createdAt ?? DateTime.now() ),
+            createdAt: Value(backup.user?.createdAt ?? DateTime.now()),
             updatedAt: Value(backup.user?.updatedAt ?? DateTime.now()),
-          ).copyWith(
-            id: Value(backup.user?.id),
-          ),
-        );
-        usersUpdated++;
-      } else {
-        await (_db.update(_db.usersEntrie)
-          ..where((t) => t.keyOpen.equals(targetUserKey ?? '')))
-            .write(UsersEntrieCompanion(
-          id: Value(backup.user?.id),
-          username: Value(backup.user?.username ?? ''),
-          currentStreak: Value(backup.user?.currentStreak ?? 0),
-          longestStreak: Value(backup.user?.longestStreak ?? 0),
-          totalLearned: Value(backup.user?.totalLearned ?? 0),
-          lastActiveDate: Value(backup.user?.lastActiveDate),
-          gems: Value(backup.user?.gems ?? 0),
-          level: Value(backup.user?.level ?? 1),
-          experience: Value(backup.user?.experience ?? 0),
-          createdAt: Value(backup.user?.createdAt ?? DateTime.now()),
-          updatedAt: Value(backup.user?.updatedAt ?? DateTime.now()),
-        ));
-        usersUpdated++;
+          ));
+          usersUpdated++;
+        }
       }
 
       // ── 2. Units ───────────────────────────────────────────────
@@ -494,9 +513,11 @@ class BackupRepository implements IBackupRepository {
       final vocabIdMap = <int, int>{};
 
       for (final vocab in backup.vocabularies ?? []) {
+        if (vocab.word == null || vocab.meaning == null) continue;
+
         final existing = await (_db.select(_db.vocabularyEntries)
           ..where((t) =>
-          t.word.equals(vocab.word) & t.meaning.equals(vocab.meaning)))
+          t.word.equals(vocab.word!) & t.meaning.equals(vocab.meaning!)))
             .getSingleOrNull();
 
         if (existing == null) {
@@ -505,39 +526,39 @@ class BackupRepository implements IBackupRepository {
           final inserted =
           await _db.into(_db.vocabularyEntries).insertReturningOrNull(
             VocabularyEntriesCompanion.insert(
-              word: vocab.word,
-              meaning: vocab.meaning,
+              word: vocab.word!,
+              meaning: vocab.meaning!,
               example: Value(vocab.example),
               pronunciation: Value(vocab.pronunciation),
               language: Value(vocab.language),
-              level: Value(vocab.level),
-              correctCount: Value(vocab.correctCount),
-              wrongCount: Value(vocab.wrongCount),
-              isFavorite: Value(vocab.isFavorite),
+              level: Value(vocab.level ?? 1),
+              correctCount: Value(vocab.correctCount ?? 0),
+              wrongCount: Value(vocab.wrongCount ?? 0),
+              isFavorite: Value(vocab.isFavorite ?? false),
               lastReviewed: Value(vocab.lastReviewed),
               nextReview: Value(vocab.nextReview),
               unitId: Value(newUnitId),
-              createdAt: Value(vocab.createdAt),
-              updatedAt: Value(vocab.updatedAt),
+              createdAt: Value(vocab.createdAt ?? DateTime.now()),
+              updatedAt: Value(vocab.updatedAt ?? DateTime.now()),
             ),
           );
           if (inserted != null) {
-            vocabIdMap[vocab.id] = inserted.id;
+            if (vocab.id != null) vocabIdMap[vocab.id!] = inserted.id;
             vocabulariesAdded++;
           }
         } else {
-          vocabIdMap[vocab.id] = existing.id;
-          if (vocab.updatedAt.isAfter(existing.updatedAt)) {
+          if (vocab.id != null) vocabIdMap[vocab.id!] = existing.id;
+          if (vocab.updatedAt != null && vocab.updatedAt!.isAfter(existing.updatedAt)) {
             await (_db.update(_db.vocabularyEntries)
               ..where((t) => t.id.equals(existing.id)))
                 .write(VocabularyEntriesCompanion(
-              level: Value(vocab.level),
-              correctCount: Value(vocab.correctCount),
-              wrongCount: Value(vocab.wrongCount),
-              isFavorite: Value(vocab.isFavorite),
+              level: Value(vocab.level ?? existing.level),
+              correctCount: Value(vocab.correctCount ?? existing.correctCount),
+              wrongCount: Value(vocab.wrongCount ?? existing.wrongCount),
+              isFavorite: Value(vocab.isFavorite ?? existing.isFavorite),
               lastReviewed: Value(vocab.lastReviewed),
               nextReview: Value(vocab.nextReview),
-              updatedAt: Value(vocab.updatedAt),
+              updatedAt: Value(vocab.updatedAt ?? existing.updatedAt),
             ));
           }
         }

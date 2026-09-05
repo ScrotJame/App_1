@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -11,7 +10,7 @@ import '../widgets/button_widget.dart';
 import '../widgets/card_widget.dart';
 
 class ConfigScreen extends StatefulWidget {
-  const ConfigScreen();
+  const ConfigScreen({super.key});
 
   @override
   State<ConfigScreen> createState() => ConfigScreenState();
@@ -384,7 +383,7 @@ class ConfigScreenState extends State<ConfigScreen> {
           boxShadow: selected
               ? [
             BoxShadow(
-                color: AppColors.kBlue.withOpacity(0.2),
+                color: AppColors.kBlue.withValues(alpha: 0.2),
                 blurRadius: 6,
                 offset: const Offset(0, 2))
           ]

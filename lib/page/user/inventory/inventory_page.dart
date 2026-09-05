@@ -7,7 +7,6 @@ import '../../../commons/app_images.dart';
 import '../../../extentions/icon_extension.dart';
 import '../../../helper/format_helper.dart';
 import '../../../models/entity/item_entity.dart';
-import '../../../models/items_entity.dart';
 import '../../../repository/inventory_repository.dart';
 import '../../widgets/app_gradient_header.dart';
 import '../profile/profile_cubit.dart';
@@ -112,7 +111,7 @@ class _InventoryPageState extends State<InventoryPage> {
               border: Border.all(color: _kGemColor, width: 1.5),
               boxShadow: [
                 BoxShadow(
-                  color: _kGemColor.withOpacity(0.15),
+                  color: _kGemColor.withValues(alpha: 0.15),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -155,7 +154,7 @@ class _InventoryPageState extends State<InventoryPage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -228,7 +227,7 @@ class _InventoryPageState extends State<InventoryPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.inventory_2_outlined,
-                size: 56, color: _kGrey.withOpacity(0.5)),
+                size: 56, color: _kGrey.withValues(alpha: 0.5)),
             const SizedBox(height: 12),
             Text(
               'No items found',
@@ -298,7 +297,7 @@ class InventoryItemCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 12,
                 offset: const Offset(0, 3),
               ),
@@ -353,8 +352,8 @@ class _ItemImage extends StatelessWidget {
       height: 72,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: _kAccent.withOpacity(0.15),
-        border: Border.all(color: _kAccent.withOpacity(0.4), width: 2),
+        color: _kAccent.withValues(alpha: 0.15),
+        border: Border.all(color: _kAccent.withValues(alpha: 0.4), width: 2),
       ),
       child: ClipOval(
         child: assetPath != null

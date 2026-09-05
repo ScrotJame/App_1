@@ -15,7 +15,6 @@ import '../../repository/unit_repository.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../../router/router.dart';
 import '../../service/tts_service.dart';
-import '../add_word/add_word_cubit.dart';
 import '../add_word/add_word_page.dart';
 import '../scan_vocab/scan_vocab_page.dart';
 import '../widgets/app_gradient_header.dart';
@@ -218,7 +217,7 @@ class _ListWordPageState extends State<ListWordPage> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 16,
                 offset: const Offset(0, -4),
               ),
@@ -239,7 +238,7 @@ class _ListWordPageState extends State<ListWordPage> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF5B6EC7).withOpacity(0.4),
+                          color: const Color(0xFF5B6EC7).withValues(alpha: 0.4),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -273,7 +272,7 @@ class _ListWordPageState extends State<ListWordPage> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
                     color: const Color(0xFFFFEBEB),
-                    border: Border.all(color: const Color(0xFFEF5350).withOpacity(0.4)),
+                    border: Border.all(color: const Color(0xFFEF5350).withValues(alpha: 0.4)),
                   ),
                   child: const Icon(
                     Icons.delete_outline_rounded,
@@ -529,6 +528,11 @@ class _ListWordPageState extends State<ListWordPage> {
   // ─── Word list ────────────────────────────────────────────
   Widget _buildWordList() {
     return BlocBuilder<ListWordCubit, ListWordState>(
+      buildWhen: (previous, current) =>
+          previous.loadstatus != current.loadstatus ||
+          previous.filteredWords != current.filteredWords ||
+          previous.isSelectionMode != current.isSelectionMode ||
+          previous.selectedWordIds != current.selectedWordIds,
       builder: (context, state) {
         if (state.loadstatus == LOADSTATUS.LOADING) {
           return const Center(
@@ -539,10 +543,33 @@ class _ListWordPageState extends State<ListWordPage> {
         if (state.filteredWords.isEmpty) return _buildEmptyState();
 
         return ListView.builder(
+          cacheExtent: 250.0,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: state.filteredWords.length,
-          itemBuilder: (context, index) =>
-              _buildWordCard(state.filteredWords[index], state),
+          itemBuilder: (context, index) {
+            final item = state.filteredWords[index];
+            return _WordCardItem(
+              key: ValueKey(item.word.id),
+              item: item,
+              isSelected: state.isWordSelected(item.word.id),
+              isSelecting: state.isSelectionMode,
+              onTap: (cardKey) {
+                if (state.isSelectionMode) {
+                  _cubit.toggleWordSelection(item.word.id);
+                } else {
+                  _showWordMenu(context, cardKey, item);
+                }
+              },
+              onLongPress: () {
+                if (!state.isSelectionMode) {
+                  _cubit.toggleSelectionMode();
+                  _cubit.toggleWordSelection(item.word.id);
+                }
+              },
+              buildCardActions: _buildCardActions,
+              buildWordContent: _buildWordContent,
+            );
+          },
         );
       },
     );
@@ -564,86 +591,6 @@ class _ListWordPageState extends State<ListWordPage> {
           Text('Nhấn + để thêm từ mới',
               style: TextStyle(fontSize: 13, color: Colors.grey.shade400)),
         ],
-      ),
-    );
-  }
-
-  // ─── Word card ────────────────────────────────────────────
-  Widget _buildWordCard(VocabularyWithTags item, ListWordState state) {
-    final word = item.word;
-    final tags = item.tags;
-    final cardKey = GlobalKey();
-    final isSelected = state.isWordSelected(word.id);
-    final isSelecting = state.isSelectionMode;
-
-    return GestureDetector(
-      onTap: () {
-        if (isSelecting) {
-          _cubit.toggleWordSelection(word.id);
-        } else {
-          _showWordMenu(context, cardKey, item);
-        }
-      },
-      onLongPress: () {
-        if (!isSelecting) {
-          _cubit.toggleSelectionMode();
-          _cubit.toggleWordSelection(word.id);
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        key: cardKey,
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFFEDE7F6)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: isSelected
-              ? Border.all(color: const Color(0xFF6B7FD4), width: 1.5)
-              : null,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Checkbox khi ở selection mode
-              if (isSelecting) ...[
-                Padding(
-                  padding: const EdgeInsets.only(top: 2, right: 8),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      isSelected
-                          ? Icons.check_circle_rounded
-                          : Icons.radio_button_unchecked_rounded,
-                      key: ValueKey(isSelected),
-                      color: isSelected
-                          ? const Color(0xFF6B7FD4)
-                          : Colors.grey.shade400,
-                      size: 24,
-                    ),
-                  ),
-                ),
-              ] else ...[
-                const SizedBox(width: 4),
-              ],
-              Expanded(child: _buildWordContent(word, tags ?? [])),
-              if (!isSelecting) ...[
-                const SizedBox(width: 8),
-                _buildCardActions(word),
-              ],
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -927,7 +874,7 @@ class _ListWordPageState extends State<ListWordPage> {
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.12),
+                color: Colors.black.withValues(alpha: 0.12),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -954,7 +901,7 @@ class _ListWordPageState extends State<ListWordPage> {
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6B7FD4).withOpacity(0.35),
+                  color: const Color(0xFF6B7FD4).withValues(alpha: 0.35),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -1219,6 +1166,103 @@ class _UnitPickerSheetState extends State<_UnitPickerSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Word card Widget (Stable GlobalKey per State) ────────────────
+class _WordCardItem extends StatefulWidget {
+  final VocabularyWithTags item;
+  final bool isSelected;
+  final bool isSelecting;
+  final void Function(GlobalKey cardKey) onTap;
+  final VoidCallback onLongPress;
+  final Widget Function(VocabularyEntry word) buildCardActions;
+  final Widget Function(VocabularyEntry word, List<Tag> tags) buildWordContent;
+
+  const _WordCardItem({
+    super.key,
+    required this.item,
+    required this.isSelected,
+    required this.isSelecting,
+    required this.onTap,
+    required this.onLongPress,
+    required this.buildCardActions,
+    required this.buildWordContent,
+  });
+
+  @override
+  State<_WordCardItem> createState() => _WordCardItemState();
+}
+
+class _WordCardItemState extends State<_WordCardItem> {
+  final GlobalKey _cardKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    final word = widget.item.word;
+    final tags = widget.item.tags;
+    final isSelected = widget.isSelected;
+    final isSelecting = widget.isSelecting;
+
+    return GestureDetector(
+      onTap: () => widget.onTap(_cardKey),
+      onLongPress: widget.onLongPress,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        key: _cardKey,
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFFEDE7F6)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: isSelected
+              ? Border.all(color: const Color(0xFF6B7FD4), width: 1.5)
+              : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Checkbox khi ở selection mode
+              if (isSelecting) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 2, right: 8),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      isSelected
+                          ? Icons.check_circle_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      key: ValueKey(isSelected),
+                      color: isSelected
+                          ? const Color(0xFF6B7FD4)
+                          : Colors.grey.shade400,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(width: 4),
+              ],
+              Expanded(child: widget.buildWordContent(word, tags ?? [])),
+              if (!isSelecting) ...[
+                const SizedBox(width: 8),
+                widget.buildCardActions(word),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

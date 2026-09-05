@@ -1,13 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:test_abc/commons/app_images.dart';
-import 'package:test_abc/generated/l10n.dart';
 
 import '../../../commons/app_colors.dart';
 import '../../../database/app_db.dart';
-import '../../../repository/user_repository.dart';
 import '../../../router/router.dart';
 import '../test_cubit.dart';
 import '../widgets/app_bar_widget.dart';
@@ -144,9 +141,9 @@ class ResultScreenState extends State<ResultScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color?.withOpacity(0.1),
+        color: color?.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: (color ?? Colors.grey).withOpacity(0.3)),
+        border: Border.all(color: (color ?? Colors.grey).withValues(alpha: 0.3)),
       ),
       child: Text('Lv.$level',
           style: TextStyle(

@@ -1,7 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CloudService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore? _customDb;
+
+  CloudService({FirebaseFirestore? firestore}) : _customDb = firestore;
+
+  FirebaseFirestore get _db => _customDb ?? FirebaseFirestore.instance;
 
   /// Upload backup — dùng backupKey của user làm document ID
   Future<bool> uploadBackup(String backupKey, String jsonData) async {
@@ -12,7 +16,7 @@ class CloudService {
       });
       //print('Upload backup thành công cho key: $backupKey');
       return true;
-    } catch (e, stackTrace) {
+    } catch (e) {
       //print('Lỗi uploadBackup - $e\n$stackTrace');
       rethrow;
     }
@@ -27,7 +31,7 @@ class CloudService {
         return null;
       }
       return (doc.data() as Map<String, dynamic>)['data'] as String?;
-    } catch (e, stackTrace) {
+    } catch (e) {
       //print(' Lỗi downloadBackup - $e\n$stackTrace');
       rethrow;
     }

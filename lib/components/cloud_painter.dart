@@ -1,10 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class CloudPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withOpacity(0.88);
+    final paint = Paint()..color = Colors.white.withValues(alpha: 0.88);
     final w = size.width;
     final h = size.height;
 

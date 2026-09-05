@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../commons/user_sesion.dart';
-import '../database/app_db.dart';
 import '../page/achievement/achievement_page.dart';
 import '../page/add_word/add_word_page.dart';
 import '../page/backup/backup_page.dart';

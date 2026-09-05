@@ -96,7 +96,7 @@ class LearningConfigScreen extends StatelessWidget {
         textAlign: TextAlign.center,
         style: GoogleFonts.balooBhai2(
           fontSize: 13,
-          color: _kDark.withOpacity(0.6),
+          color: _kDark.withValues(alpha: 0.6),
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -170,7 +170,7 @@ class LearningConfigScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF42C8F5).withOpacity(0.3),
+              color: const Color(0xFF42C8F5).withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -319,13 +319,13 @@ class LearningConfigScreen extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: _kAccent,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: _kAccent.withOpacity(0.5),
+          disabledBackgroundColor: _kAccent.withValues(alpha: 0.5),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
           elevation: 4,
-          shadowColor: _kAccent.withOpacity(0.35),
+          shadowColor: _kAccent.withValues(alpha: 0.35),
         ),
       ),
     );
@@ -416,7 +416,7 @@ class _LearningTypeCard extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             color: isSelected
-                ? item.accentColor.withOpacity(0.12)
+                ? item.accentColor.withValues(alpha: 0.12)
                 : _kCard,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
@@ -426,8 +426,8 @@ class _LearningTypeCard extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: isSelected
-                    ? item.accentColor.withOpacity(0.2)
-                    : Colors.black.withOpacity(0.06),
+                    ? item.accentColor.withValues(alpha: 0.2)
+                    : Colors.black.withValues(alpha: 0.06),
                 blurRadius: 12,
                 offset: const Offset(0, 3),
               ),
@@ -444,9 +444,9 @@ class _LearningTypeCard extends StatelessWidget {
                   height: 72,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: item.accentColor.withOpacity(0.15),
+                    color: item.accentColor.withValues(alpha: 0.15),
                     border: Border.all(
-                      color: item.accentColor.withOpacity(isSelected ? 0.7 : 0.3),
+                      color: item.accentColor.withValues(alpha: isSelected ? 0.7 : 0.3),
                       width: 2,
                     ),
                   ),
@@ -477,7 +477,7 @@ class _LearningTypeCard extends StatelessWidget {
                   style: GoogleFonts.balooBhai2(
                     fontSize: 11,
                     color: isSelected
-                        ? item.accentColor.withOpacity(0.8)
+                        ? item.accentColor.withValues(alpha: 0.8)
                         : _kGrey,
                     fontWeight: FontWeight.w500,
                   ),
@@ -648,7 +648,7 @@ class _LearningConfigBottomSheetContentState
       style: GoogleFonts.balooBhai2(
         fontSize: 14,
         fontWeight: FontWeight.bold,
-        color: _kDark.withOpacity(0.8),
+        color: _kDark.withValues(alpha: 0.8),
       ),
     );
   }
@@ -661,7 +661,7 @@ class _LearningConfigBottomSheetContentState
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -676,7 +676,7 @@ class _LearningConfigBottomSheetContentState
                 'Số lượng từ (tối đa 50):',
                 style: GoogleFonts.balooBhai2(
                   fontSize: 13,
-                  color: _kDark.withOpacity(0.7),
+                  color: _kDark.withValues(alpha: 0.7),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -754,9 +754,9 @@ class _LearningConfigBottomSheetContentState
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: _kAccent,
-              inactiveTrackColor: _kAccent.withOpacity(0.2),
+              inactiveTrackColor: _kAccent.withValues(alpha: 0.2),
               thumbColor: _kAccent,
-              overlayColor: _kAccent.withOpacity(0.12),
+              overlayColor: _kAccent.withValues(alpha: 0.12),
               valueIndicatorColor: _kAccent,
               valueIndicatorTextStyle: const TextStyle(color: Colors.white),
             ),
@@ -797,7 +797,7 @@ class _LearningConfigBottomSheetContentState
             child: ChoiceChip(
               label: Text(displayLabel),
               selected: isSelected,
-              selectedColor: _kAccent.withOpacity(0.2),
+              selectedColor: _kAccent.withValues(alpha: 0.2),
               backgroundColor: _kCard,
               labelStyle: GoogleFonts.balooBhai2(
                 color: isSelected ? _kAccent : _kDark,
@@ -833,7 +833,7 @@ class _LearningConfigBottomSheetContentState
             child: ChoiceChip(
               label: const Text('Tất cả'),
               selected: _selectedUnitId == null,
-              selectedColor: _kAccent.withOpacity(0.2),
+              selectedColor: _kAccent.withValues(alpha: 0.2),
               backgroundColor: _kCard,
               labelStyle: GoogleFonts.balooBhai2(
                 color: _selectedUnitId == null ? _kAccent : _kDark,
@@ -862,7 +862,7 @@ class _LearningConfigBottomSheetContentState
               child: ChoiceChip(
                 label: Text(unit.title),
                 selected: isSelected,
-                selectedColor: _kAccent.withOpacity(0.2),
+                selectedColor: _kAccent.withValues(alpha: 0.2),
                 backgroundColor: _kCard,
                 labelStyle: GoogleFonts.balooBhai2(
                   color: isSelected ? _kAccent : _kDark,
@@ -914,7 +914,7 @@ class _LearningConfigBottomSheetContentState
             borderRadius: BorderRadius.circular(14),
           ),
           elevation: 4,
-          shadowColor: _kAccent.withOpacity(0.35),
+          shadowColor: _kAccent.withValues(alpha: 0.35),
         ),
       ),
     );

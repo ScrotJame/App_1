@@ -1,8 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:test_abc/models/flash_card_model.dart';
 
 import '../../../models/tag_vocab.dart';
 
@@ -57,7 +55,7 @@ class FlipCardState extends State<FlipCard>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       child: GestureDetector(
         onTap: widget.onTap,
@@ -93,7 +91,7 @@ Widget _cardSide(VocabularyWithTags? card, bool? isFront,) {
       borderRadius: BorderRadius.circular(30),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.08),
+          color: Colors.black.withValues(alpha: 0.08),
           blurRadius: 20,
           offset: const Offset(0, 10),
         ),

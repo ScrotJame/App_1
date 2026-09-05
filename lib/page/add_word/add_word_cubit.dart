@@ -11,7 +11,6 @@ import '../../repository/vocabulary_repository.dart';
 import '../../service/pronunciation_service.dart';
 import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 
-import '../scan_vocab/scan_vocab_cubit.dart';
 part 'add_word_state.dart';
 
 class AddWordCubit extends Cubit<AddWordState> {

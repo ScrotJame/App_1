@@ -208,6 +208,7 @@ class VocabularyRepository implements IVocabularyRepository {
     ));
   }
 
+  @override
   Future<void> changeWordState(int wordId, int newLevel, String? userId) async {
     final newStatus = _resolveStatus(newLevel);
 

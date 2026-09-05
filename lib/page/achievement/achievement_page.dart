@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/commons/user_sesion.dart';
 import 'package:test_abc/database/app_db.dart';
-import 'package:test_abc/page/achievement/widgets/achievement_badge_row_widget.dart';
 import 'package:test_abc/page/achievement/widgets/achievement_card_widget.dart';
 import 'package:test_abc/page/achievement/widgets/achievement_filter_bar_widget.dart';
 import 'package:test_abc/page/achievement/widgets/achievement_summary_widget.dart';

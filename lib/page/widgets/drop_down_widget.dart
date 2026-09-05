@@ -176,13 +176,13 @@ class _DropDownOverlayState extends State<_DropDownOverlay>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark
         ? const Color(0xFF2C2C2E)
-        : const Color(0xFFFFFFFF).withOpacity(0.97);
+        : const Color(0xFFFFFFFF).withValues(alpha: 0.97);
     final dividerColor = isDark
-        ? Colors.white.withOpacity(0.10)
-        : Colors.black.withOpacity(0.10);
+        ? Colors.white.withValues(alpha: 0.10)
+        : Colors.black.withValues(alpha: 0.10);
     final borderColor = isDark
         ? const Color(0xFF2C2C2E)
-        : const Color(0xFFE1E1EA).withOpacity(0.97);
+        : const Color(0xFFE1E1EA).withValues(alpha: 0.97);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(13),
@@ -197,7 +197,7 @@ class _DropDownOverlayState extends State<_DropDownOverlay>
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.45 : 0.18),
+              color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.18),
               blurRadius: 28,
               spreadRadius: 2,
               offset: const Offset(0, 8),
@@ -232,8 +232,7 @@ class _DropDownOverlayState extends State<_DropDownOverlay>
 
     return CupertinoButton(
       padding: EdgeInsets.zero,
-      minSize: 0,
-      onPressed: () => _closeAndRun(item.onTap),
+      onPressed: () => _closeAndRun(item.onTap), minimumSize: Size(0, 0),
       child: Container(
         height: _itemHeight,
         padding: const EdgeInsets.symmetric(horizontal: 16),

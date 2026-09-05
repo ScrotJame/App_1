@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -8,7 +7,7 @@ import '../test_cubit.dart';
 enum _ChoiceState { idle, selected, correct, wrong, eliminated }
 
 class TestingScreen extends StatefulWidget {
-  const TestingScreen();
+  const TestingScreen({super.key});
 
   @override
   State<TestingScreen> createState() => _TestingScreenState();
@@ -78,10 +77,10 @@ class _TestingScreenState extends State<TestingScreen> {
     final Color bg;
     final Color fg;
     if (isCritical) {
-      bg = const Color(0xFFFF3B30).withOpacity(0.12);
+      bg = const Color(0xFFFF3B30).withValues(alpha: 0.12);
       fg = const Color(0xFFFF3B30);
     } else if (isWarning) {
-      bg = const Color(0xFFFF9500).withOpacity(0.12);
+      bg = const Color(0xFFFF9500).withValues(alpha: 0.12);
       fg = const Color(0xFFFF9500);
     } else {
       bg = AppColors.kBlueBg;
@@ -459,7 +458,7 @@ class _TestingScreenState extends State<TestingScreen> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 12,
                   offset: const Offset(0, -3))
             ],

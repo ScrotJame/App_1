@@ -15,7 +15,7 @@ class LodgeBottomNavBar extends StatelessWidget {
   final double? centerIconSize; // Kích thước icon giữa
 
   const LodgeBottomNavBar({
-    Key? key,
+    super.key,
     this.selectedIndex,
     required this.onTabSelected,
     this.onCenterButtonPressed,
@@ -28,7 +28,7 @@ class LodgeBottomNavBar extends StatelessWidget {
     this.centerButtonSize = 60.0,
     this.centerIcon,
     this.centerIconSize = 30.0,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +53,7 @@ class LodgeBottomNavBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(35),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   offset: const Offset(0, 4),
                   blurRadius: 20,
                   spreadRadius: 0,
@@ -123,7 +123,7 @@ class LodgeBottomNavBar extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: effectiveCenterButtonColor.withOpacity(0.3),
+                        color: effectiveCenterButtonColor.withValues(alpha: 0.3),
                         offset: const Offset(0, 4),
                         blurRadius: 15,
                         spreadRadius: 0,
@@ -147,8 +147,8 @@ class LodgeBottomNavBar extends StatelessWidget {
       Color unselectedColor,
       ) {
     final color = isSelected ? selectedColor : unselectedColor;
-    Widget iconWidget = isSelected && item.activeIcon != null
-        ? item.activeIcon!
+    Widget iconWidget = isSelected
+        ? item.activeIcon
         : item.icon;
 
     if (iconWidget is Icon) {

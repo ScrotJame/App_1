@@ -264,7 +264,7 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
           Container(
             width: 100, height: 100,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
+              color: Colors.white.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.document_scanner_rounded, size: 50, color: Colors.white70),
@@ -293,7 +293,7 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white24),
         ),
@@ -345,9 +345,9 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(vertical: 9),
         decoration: BoxDecoration(
-          color: isActive ? color : color.withOpacity(0.15),
+          color: isActive ? color : color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: isActive ? color : color.withOpacity(0.4), width: 1.5),
+          border: Border.all(color: isActive ? color : color.withValues(alpha: 0.4), width: 1.5),
         ),
         alignment: Alignment.center,
         child: Text(
@@ -496,13 +496,13 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: state.isLanguageManuallySet
-                            ? const Color(0xFF7B6FD4).withOpacity(0.28)
-                            : const Color(0xFF7B6FD4).withOpacity(0.18),
+                            ? const Color(0xFF7B6FD4).withValues(alpha: 0.28)
+                            : const Color(0xFF7B6FD4).withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: state.isLanguageManuallySet
-                              ? const Color(0xFF7B6FD4).withOpacity(0.9)
-                              : const Color(0xFF7B6FD4).withOpacity(0.5),
+                              ? const Color(0xFF7B6FD4).withValues(alpha: 0.9)
+                              : const Color(0xFF7B6FD4).withValues(alpha: 0.5),
                         ),
                       ),
                       child: Row(
@@ -614,9 +614,9 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
+          color: color.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(hasValue ? 0.7 : 0.3)),
+          border: Border.all(color: color.withValues(alpha: hasValue ? 0.7 : 0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -678,7 +678,7 @@ class _BlockOverlayPainter extends CustomPainter {
         final color = roleColors[block.role]!;
         canvas.drawRRect(
           RRect.fromRectAndRadius(r, const Radius.circular(4)),
-          Paint()..color = color.withOpacity(0.35),
+          Paint()..color = color.withValues(alpha: 0.35),
         );
         canvas.drawRRect(
           RRect.fromRectAndRadius(r, const Radius.circular(4)),
@@ -704,7 +704,7 @@ class _BlockOverlayPainter extends CustomPainter {
         canvas.drawRRect(
           RRect.fromRectAndRadius(r, const Radius.circular(4)),
           Paint()
-            ..color = Colors.white.withOpacity(0.25)
+            ..color = Colors.white.withValues(alpha: 0.25)
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1,
         );
@@ -726,7 +726,7 @@ class _DragRectPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(rect, Paint()..color = color.withOpacity(0.2));
+    canvas.drawRect(rect, Paint()..color = color.withValues(alpha: 0.2));
     final dashPaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke

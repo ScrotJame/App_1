@@ -1,5 +1,4 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'companion_definition_entity.dart';
 
 part 'learning_history_entity.g.dart';
 

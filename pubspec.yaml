@@ -74,8 +74,6 @@ dependencies:
   flutter_tts: ^4.2.5
   android_intent_plus: ^6.0.0
 
-  flame: ^1.37.0
-  flame_audio: ^2.12.1
   kuromoji: ^1.0.5
   kana_kit: ^2.1.1
 
