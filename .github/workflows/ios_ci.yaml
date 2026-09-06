@@ -39,6 +39,6 @@ jobs:
 
       # Build iOS (Chỉ kiểm tra khả năng biên dịch) kèm Token
       - name: Build iOS (No Codesign)
-        run: flutter build ios --release --no-codesign
+        run: flutter build ios --simulator
         env: # Truyền token vào môi trường máy ảo cho luồng build này
           API_TOKEN: ${{ secrets.SECRET_TOKEN }}

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/page/daily_quest/daily_quest_cubit.dart';
 import 'package:test_abc/page/daily_quest/data/daily_quest_repository.dart';
 import 'package:test_abc/page/daily_quest/data/quest_local_data_source.dart';
-import 'package:test_abc/page/daily_quest/models/daily_quest_model.dart';
 import 'package:test_abc/page/daily_quest/widgets/daily_quest_card.dart';
 import 'package:test_abc/service/active_time_tracker.dart';
 import 'package:test_abc/service/mission_service.dart';
