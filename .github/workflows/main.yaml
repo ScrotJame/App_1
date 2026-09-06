@@ -34,31 +34,52 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # 5. Chạy sinh code đa ngôn ngữ (intl)
+      # 5. Tạo các file .env từ GitHub Secrets để Flutter đóng gói asset
+      - name: Create .env files
+        env:
+          APP_ENV: ${{ secrets.APP_ENV }}
+          BACKUP_SECRET_KEY: ${{ secrets.BACKUP_SECRET_KEY }}
+          ENABLE_LOG: ${{ secrets.ENABLE_LOG }}
+        run: |
+          echo "BACKUP_SECRET_KEY=$BACKUP_SECRET_KEY" > .env
+
+          cat << EOF > .env.dev
+          APP_ENV=dev
+          BACKUP_SECRET_KEY=$BACKUP_SECRET_KEY
+          ENABLE_LOG=true
+          EOF
+
+          cat << EOF > .env.prod
+          APP_ENV=$APP_ENV
+          BACKUP_SECRET_KEY=$BACKUP_SECRET_KEY
+          ENABLE_LOG=$ENABLE_LOG
+          EOF
+
+      # 6. Chạy sinh code đa ngôn ngữ (intl)
       - name: Run intl_utils generate
         run: flutter pub run intl_utils:generate
 
-      # 6. Chạy code generation
+      # 7. Chạy code generation
       - name: Run build_runner
         run: dart run build_runner build --delete-conflicting-outputs
 
-      # 7. Kiểm tra lỗi cú pháp và format code
+      # 8. Kiểm tra lỗi cú pháp và format code
       - name: Analyze project source
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      # 8. Chạy Unit test (nếu có trong thư mục test/)
+      # 9. Chạy Unit test (nếu có trong thư mục test/)
       #- name: Run tests
       #  run: flutter test
 
-      # 9. Build file APK release cho Android (CÓ TRUYỀN TOKEN VÀO ĐÂY)
+      # 10. Build file APK release cho Android (Flavor Prod)
       - name: Build Android APK
-        run: flutter build apk --release
+        run: flutter build apk --release --flavor prod -t lib/main_prod.dart
         env: # Truyền token vào môi trường máy ảo
           API_TOKEN: ${{ secrets.SECRET_TOKEN }}
 
-      # 10. Lưu trữ file APK sau khi build xong để tải về
+      # 11. Lưu trữ file APK sau khi build xong để tải về
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/*.apk

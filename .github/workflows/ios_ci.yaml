@@ -25,6 +25,27 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # Tạo các file .env từ GitHub Secrets để Flutter đóng gói asset
+      - name: Create .env files
+        env:
+          APP_ENV: ${{ secrets.APP_ENV }}
+          BACKUP_SECRET_KEY: ${{ secrets.BACKUP_SECRET_KEY }}
+          ENABLE_LOG: ${{ secrets.ENABLE_LOG }}
+        run: |
+          echo "BACKUP_SECRET_KEY=$BACKUP_SECRET_KEY" > .env
+
+          cat << EOF > .env.dev
+          APP_ENV=dev
+          BACKUP_SECRET_KEY=$BACKUP_SECRET_KEY
+          ENABLE_LOG=true
+          EOF
+
+          cat << EOF > .env.prod
+          APP_ENV=$APP_ENV
+          BACKUP_SECRET_KEY=$BACKUP_SECRET_KEY
+          ENABLE_LOG=$ENABLE_LOG
+          EOF
+
       - name: Run intl_utils generate
         run: flutter pub run intl_utils:generate
 
@@ -37,8 +58,8 @@ jobs:
       #- name: Run tests
       #  run: flutter test
 
-      # Build iOS (Chỉ kiểm tra khả năng biên dịch) kèm Token
-      - name: Build iOS (No Codesign)
-        run: flutter build ios --simulator
+      # Build iOS Simulator (Kiểm tra khả năng biên dịch, không cần Apple Team/Codesign)
+      - name: Build iOS Simulator
+        run: flutter build ios --simulator -t lib/main_prod.dart
         env: # Truyền token vào môi trường máy ảo cho luồng build này
           API_TOKEN: ${{ secrets.SECRET_TOKEN }}
