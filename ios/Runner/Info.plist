@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Dungeonary dùng camera để quét từ vựng từ sách và tài liệu.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Dungeonary dùng ảnh bạn chọn để quét từ vựng.</string>
 </dict>
 </plist>

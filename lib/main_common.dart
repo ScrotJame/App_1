@@ -17,9 +17,6 @@ Future<void> _requestPermissions() async {
   if (await Permission.scheduleExactAlarm.isDenied) {
     await Permission.scheduleExactAlarm.request();
   }
-  if (await Permission.manageExternalStorage.isDenied) {
-    await Permission.manageExternalStorage.request();
-  }
 }
 
 /// Singleton instance — khởi tạo 1 lần, dùng chung cho toàn app

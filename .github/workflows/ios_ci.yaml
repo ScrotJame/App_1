@@ -25,27 +25,6 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Tạo các file .env từ GitHub Secrets để Flutter đóng gói asset
-      - name: Create .env files
-        env:
-          APP_ENV: ${{ secrets.APP_ENV }}
-          BACKUP_SECRET_KEY: ${{ secrets.BACKUP_SECRET_KEY }}
-          ENABLE_LOG: ${{ secrets.ENABLE_LOG }}
-        run: |
-          echo "BACKUP_SECRET_KEY=$BACKUP_SECRET_KEY" > .env
-
-          cat << EOF > .env.dev
-          APP_ENV=dev
-          BACKUP_SECRET_KEY=$BACKUP_SECRET_KEY
-          ENABLE_LOG=true
-          EOF
-
-          cat << EOF > .env.prod
-          APP_ENV=$APP_ENV
-          BACKUP_SECRET_KEY=$BACKUP_SECRET_KEY
-          ENABLE_LOG=$ENABLE_LOG
-          EOF
-
       - name: Run intl_utils generate
         run: flutter pub run intl_utils:generate
 
