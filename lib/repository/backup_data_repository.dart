@@ -65,6 +65,12 @@ class BackupRepository implements IBackupRepository {
   final AuthService _authService;
   static const String _localKeyPref = 'local_key';
 
+  /// Backup file format written by this version of the app.
+  static const int currentBackupVersion = 2;
+
+  /// Builds the backup content as plain JSON text.
+  Future<String> buildBackupJson() => _buildJsonString();
+
   BackupRepository(
       this._db, {
         CloudService? cloudService,
@@ -281,6 +287,12 @@ class BackupRepository implements IBackupRepository {
           decoded['units'] == null) {
         return const ImportResult.fail('Dữ liệu không hợp lệ: Không tìm thấy trường backup hợp lệ');
       }
+      final version = decoded['version'];
+      if (version is int && version > currentBackupVersion) {
+        return const ImportResult.fail(
+          'File backup được tạo từ phiên bản app mới hơn. Vui lòng cập nhật app.',
+        );
+      }
       final backup = BackupData.fromJson(decoded);
       return await _mergeBackup(backup);
     } catch (e) {
@@ -311,7 +323,7 @@ class BackupRepository implements IBackupRepository {
     final items = await _db.select(_db.itemsEntrie).get();
 
     return BackupData(
-      version: 1,
+      version: currentBackupVersion,
       exportedAt: DateTime.now(),
       userKey: user.keyOpen,
       user: UserEntity(
@@ -368,6 +380,9 @@ class BackupRepository implements IBackupRepository {
         isFavorite: v.isFavorite,
         lastReviewed: v.lastReviewed,
         nextReview: v.nextReview,
+        easeFactor: v.easeFactor,
+        repetitions: v.repetitions,
+        interval: v.interval,
         unitId: v.unitId,
         createdAt: v.createdAt,
         updatedAt: v.updatedAt,
@@ -537,6 +552,9 @@ class BackupRepository implements IBackupRepository {
               isFavorite: Value(vocab.isFavorite ?? false),
               lastReviewed: Value(vocab.lastReviewed),
               nextReview: Value(vocab.nextReview),
+              easeFactor: Value.absentIfNull(vocab.easeFactor),
+              repetitions: Value.absentIfNull(vocab.repetitions),
+              interval: Value.absentIfNull(vocab.interval),
               unitId: Value(newUnitId),
               createdAt: Value(vocab.createdAt ?? DateTime.now()),
               updatedAt: Value(vocab.updatedAt ?? DateTime.now()),
@@ -556,9 +574,24 @@ class BackupRepository implements IBackupRepository {
               correctCount: Value(vocab.correctCount ?? existing.correctCount),
               wrongCount: Value(vocab.wrongCount ?? existing.wrongCount),
               isFavorite: Value(vocab.isFavorite ?? existing.isFavorite),
+              updatedAt: Value(vocab.updatedAt ?? existing.updatedAt),
+            ));
+          }
+
+          // SM-2 reviews do not touch updatedAt, so the schedule is compared
+          // by lastReviewed.
+          final fileReviewedLater = vocab.lastReviewed != null &&
+              (existing.lastReviewed == null ||
+                  vocab.lastReviewed!.isAfter(existing.lastReviewed!));
+          if (fileReviewedLater) {
+            await (_db.update(_db.vocabularyEntries)
+              ..where((t) => t.id.equals(existing.id)))
+                .write(VocabularyEntriesCompanion(
+              easeFactor: Value.absentIfNull(vocab.easeFactor),
+              repetitions: Value.absentIfNull(vocab.repetitions),
+              interval: Value.absentIfNull(vocab.interval),
               lastReviewed: Value(vocab.lastReviewed),
               nextReview: Value(vocab.nextReview),
-              updatedAt: Value(vocab.updatedAt ?? existing.updatedAt),
             ));
           }
         }

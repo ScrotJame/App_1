@@ -15,6 +15,9 @@ class VocabularyEntity {
   final bool? isFavorite;
   final DateTime? lastReviewed;
   final DateTime? nextReview;
+  final double? easeFactor;
+  final int? repetitions;
+  final int? interval;
   final int? unitId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -32,6 +35,9 @@ class VocabularyEntity {
     this.isFavorite,
     this.lastReviewed,
     this.nextReview,
+    this.easeFactor,
+    this.repetitions,
+    this.interval,
     this.unitId,
     this.createdAt,
     this.updatedAt,
