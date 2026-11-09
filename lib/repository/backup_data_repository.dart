@@ -496,7 +496,9 @@ class BackupRepository implements IBackupRepository {
 
       for (final unit in backup.units ?? []) {
         final existing = await (_db.select(_db.unitsEntries)
-          ..where((t) => t.title.equals(unit.title)))
+          ..where((t) => t.title.equals(unit.title))
+          ..orderBy([(t) => OrderingTerm.asc(t.id)])
+          ..limit(1))
             .getSingleOrNull();
 
         if (existing == null) {
@@ -530,14 +532,21 @@ class BackupRepository implements IBackupRepository {
       for (final vocab in backup.vocabularies ?? []) {
         if (vocab.word == null || vocab.meaning == null) continue;
 
+        final newUnitId =
+            vocab.unitId != null ? unitIdMap[vocab.unitId] : null;
+
         final existing = await (_db.select(_db.vocabularyEntries)
           ..where((t) =>
-          t.word.equals(vocab.word!) & t.meaning.equals(vocab.meaning!)))
+              t.word.equals(vocab.word!) &
+              t.meaning.equals(vocab.meaning!) &
+              (newUnitId == null
+                  ? t.unitId.isNull()
+                  : t.unitId.equals(newUnitId)))
+          ..orderBy([(t) => OrderingTerm.asc(t.id)])
+          ..limit(1))
             .getSingleOrNull();
 
         if (existing == null) {
-          final newUnitId =
-          vocab.unitId != null ? unitIdMap[vocab.unitId] : null;
           final inserted =
           await _db.into(_db.vocabularyEntries).insertReturningOrNull(
             VocabularyEntriesCompanion.insert(
@@ -602,7 +611,9 @@ class BackupRepository implements IBackupRepository {
 
       for (final tag in backup.tags ?? []) {
         final existing = await (_db.select(_db.tags)
-          ..where((t) => t.tagName.equals(tag.tagName)))
+          ..where((t) => t.tagName.equals(tag.tagName))
+          ..orderBy([(t) => OrderingTerm.asc(t.id)])
+          ..limit(1))
             .getSingleOrNull();
 
         if (existing == null) {
