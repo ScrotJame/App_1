@@ -75,10 +75,12 @@ class BackupCubit extends Cubit<BackupState> {
   Future<void> exportToFile() async {
     emit(state.copyWith(status: BackupStatus.loading));
     final result = await _repo.exportToFile();
-    if (result.success) {
+    if (result.cancelled) {
+      emit(state.copyWith(status: BackupStatus.initial));
+    } else if (result.success) {
       emit(state.copyWith(
         status: BackupStatus.success,
-        successMessage: 'Đã lưu file vào thư mục Downloads!',
+        successMessage: 'Đã lưu file backup!',
         exportedFilePath: result.filePath,
       ));
     } else {

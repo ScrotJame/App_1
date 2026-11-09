@@ -82,9 +82,7 @@ class BackupRepository implements IBackupRepository {
   @override
   Future<ExportResult> exportAndShare() async {
     try {
-      final jsonStr = await _buildJsonString();
-      final encryptedStr = SecurityService.encryptData(jsonStr);
-      final file = await _writeTempEncryptedFile(encryptedStr);
+      final file = await _writeTempFile();
       await Share.shareXFiles(
         [XFile(file.path, mimeType: 'application/json')],
         subject: 'Dungeonary Backup',
@@ -96,32 +94,21 @@ class BackupRepository implements IBackupRepository {
     }
   }
 
-  Future<File> _writeTempEncryptedFile(String encryptedData) async {
-    final tempDir = await getTemporaryDirectory();
-    final fileName = '${_buildFileNameWithoutExt()}.json';
-    final file = File('${tempDir.path}/$fileName');
-    return await file.writeAsString(encryptedData);
-  }
-
-  /// Lưu file JSON vào thư mục Downloads bằng [file_saver].
-  ///
-  /// Android: ghi vào Downloads qua MediaStore (không cần xin quyền).
-  /// iOS    : lưu vào Documents của app, có thể truy cập qua Files app.
+  /// Opens the system "save as" dialog so the file lands outside the app's
+  /// private folders. FileSaver.saveFile writes to getExternalFilesDir on
+  /// Android, which is deleted together with the app.
   @override
   Future<ExportResult> exportToFile() async {
     try {
       final jsonStr = await _buildJsonString();
-      final encryptedStr = SecurityService.encryptData(jsonStr);
-      final bytes = Uint8List.fromList(utf8.encode(encryptedStr));
-      final fileName = _buildFileNameWithoutExt();
-
-      final savedPath = await FileSaver.instance.saveFile(
-        name: fileName,
-        bytes: bytes,
+      final savedPath = await FileSaver.instance.saveAs(
+        name: _buildFileNameWithoutExt(),
+        bytes: Uint8List.fromList(utf8.encode(jsonStr)),
         fileExtension: 'json',
         mimeType: MimeType.json,
       );
 
+      if (savedPath == null) return const ExportResult.cancelled();
       return ExportResult.ok(filePath: savedPath);
     } catch (e) {
       return ExportResult.fail('Lưu file thất bại: $e');
@@ -166,44 +153,22 @@ class BackupRepository implements IBackupRepository {
   @override
   Future<ImportResult> importFromFile(File file) async {
     try {
-      print("📁 ĐANG ĐỌC FILE TỪ THIẾT BỊ...");
-      print("   📍 Đường dẫn file: ${file.path}");
-
       final fileContent = await file.readAsString(encoding: utf8);
-      print("   📄 Đọc file thành công. Tổng ký tự: ${fileContent.length}");
-
-      if (fileContent.isEmpty) {
-        return const ImportResult.fail('File rỗng, không có dữ liệu!');
-      }
-
       final cleanContent = fileContent.trim();
 
-      String? jsonStr;
-
-      // Kiểm tra ký tự đầu tiên
-      final firstChar = cleanContent.isNotEmpty ? cleanContent[0] : '';
-      print("   🔍 Ký tự đầu tiên của file là: '$firstChar'");
-
-      if (cleanContent.startsWith('{')) {
-        print("   ⚠️ Phát hiện file JSON cũ (chưa mã hóa). Tiến hành nạp trực tiếp...");
-        jsonStr = cleanContent;
-      } else {
-        print("   🔒 Phát hiện file mã hóa AES. Bắt đầu giải mã...");
-        jsonStr = SecurityService.decryptData(cleanContent);
+      if (cleanContent.isEmpty) {
+        return const ImportResult.fail('File rỗng, không có dữ liệu!');
+      }
+      if (!cleanContent.startsWith('{')) {
+        return const ImportResult.fail(
+          'File không phải bản backup JSON của Dungeonary.',
+        );
       }
 
-      if (jsonStr == null) {
-        return const ImportResult.fail('File đã bị can thiệp hoặc sai hệ thống giải mã!');
-      }
-
-      print("🔄 Bắt đầu Merge dữ liệu vào Database...");
-      return _parseAndMerge(jsonStr);
-
+      return _parseAndMerge(cleanContent);
     } on FormatException catch (e) {
-      print("❌ LỖI FORMAT: $e");
       return ImportResult.fail('File không hợp lệ: $e');
     } catch (e) {
-      print("❌ LỖI KHÔNG XÁC ĐỊNH KHI ĐỌC FILE: $e");
       return ImportResult.fail('Lỗi khi đọc file: $e');
     }
   }

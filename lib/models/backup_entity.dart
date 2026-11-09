@@ -35,13 +35,21 @@ class ImportSummary {
 
 class ExportResult {
   final bool success;
+  final bool cancelled;
   final String? error;
   final String? filePath; // null nếu share hoặc upload lên server
 
   const ExportResult.ok({this.filePath})
       : success = true,
+        cancelled = false,
         error = null;
   const ExportResult.fail(this.error)
       : success = false,
+        cancelled = false,
+        filePath = null;
+  const ExportResult.cancelled()
+      : success = false,
+        cancelled = true,
+        error = null,
         filePath = null;
 }

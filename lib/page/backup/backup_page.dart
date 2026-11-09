@@ -469,7 +469,7 @@ class _BackupPageState extends State<BackupPage> {
             icon: Icons.download_rounded,
             iconColor: const Color(0xFF2E7D32),
             title: 'Lưu vào bộ nhớ máy',
-            subtitle: 'Lưu file JSON vào thư mục Downloads / Documents',
+            subtitle: 'Chọn nơi lưu file JSON trên máy',
             loading: state.isLoading,
             onTap: _cubit.exportToFile,
           ),
