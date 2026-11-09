@@ -42,5 +42,10 @@ void main() {
       expect(AppConfig.instance, equals(config));
       expect(AppConfig.instance.isDev, isTrue);
     });
+
+    test('Offline release keeps cloud and shop disabled', () {
+      expect(AppConfig.cloudEnabled, isFalse);
+      expect(AppConfig.shopEnabled, isFalse);
+    });
   });
 }

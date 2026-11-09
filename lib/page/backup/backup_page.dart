@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../commons/enums.dart';
+import '../../config/app_config.dart';
 import '../../components/login_bottom_sheet.dart';
 import '../../cubit/auth_cubit.dart';
 import '../../repository/backup_data_repository.dart';
@@ -82,8 +83,10 @@ class _BackupPageState extends State<BackupPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // ── Mode selector ──
-                        _buildModeSelector(backupState),
-                        const SizedBox(height: 24),
+                        if (AppConfig.cloudEnabled) ...[
+                          _buildModeSelector(backupState),
+                          const SizedBox(height: 24),
+                        ],
 
                         // ── Auth banner (chỉ hiện khi mode = server) ──
                         if (backupState.mode == BackupMode.server) ...[
@@ -101,6 +104,19 @@ class _BackupPageState extends State<BackupPage> {
                         _buildSectionLabel('Nhập dữ liệu'),
                         const SizedBox(height: 12),
                         _buildImportSection(backupState, authState),
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Text(
+                            'Backup gồm từ vựng, unit, tag và tiến độ ôn. '
+                            'Companion, thành tích, lịch sử học và nhiệm vụ '
+                            'ngày chưa được sao lưu.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   );

@@ -13,6 +13,7 @@ import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/ultis/extension/label_extension.dart';
 
 import '../../../commons/enums.dart';
+import '../../../config/app_config.dart';
 import '../../../components/login_bottom_sheet.dart';
 import '../../../cubit/app_cubit.dart';
 import '../../../cubit/auth_cubit.dart';
@@ -156,12 +157,13 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: _buildAccountProgress(),
                     ),
                   ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                      child: _buildCloudAccountSection(),
+                  if (AppConfig.cloudEnabled)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                        child: _buildCloudAccountSection(),
+                      ),
                     ),
-                  ),
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),

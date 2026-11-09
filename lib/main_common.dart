@@ -30,11 +30,13 @@ Future<void> mainCommon(AppConfig config) async {
 
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: config.envFileName);
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  await GoogleSignIn.instance.initialize();
+  if (AppConfig.cloudEnabled) {
+    await dotenv.load(fileName: config.envFileName);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    await GoogleSignIn.instance.initialize();
+  }
   await _requestPermissions();
 
   // Khởi tạo dictionary cho pronunciation (kuromoji, pinyin) — chạy nền, không chặn cold-start

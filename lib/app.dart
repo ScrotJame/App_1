@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'config/app_config.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
@@ -125,10 +126,14 @@ class _MyAppState extends State<MyApp> {
             create: (ctx) => ListUnitCubit(ctx.read<UnitRepository>(), ctx.read<VocabularyRepository>())
           ),
           BlocProvider<AuthCubit>(
-            create: (ctx) => AuthCubit(
-              ctx.read<AuthService>(),
-              ctx.read<UserRepository>(),
-            )..init(),
+            create: (ctx) {
+              final cubit = AuthCubit(
+                ctx.read<AuthService>(),
+                ctx.read<UserRepository>(),
+              );
+              if (AppConfig.cloudEnabled) cubit.init();
+              return cubit;
+            },
           ),
           BlocProvider<BackupCubit>(
             create: (ctx) => BackupCubit(ctx.read<BackupRepository>()),
@@ -172,7 +177,8 @@ class _MyAppState extends State<MyApp> {
             // lại autoSyncFromServer() mỗi khi AuthState rebuild vì lý do
             // khác (ví dụ chỉ đổi errorMessage).
             listenWhen: (previous, current) =>
-            previous.status != AuthStatus.authenticated &&
+                AppConfig.cloudEnabled &&
+                previous.status != AuthStatus.authenticated &&
                 current.status == AuthStatus.authenticated,
             listener: (context, authState) {
               // Đăng nhập xong (kể cả trên máy mới) -> tự động tải bản

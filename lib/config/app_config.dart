@@ -4,6 +4,13 @@ enum AppFlavor {
 }
 
 class AppConfig {
+  /// Login, cloud backup and everything that needs Firebase.
+  /// Turning this on also needs per-user backup keys; see the offline release spec.
+  static const bool cloudEnabled = false;
+
+  /// Shop and inventory.
+  static const bool shopEnabled = false;
+
   final AppFlavor flavor;
   final String appName;
   final String envFileName;
