@@ -18,6 +18,7 @@ import '../models/entity/tag_entity.dart';
 import '../models/entity/unit_entity.dart';
 import '../models/entity/user_entity.dart';
 import '../models/entity/vocabulary_entity.dart';
+import 'backup_user_merge.dart';
 import '../service/auth_service.dart';
 import '../service/cloud_service.dart';
 import '../service/sercurity_service.dart';
@@ -474,18 +475,11 @@ class BackupRepository implements IBackupRepository {
         } else {
           await (_db.update(_db.usersEntrie)
             ..where((t) => t.keyOpen.equals(targetUserKey ?? '')))
-              .write(UsersEntrieCompanion(
-            id: Value(backup.user?.id),
-            username: Value(safeUsername),
-            currentStreak: Value(backup.user?.currentStreak ?? 0),
-            longestStreak: Value(backup.user?.longestStreak ?? 0),
-            totalLearned: Value(backup.user?.totalLearned ?? 0),
-            lastActiveDate: Value(backup.user?.lastActiveDate),
-            gems: Value(safeGems),
-            level: Value(backup.user?.level ?? 1),
-            experience: Value(backup.user?.experience ?? 0),
-            createdAt: Value(backup.user?.createdAt ?? DateTime.now()),
-            updatedAt: Value(backup.user?.updatedAt ?? DateTime.now()),
+              .write(mergeUserStats(
+            existing: existingUser,
+            backup: backup.user!,
+            safeUsername: safeUsername,
+            safeGems: safeGems,
           ));
           usersUpdated++;
         }
