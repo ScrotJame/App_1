@@ -20,6 +20,7 @@ import '../page/test_word/test_page.dart';
 import '../page/user/inventory/inventory_page.dart';
 import '../page/user/profile/profile_page.dart';
 import '../repository/user_repository.dart';
+import '../config/app_config.dart';
 import 'router.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -90,10 +91,11 @@ GoRouter createGoRouter() {
       ),
 
       // ── Shop ───────────────────────────────────────────────
-      GoRoute(
-        path: Routes.shop,
-        builder: (context, state) => const ShopPage(),
-      ),
+      if (AppConfig.shopEnabled)
+        GoRoute(
+          path: Routes.shop,
+          builder: (context, state) => const ShopPage(),
+        ),
 
       // ── Scan Vocab ─────────────────────────────────────────
       GoRoute(
@@ -117,10 +119,11 @@ GoRouter createGoRouter() {
       ),
 
       // ── Inventory ──────────────────────────────────────────
-      GoRoute(
-        path: Routes.inventory,
-        builder: (context, state) => const InventoryPage(),
-      ),
+      if (AppConfig.shopEnabled)
+        GoRoute(
+          path: Routes.inventory,
+          builder: (context, state) => const InventoryPage(),
+        ),
 
       // ── Achievement ────────────────────────────────────────
       GoRoute(

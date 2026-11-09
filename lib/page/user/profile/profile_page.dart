@@ -13,6 +13,7 @@ import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/ultis/extension/label_extension.dart';
 
 import '../../../commons/enums.dart';
+import '../../../components/privacy_policy_dialog.dart';
 import '../../../config/app_config.dart';
 import '../../../components/login_bottom_sheet.dart';
 import '../../../cubit/app_cubit.dart';
@@ -445,14 +446,16 @@ class _ProfilePageState extends State<ProfilePage> {
         _card(
           child: Column(
             children: [
-              settingsItem(
-                  icon: AppImages.icBag,
-                  label: S.current.my_inventory.capitalize(),
-                  onTap: () {
-                    context.push(Routes.inventory);
-                  }
-              ),
-              divider,
+              if (AppConfig.shopEnabled) ...[
+                settingsItem(
+                    icon: AppImages.icBag,
+                    label: S.current.my_inventory.capitalize(),
+                    onTap: () {
+                      context.push(Routes.inventory);
+                    }
+                ),
+                divider,
+              ],
               settingsItem(
                   icon:  AppImages.icLearnHistory,
                   label: S.current.learning_history.capitalize(),
@@ -695,18 +698,13 @@ class _ProfilePageState extends State<ProfilePage> {
               settingsItem(
                   icon: AppImages.icPrivacy,
                   label: S.current.privacy,
-                  onTap: () {}),
+                  onTap: () => showPrivacyPolicyDialog(context)),
               divider,
               settingsItem(
                 icon: AppImages.icLanguage,
                 label: S.current.language,
                 onTap: () => _showLanguagePicker(context),
               ),
-              divider,
-              settingsItem(
-                  icon: AppImages.icHelpAndSupport,
-                  label: S.current.help_support,
-                  onTap: () {}),
             ],
           ),
         ),

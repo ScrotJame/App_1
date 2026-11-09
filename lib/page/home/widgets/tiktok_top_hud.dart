@@ -9,6 +9,7 @@ import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/helper/format_helper.dart';
 import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/page/widgets/avatar/xp_cubit.dart';
+import 'package:test_abc/config/app_config.dart';
 import 'package:test_abc/router/router.dart';
 
 import 'daily_segmented_progress.dart';
@@ -188,7 +189,9 @@ class TiktokTopHud extends StatelessWidget {
           children: [
             // Gems Badge
             GestureDetector(
-              onTap: () => context.push(Routes.shop),
+              onTap: AppConfig.shopEnabled
+                  ? () => context.push(Routes.shop)
+                  : null,
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 5),

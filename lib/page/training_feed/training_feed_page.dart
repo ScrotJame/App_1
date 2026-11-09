@@ -22,6 +22,7 @@ import 'package:test_abc/ultis/extension/label_extension.dart';
 import '../../commons/app_colors.dart';
 import '../../commons/enums.dart';
 import '../../repository/vocabulary_repository.dart';
+import '../../config/app_config.dart';
 import '../../router/router.dart';
 import '../../service/tts_service.dart';
 import '../daily_quest/daily_quest_cubit.dart';
@@ -609,7 +610,9 @@ class _BottomNavBar extends StatelessWidget {
           } else if (index == 3) {
             context.push(Routes.test);
           } else if (index == 4) {
-            context.push(Routes.shop);
+            context.push(
+              AppConfig.shopEnabled ? Routes.shop : Routes.backup,
+            );
           }
         },
         items: [
@@ -630,8 +633,14 @@ class _BottomNavBar extends StatelessWidget {
             label: S.of(context).test.capitalize(),
           ),
           BottomNavigationBarItem(
-            icon: const Icon(Icons.storefront_rounded),
-            label: S.of(context).shop.capitalize(),
+            icon: Icon(
+              AppConfig.shopEnabled
+                  ? Icons.storefront_rounded
+                  : Icons.backup_rounded,
+            ),
+            label: AppConfig.shopEnabled
+                ? S.of(context).shop.capitalize()
+                : S.of(context).save_data,
           ),
         ],
       ),
