@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:test_abc/commons/app_colors.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/commons/user_sesion.dart';
+import 'package:test_abc/config/app_config.dart';
 import 'package:test_abc/router/router.dart';
 
 class TiktokSideActions extends StatefulWidget {
@@ -31,6 +32,7 @@ class _TiktokSideActionsState extends State<TiktokSideActions> {
       mainAxisSize: MainAxisSize.min,
       children: [
         // ── 1. Companion / Mascot Button ──
+        if (AppConfig.companionEnabled) ...[
         _buildActionItem(
           iconWidget: Image.asset(
             AppImages.icCompanion,
@@ -52,6 +54,7 @@ class _TiktokSideActionsState extends State<TiktokSideActions> {
         ),
 
         const SizedBox(height: 14),
+        ],
 
         // ── 2. Heart / Bookmark Button with animation ──
         _buildActionItem(

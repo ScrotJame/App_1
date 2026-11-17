@@ -462,13 +462,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   onTap: () {
                     context.push(Routes.learningHistory);
                   }),
-              divider,
-              settingsItem(
-                  icon: AppImages.icBadge,
-                  label: S.current.rewards.capitalize(),
-                  onTap: () {
-                    context.push(Routes.achievement);
-                  }),
+              if (AppConfig.achievementsEnabled) ...[
+                divider,
+                settingsItem(
+                    icon: AppImages.icBadge,
+                    label: S.current.rewards.capitalize(),
+                    onTap: () {
+                      context.push(Routes.achievement);
+                    }),
+              ],
             ],
           ),
         ),

@@ -110,13 +110,14 @@ GoRouter createGoRouter() {
       ),
 
       // ── Companion (path param: userKey) ────────────────────
-      GoRoute(
-        path: Routes.companion,
-        builder: (context, state) {
-          final userKey = state.pathParameters['userKey'] ?? '';
-          return CompanionPage(userKey: userKey);
-        },
-      ),
+      if (AppConfig.companionEnabled)
+        GoRoute(
+          path: Routes.companion,
+          builder: (context, state) {
+            final userKey = state.pathParameters['userKey'] ?? '';
+            return CompanionPage(userKey: userKey);
+          },
+        ),
 
       // ── Inventory ──────────────────────────────────────────
       if (AppConfig.shopEnabled)
@@ -126,10 +127,11 @@ GoRouter createGoRouter() {
         ),
 
       // ── Achievement ────────────────────────────────────────
-      GoRoute(
-        path: Routes.achievement,
-        builder: (context, state) => const AchievementPage(),
-      ),
+      if (AppConfig.achievementsEnabled)
+        GoRoute(
+          path: Routes.achievement,
+          builder: (context, state) => const AchievementPage(),
+        ),
 
       // ── Backup ─────────────────────────────────────────────
       GoRoute(

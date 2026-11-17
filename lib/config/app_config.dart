@@ -11,6 +11,13 @@ class AppConfig {
   /// Shop and inventory.
   static const bool shopEnabled = false;
 
+  /// Achievements page. Off until unlocking is wired up (report item 4).
+  static const bool achievementsEnabled = false;
+
+  /// Companion/pet page, feed bubble and food rewards.
+  /// Off until food, XP bonus and unlock level work (report item 5).
+  static const bool companionEnabled = false;
+
   final AppFlavor flavor;
   final String appName;
   final String envFileName;

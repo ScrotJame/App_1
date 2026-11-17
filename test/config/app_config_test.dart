@@ -47,5 +47,10 @@ void main() {
       expect(AppConfig.cloudEnabled, isFalse);
       expect(AppConfig.shopEnabled, isFalse);
     });
+
+    test('Offline release hides achievements and companion', () {
+      expect(AppConfig.achievementsEnabled, isFalse);
+      expect(AppConfig.companionEnabled, isFalse);
+    });
   });
 }
