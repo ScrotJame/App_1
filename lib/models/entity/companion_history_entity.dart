@@ -7,6 +7,7 @@ class CompanionHistoryEntity {
   final String? userKey;
   final int? definitionId;
   final int? levelReached;
+  final int? totalFoodUsed;
   final double? totalWordsLearned;
   final DateTime? adoptedAt;
   final DateTime? deletedAt;
@@ -16,6 +17,7 @@ class CompanionHistoryEntity {
     this.userKey,
     this.definitionId,
     this.levelReached,
+    this.totalFoodUsed,
     this.totalWordsLearned,
     this.adoptedAt,
     this.deletedAt,

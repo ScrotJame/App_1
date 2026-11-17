@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import '../../commons/enums.dart';
 import '../../models/backup_entity.dart';
 import '../../repository/backup_data_repository.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 part 'backup_state.dart';
 
@@ -25,7 +26,7 @@ class BackupCubit extends Cubit<BackupState> {
     } else {
       emit(state.copyWith(
         status: BackupStatus.failed,
-        errorMessage: 'Chưa có backup key. Vui lòng thử lại sau.',
+        errorMessage: S.current.backup_key_missing_retry,
       ));
     }
   }
@@ -62,7 +63,7 @@ class BackupCubit extends Cubit<BackupState> {
     if (result.success) {
       emit(state.copyWith(
         status: BackupStatus.success,
-        successMessage: 'Đã xuất file backup thành công!',
+        successMessage: S.current.backup_export_success,
       ));
     } else {
       emit(state.copyWith(
@@ -80,7 +81,7 @@ class BackupCubit extends Cubit<BackupState> {
     } else if (result.success) {
       emit(state.copyWith(
         status: BackupStatus.success,
-        successMessage: 'Đã lưu file backup!',
+        successMessage: S.current.backup_file_saved,
         exportedFilePath: result.filePath,
       ));
     } else {
@@ -97,7 +98,7 @@ class BackupCubit extends Cubit<BackupState> {
       print('BackupCubit: exportToServer - Không lấy được backup key');
       emit(state.copyWith(
         status: BackupStatus.failed,
-        errorMessage: 'Không lấy được backup key. Vui lòng đăng nhập hoặc nhập key.',
+        errorMessage: S.current.backup_key_missing_login_or_enter,
       ));
       return;
     }
@@ -106,7 +107,7 @@ class BackupCubit extends Cubit<BackupState> {
     if (result.success) {
       emit(state.copyWith(
         status: BackupStatus.success,
-        successMessage: 'Đã upload backup lên cloud!',
+        successMessage: S.current.backup_upload_success,
       ));
     } else {
       emit(state.copyWith(
@@ -127,7 +128,7 @@ class BackupCubit extends Cubit<BackupState> {
     if (key == null || key.trim().isEmpty) {
       emit(state.copyWith(
         status: BackupStatus.failed,
-        errorMessage: 'Không lấy được backup key. Vui lòng đăng nhập.',
+        errorMessage: S.current.backup_key_missing_login,
       ));
       return;
     }
@@ -139,13 +140,20 @@ class BackupCubit extends Cubit<BackupState> {
   void _handleImportResult(ImportResult result, {bool silent = false}) {
     if (result.success) {
       final s = result.summary;
+      final l10n = S.current;
       final msg = s == null
-          ? 'Import thành công!'
-          : 'Import thành công!\n'
-          '• User: ${s.usersUpdated} bản ghi được thêm/cập nhật\n'
-          '• ${s.vocabulariesAdded} từ vựng · ${s.tagsAdded} tag · ${s.vocabularyTagsAdded} gắn tag\n'
-          '• ${s.unitsAdded} unit · ${s.activitiesAdded} hoạt động\n'
-          '• ${s.wordProgressMerged} tiến độ word · ${s.userItemsMerged} items';
+          ? l10n.import_success
+          : [
+              l10n.import_success,
+              l10n.import_summary_users(s.usersUpdated),
+              l10n.import_summary_vocabulary(
+                  s.vocabulariesAdded, s.tagsAdded, s.vocabularyTagsAdded),
+              l10n.import_summary_units(s.unitsAdded, s.activitiesAdded),
+              l10n.import_summary_progress(
+                  s.wordProgressMerged, s.userItemsMerged),
+              l10n.import_summary_history(s.learningHistoryAdded,
+                  s.achievementsMerged, s.companionsMerged),
+            ].join('\n');
       emit(state.copyWith(
         status: BackupStatus.success,
         // Auto-sync ngầm sau khi đăng nhập thì không bật popup, tránh
@@ -156,7 +164,7 @@ class BackupCubit extends Cubit<BackupState> {
     } else {
       emit(state.copyWith(
         status: BackupStatus.failed,
-        errorMessage: silent ? null : (result.error ?? 'Lỗi không xác định'),
+        errorMessage: silent ? null : (result.error ?? S.current.unknown_error),
       ));
     }
   }

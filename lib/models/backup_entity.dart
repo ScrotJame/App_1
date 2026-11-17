@@ -20,6 +20,9 @@ class ImportSummary {
   final int tagsAdded;
   final int vocabularyTagsAdded;
   final int userItemsMerged;
+  final int learningHistoryAdded;
+  final int achievementsMerged;
+  final int companionsMerged;
 
   const ImportSummary({
     required this.usersUpdated,
@@ -30,6 +33,9 @@ class ImportSummary {
     required this.tagsAdded,
     required this.vocabularyTagsAdded,
     required this.userItemsMerged,
+    this.learningHistoryAdded = 0,
+    this.achievementsMerged = 0,
+    this.companionsMerged = 0,
   });
 }
 

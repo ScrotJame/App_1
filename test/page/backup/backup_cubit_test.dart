@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -6,10 +8,16 @@ import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/models/backup_entity.dart';
 import 'package:test_abc/page/backup/backup_cubit.dart';
 import 'package:test_abc/repository/backup_data_repository.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 class MockBackupRepository extends Mock implements BackupRepository {}
 
 void main() {
+  // Cubit messages are localized, so the strings have to be loaded.
+  setUpAll(() async {
+    await S.load(const Locale('vi'));
+  });
+
   late BackupCubit cubit;
   late MockBackupRepository mockRepo;
 

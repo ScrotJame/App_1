@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:drift/drift.dart';
 import 'package:file_picker/file_picker.dart';
@@ -10,15 +11,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:test_abc/database/app_db.dart';
 import 'package:test_abc/models/entity/word_progress_entity.dart';
+import '../commons/status_comon.dart';
 import '../database/backup_data.dart';
+import '../helper/streak_date_helper.dart';
 import '../models/backup_entity.dart';
+import '../models/entity/achievement_progress_entity.dart';
+import '../models/entity/active_companion_entity.dart';
 import '../models/entity/activity_entity.dart';
+import '../models/entity/companion_definition_entity.dart';
+import '../models/entity/companion_history_entity.dart';
 import '../models/entity/item_entity.dart';
+import '../models/entity/learning_history_log_entity.dart';
 import '../models/entity/tag_entity.dart';
 import '../models/entity/unit_entity.dart';
 import '../models/entity/user_entity.dart';
 import '../models/entity/vocabulary_entity.dart';
 import 'backup_user_merge.dart';
+import 'user_repository.dart';
 import '../service/auth_service.dart';
 import '../service/cloud_service.dart';
 import '../service/sercurity_service.dart';
@@ -280,18 +289,48 @@ class BackupRepository implements IBackupRepository {
       ..where((t) => t.userKey.equals(user.keyOpen)))
         .get();
 
-    final wordProgress = await _db.select(_db.userWordProgressEntrie).get();
+    final wordProgress = await (_db.select(_db.userWordProgressEntrie)
+          ..where((t) => t.userId.equals(user.keyOpen)))
+        .get();
     final units = await _db.select(_db.unitsEntries).get();
     final vocabularies = await _db.select(_db.vocabularyEntries).get();
     final tags = await _db.select(_db.tags).get();
     final vocabularyTags = await _db.select(_db.vocabularyTags).get();
-    final userItems = await _db.select(_db.userItemsEntrie).get();
+    final userItems = await (_db.select(_db.userItemsEntrie)
+          ..where((t) => t.userId.equals(user.keyOpen)))
+        .get();
     final items = await _db.select(_db.itemsEntrie).get();
+    final learningHistory = await (_db.select(_db.learningHistoryLogs)
+          ..where((t) => t.userKey.equals(user.keyOpen))
+          ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+        .get();
+    final achievementRows = await (_db.select(_db.userAchievementProgress).join([
+      innerJoin(
+        _db.achievementDefinitions,
+        _db.achievementDefinitions.id
+            .equalsExp(_db.userAchievementProgress.achievementId),
+      ),
+    ])
+          ..where(_db.userAchievementProgress.userKey.equals(user.keyOpen)))
+        .get();
+    final companionDefinitions =
+        await _db.select(_db.companionDefinitions).get();
+    final activeCompanion = await (_db.select(_db.activeCompanions)
+          ..where((t) => t.userKey.equals(user.keyOpen)))
+        .getSingleOrNull();
+    final companionHistories = await (_db.select(_db.companionHistories)
+          ..where((t) => t.userKey.equals(user.keyOpen))
+          ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+        .get();
+    final streakDates = [
+      ...?prefs.getStringList(StreakDateHelper.prefKey),
+    ]..sort();
 
     return BackupData(
       version: currentBackupVersion,
       exportedAt: DateTime.now(),
       userKey: user.keyOpen,
+      streakDates: streakDates,
       user: UserEntity(
         id: user.id,
         keyOpen: user.keyOpen,
@@ -385,6 +424,64 @@ class BackupRepository implements IBackupRepository {
         lastUpdated: i.lastUpdated,
       ))
           .toList(),
+      // The sections below write their times in UTC, so they mean the same
+      // moment on a device in another time zone. `learnedDate` depends on it:
+      // it is the UTC midnight of the day the answer was given.
+      learningHistory: learningHistory
+          .map((log) => LearningHistoryLogEntity(
+                wordId: log.wordId,
+                wordLevelSnapshot: log.wordLevelSnapshot,
+                sessionType: log.sessionType,
+                isCorrect: log.isCorrect,
+                learnedDate: log.learnedDate.toUtc(),
+                createdAt: log.createdAt.toUtc(),
+              ))
+          .toList(),
+      achievementProgress: achievementRows.map((row) {
+        final progress = row.readTable(_db.userAchievementProgress);
+        return AchievementProgressEntity(
+          code: row.readTable(_db.achievementDefinitions).code,
+          currentValue: progress.currentValue,
+          isUnlocked: progress.isUnlocked,
+          unlockedAt: progress.unlockedAt?.toUtc(),
+          updatedAt: progress.updatedAt.toUtc(),
+        );
+      }).toList(),
+      companionDefinitions: companionDefinitions
+          .map((d) => CompanionDefinitionEntity(
+                id: d.id,
+                type: d.type,
+                name: d.name,
+              ))
+          .toList(),
+      activeCompanion: activeCompanion == null
+          ? null
+          : ActiveCompanionEntity(
+              userKey: activeCompanion.userKey,
+              definitionId: activeCompanion.definitionId,
+              level: activeCompanion.level,
+              foodInventory: activeCompanion.foodInventory,
+              pendingWords: activeCompanion.pendingWords,
+              foodUsedInCurrentLevel: activeCompanion.foodUsedInCurrentLevel,
+              totalFoodUsed: activeCompanion.totalFoodUsed,
+              totalWordsLearned: activeCompanion.totalWordsLearned,
+              currentXpBonus: activeCompanion.currentXpBonus,
+              isMaxLevel: activeCompanion.isMaxLevel,
+              adoptedAt: activeCompanion.adoptedAt.toUtc(),
+              updatedAt: activeCompanion.updatedAt.toUtc(),
+            ),
+      companionHistories: companionHistories
+          .map((h) => CompanionHistoryEntity(
+                id: h.id,
+                userKey: h.userKey,
+                definitionId: h.definitionId,
+                levelReached: h.levelReached,
+                totalFoodUsed: h.totalFoodUsed,
+                totalWordsLearned: h.totalWordsLearned,
+                adoptedAt: h.adoptedAt.toUtc(),
+                deletedAt: h.deletedAt.toUtc(),
+              ))
+          .toList(),
     );
   }
 
@@ -397,6 +494,9 @@ class BackupRepository implements IBackupRepository {
     int tagsAdded = 0;
     int vocabularyTagsAdded = 0;
     int userItemsMerged = 0;
+    int learningHistoryAdded = 0;
+    int achievementsMerged = 0;
+    int companionsMerged = 0;
 
     final prefs = await SharedPreferences.getInstance();
     final currentLocalKey = prefs.getString(_localKeyPref);
@@ -450,6 +550,14 @@ class BackupRepository implements IBackupRepository {
         }
       }
 
+      // Rows that belong to the user can only be written when that user
+      // exists. Without one they would break the foreign key and roll the
+      // whole import back, so those sections are skipped instead.
+      final ownerKey =
+          targetUserKey != null && await _userExists(targetUserKey)
+              ? targetUserKey
+              : null;
+
       // ── 2. Units ───────────────────────────────────────────────
       final unitIdMap = <int, int>{};
 
@@ -487,8 +595,12 @@ class BackupRepository implements IBackupRepository {
 
       // ── 3. Vocabularies ────────────────────────────────────────
       final vocabIdMap = <int, int>{};
+      // Level of every word of the file as it is on this device after the
+      // merge, and the words whose level the file raised.
+      final wordLevels = <int, int>{};
+      final raisedWordIds = <int>{};
 
-      for (final vocab in backup.vocabularies ?? []) {
+      for (final VocabularyEntity vocab in backup.vocabularies ?? const []) {
         if (vocab.word == null || vocab.meaning == null) continue;
 
         final newUnitId =
@@ -530,24 +642,48 @@ class BackupRepository implements IBackupRepository {
           );
           if (inserted != null) {
             if (vocab.id != null) vocabIdMap[vocab.id!] = inserted.id;
+            wordLevels[inserted.id] = inserted.level;
             vocabulariesAdded++;
           }
         } else {
           if (vocab.id != null) vocabIdMap[vocab.id!] = existing.id;
-          if (vocab.updatedAt != null && vocab.updatedAt!.isAfter(existing.updatedAt)) {
+
+          // Only an edit of the word moves updatedAt, so it decides nothing
+          // but the edited fields.
+          final fileUpdatedAt = vocab.updatedAt;
+          final fileEditedLater = fileUpdatedAt != null &&
+              fileUpdatedAt.isAfter(existing.updatedAt);
+
+          // Answers and level changes leave updatedAt alone. Progress is
+          // merged on its own, and a restore never lowers it.
+          final level = math.max(existing.level, vocab.level ?? 0);
+          final correctCount =
+              math.max(existing.correctCount, vocab.correctCount ?? 0);
+          final wrongCount =
+              math.max(existing.wrongCount, vocab.wrongCount ?? 0);
+          wordLevels[existing.id] = level;
+          if (level > existing.level) raisedWordIds.add(existing.id);
+
+          if (fileEditedLater ||
+              level != existing.level ||
+              correctCount != existing.correctCount ||
+              wrongCount != existing.wrongCount) {
             await (_db.update(_db.vocabularyEntries)
               ..where((t) => t.id.equals(existing.id)))
                 .write(VocabularyEntriesCompanion(
-              level: Value(vocab.level ?? existing.level),
-              correctCount: Value(vocab.correctCount ?? existing.correctCount),
-              wrongCount: Value(vocab.wrongCount ?? existing.wrongCount),
-              isFavorite: Value(vocab.isFavorite ?? existing.isFavorite),
-              updatedAt: Value(vocab.updatedAt ?? existing.updatedAt),
+              level: Value(level),
+              correctCount: Value(correctCount),
+              wrongCount: Value(wrongCount),
+              isFavorite: fileEditedLater
+                  ? Value(vocab.isFavorite ?? existing.isFavorite)
+                  : const Value.absent(),
+              updatedAt:
+                  fileEditedLater ? Value(fileUpdatedAt) : const Value.absent(),
             ));
           }
 
-          // SM-2 reviews do not touch updatedAt, so the schedule is compared
-          // by lastReviewed.
+          // The review time, and the legacy SM-2 columns with it, follows the
+          // later review.
           final fileReviewedLater = vocab.lastReviewed != null &&
               (existing.lastReviewed == null ||
                   vocab.lastReviewed!.isAfter(existing.lastReviewed!));
@@ -622,101 +758,196 @@ class BackupRepository implements IBackupRepository {
       }
 
       // ── 6. Activities ──────────────────────────────────────────
-      final existingCreatedAts = await (_db.select(_db.userActivitiesEntrie)
-        ..where((t) => t.userKey.equals(targetUserKey ?? '')))
-          .get()
-          .then((list) => list.map((a) => a.createdAt).toSet());
+      if (ownerKey != null) {
+        final existingCreatedAts = await (_db.select(_db.userActivitiesEntrie)
+          ..where((t) => t.userKey.equals(ownerKey)))
+            .get()
+            .then((list) => list.map((a) => a.createdAt).toSet());
 
-      for (final activity in backup.activities ?? []) {
-        if (!existingCreatedAts.contains(activity.createdAt)) {
-          await _db.into(_db.userActivitiesEntrie).insert(
-            UserActivitiesEntrieCompanion.insert(
-              userKey: targetUserKey ?? '',
-              activityDate: activity.activityDate,
-              note: Value(activity.note),
-              createdAt: Value(activity.createdAt),
-            ),
-          );
-          activitiesAdded++;
+        for (final activity in backup.activities ?? []) {
+          if (!existingCreatedAts.contains(activity.createdAt)) {
+            await _db.into(_db.userActivitiesEntrie).insert(
+              UserActivitiesEntrieCompanion.insert(
+                userKey: ownerKey,
+                activityDate: activity.activityDate,
+                note: Value(activity.note),
+                createdAt: Value(activity.createdAt),
+              ),
+            );
+            activitiesAdded++;
+          }
         }
       }
 
       // ── 7. WordProgress ────────────────────────────────────────
-      for (final progress in backup.wordProgress ?? []) {
-        final newWordId = vocabIdMap[progress.wordId] ?? progress.wordId;
+      if (ownerKey != null) {
+        final progressTable = _db.userWordProgressEntrie;
+        final wordsWithFileRow = <int>{};
 
-        final existing = await (_db.select(_db.userWordProgressEntrie)
-          ..where((t) =>
-          t.userId.equals(targetUserKey ?? '') &
-          t.wordId.equals(newWordId)))
-            .getSingleOrNull();
+        for (final WordProgressEntity progress
+            in backup.wordProgress ?? const []) {
+          // A word id only means something inside its own file. A row whose
+          // word is not in the file cannot be placed, and guessing would
+          // attach it to an unrelated word of this device.
+          final wordId = vocabIdMap[progress.wordId];
+          if (wordId == null) continue;
+          wordsWithFileRow.add(wordId);
 
-        if (existing == null) {
-          await _db.into(_db.userWordProgressEntrie).insert(
-            UserWordProgressEntrieCompanion.insert(
-              userId: targetUserKey ?? '',
-              wordId: newWordId,
-              status: Value(progress.status),
+          // The status is derived from the level, so it is never left below
+          // what the merged level stands for.
+          final statusOfLevel = WordStatus.fromLevel(wordLevels[wordId] ?? 0);
+          final status = math.max(
+            (progress.status ?? WordStatus.notStarted)
+                .clamp(WordStatus.notStarted, WordStatus.mastered),
+            statusOfLevel,
+          );
+          final fileUpdatedAt = progress.updatedAt;
+
+          final existing = await (_db.select(progressTable)
+            ..where((t) =>
+                t.userId.equals(ownerKey) & t.wordId.equals(wordId)))
+              .getSingleOrNull();
+
+          if (existing == null) {
+            await _db.into(progressTable).insert(
+              UserWordProgressEntrieCompanion.insert(
+                userId: ownerKey,
+                wordId: wordId,
+                status: Value(status),
+                lastPracticed: Value(progress.lastPracticed),
+                nextReview: Value(progress.nextReview),
+                updatedAt: Value.absentIfNull(fileUpdatedAt),
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
+            wordProgressMerged++;
+          } else if (fileUpdatedAt != null &&
+              fileUpdatedAt.isAfter(existing.updatedAt)) {
+            await (_db.update(progressTable)
+              ..where((t) =>
+                  t.userId.equals(ownerKey) & t.wordId.equals(wordId)))
+                .write(UserWordProgressEntrieCompanion(
+              status: Value(status),
               lastPracticed: Value(progress.lastPracticed),
               nextReview: Value(progress.nextReview),
-              updatedAt: Value(progress.updatedAt),
-            ),
-            mode: InsertMode.insertOrIgnore,
-          );
-          wordProgressMerged++;
-        } else if (progress.updatedAt.isAfter(existing.updatedAt)) {
-          await (_db.update(_db.userWordProgressEntrie)
+              updatedAt: Value(fileUpdatedAt),
+            ));
+            wordProgressMerged++;
+          } else if (existing.status < statusOfLevel) {
+            await (_db.update(progressTable)
+              ..where((t) =>
+                  t.userId.equals(ownerKey) & t.wordId.equals(wordId)))
+                .write(UserWordProgressEntrieCompanion(
+              status: Value(statusOfLevel),
+            ));
+          }
+        }
+
+        // Words whose level the file raised but that have no status row in
+        // the file: the row already on this device follows the new level.
+        for (final wordId in raisedWordIds.difference(wordsWithFileRow)) {
+          final statusOfLevel = WordStatus.fromLevel(wordLevels[wordId] ?? 0);
+          await (_db.update(progressTable)
             ..where((t) =>
-            t.userId.equals(targetUserKey ?? '') &
-            t.wordId.equals(newWordId)))
+                t.userId.equals(ownerKey) &
+                t.wordId.equals(wordId) &
+                t.status.isSmallerThanValue(statusOfLevel)))
               .write(UserWordProgressEntrieCompanion(
-            status: Value(progress.status),
-            lastPracticed: Value(progress.lastPracticed),
-            nextReview: Value(progress.nextReview),
-            updatedAt: Value(progress.updatedAt),
+            status: Value(statusOfLevel),
           ));
-          wordProgressMerged++;
         }
       }
 
-      // ── 8. UserItems ───────────────────────────────────────────
-      for (final item in backup.items ?? []) {
-        final resolvedId = item.id;
-        if (resolvedId == null) continue;
+      // ── 8. Items ───────────────────────────────────────────────
+      // Item id in the file -> id of the same item on this device.
+      final itemIdMap = <String, String>{};
+
+      for (final ItemEntity item in backup.items ?? const []) {
+        final fileId = item.id;
+        if (fileId == null) continue;
 
         final existing = await (_db.select(_db.itemsEntrie)
-          ..where((t) => t.id.equals(resolvedId)))
+          ..where((t) => t.id.equals(fileId)))
             .getSingleOrNull();
 
-        if (existing == null) {
-          await _db.into(_db.itemsEntrie).insert(
-            ItemsEntrieCompanion.insert(
-              id: Value(resolvedId),
-              name: item.name ?? '',
-              icon: item.icon ?? '',
-              price: item.price ?? 0,
+        if (existing != null) {
+          itemIdMap[fileId] = fileId;
+          if ((item.lastUpdated ?? DateTime(0)).isAfter(existing.lastUpdated)) {
+            await (_db.update(_db.itemsEntrie)
+              ..where((t) => t.id.equals(fileId)))
+                .write(ItemsEntrieCompanion(
+              name: Value(item.name ?? ''),
+              icon: Value(item.icon ?? ''),
+              price: Value(item.price ?? 0),
               stock: Value(item.stock ?? 0),
               description: Value(item.description),
               isSynced: Value(item.isSynced ?? false),
               lastUpdated: Value(item.lastUpdated ?? DateTime.now()),
-            ),
-            mode: InsertMode.insertOrIgnore,
-          );
-        } else if ((item.lastUpdated ?? DateTime(0)).isAfter(existing.lastUpdated)) {
-          await (_db.update(_db.itemsEntrie)
-            ..where((t) => t.id.equals(resolvedId)))
-              .write(ItemsEntrieCompanion(
-            name: Value(item.name ?? ''),
-            icon: Value(item.icon ?? ''),
-            price: Value(item.price ?? 0),
+            ));
+          }
+          continue;
+        }
+
+        final name = item.name ?? '';
+        final icon = item.icon ?? '';
+        if (name.isEmpty || icon.isEmpty) continue;
+
+        // Item ids are generated per install, so the same catalogue item has
+        // another id on another device. It is recognised by its name instead
+        // of being added a second time.
+        final sameName = await (_db.select(_db.itemsEntrie)
+          ..where((t) => t.name.equals(name))
+          ..orderBy([(t) => OrderingTerm.asc(t.id)])
+          ..limit(1))
+            .getSingleOrNull();
+        if (sameName != null) {
+          itemIdMap[fileId] = sameName.id;
+          continue;
+        }
+
+        await _db.into(_db.itemsEntrie).insert(
+          ItemsEntrieCompanion.insert(
+            id: Value(fileId),
+            name: name,
+            icon: icon,
+            price: item.price ?? 0,
             stock: Value(item.stock ?? 0),
             description: Value(item.description),
             isSynced: Value(item.isSynced ?? false),
             lastUpdated: Value(item.lastUpdated ?? DateTime.now()),
-          ));
-        }
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+        itemIdMap[fileId] = fileId;
+      }
+
+      if (ownerKey != null) {
+        // ── 9. UserItems ─────────────────────────────────────────
+        userItemsMerged = await _mergeUserItems(
+          backup.userItems ?? const [],
+          ownerKey,
+          itemIdMap,
+        );
+
+        // ── 10. Learning history ─────────────────────────────────
+        learningHistoryAdded = await _mergeLearningHistory(
+          backup.learningHistory ?? const [],
+          ownerKey,
+          vocabIdMap,
+        );
+
+        // ── 11. Achievements ─────────────────────────────────────
+        achievementsMerged = await _mergeAchievements(
+          backup.achievementProgress ?? const [],
+          ownerKey,
+        );
+
+        // ── 12. Companion ────────────────────────────────────────
+        companionsMerged = await _mergeCompanion(backup, ownerKey);
       }
     });
+
+    await _mergeStreakDates(prefs, backup.streakDates);
 
     return ImportResult.ok(ImportSummary(
       usersUpdated: usersUpdated,
@@ -727,6 +958,369 @@ class BackupRepository implements IBackupRepository {
       tagsAdded: tagsAdded,
       vocabularyTagsAdded: vocabularyTagsAdded,
       userItemsMerged: userItemsMerged,
+      learningHistoryAdded: learningHistoryAdded,
+      achievementsMerged: achievementsMerged,
+      companionsMerged: companionsMerged,
     ));
+  }
+
+  Future<bool> _userExists(String userKey) async {
+    final user = await (_db.select(_db.usersEntrie)
+          ..where((t) => t.keyOpen.equals(userKey)))
+        .getSingleOrNull();
+    return user != null;
+  }
+
+  /// Gives the user the items of the file. A quantity only goes up, the same
+  /// way gems do. Returns how many rows were added or raised.
+  Future<int> _mergeUserItems(
+    List<UserItemEntity> fileItems,
+    String userKey,
+    Map<String, String> itemIdMap,
+  ) async {
+    final table = _db.userItemsEntrie;
+    var merged = 0;
+
+    for (final owned in fileItems) {
+      final fileItemId = owned.itemId;
+      if (fileItemId == null) continue;
+
+      var itemId = itemIdMap[fileItemId];
+      if (itemId == null) {
+        // Not in the file's catalogue. The row is still usable when this
+        // device has an item with that very id (a restore on the same
+        // install); ids are UUIDs, so this cannot hit another item.
+        final sameId = await (_db.select(_db.itemsEntrie)
+              ..where((t) => t.id.equals(fileItemId)))
+            .getSingleOrNull();
+        if (sameId == null) continue;
+        itemId = fileItemId;
+      }
+      final localItemId = itemId;
+
+      final quantity = math.max(owned.quantity ?? 0, 0);
+      final existing = await (_db.select(table)
+            ..where((t) =>
+                t.userId.equals(userKey) & t.itemId.equals(localItemId)))
+          .getSingleOrNull();
+
+      if (existing == null) {
+        if (quantity == 0) continue;
+        await _db.into(table).insert(UserItemsEntrieCompanion.insert(
+              userId: userKey,
+              itemId: localItemId,
+              quantity: Value(quantity),
+            ));
+        merged++;
+      } else if (quantity > existing.quantity) {
+        await (_db.update(table)
+              ..where((t) =>
+                  t.userId.equals(userKey) & t.itemId.equals(localItemId)))
+            .write(UserItemsEntrieCompanion(quantity: Value(quantity)));
+        merged++;
+      }
+    }
+    return merged;
+  }
+
+  /// Adds the answers of the file that this device does not have yet and
+  /// returns how many were added.
+  ///
+  /// A history row has no identity of its own, so rows are matched by content
+  /// and counted: importing the same file twice adds nothing, while two
+  /// identical answers in one file are both kept.
+  Future<int> _mergeLearningHistory(
+    List<LearningHistoryLogEntity> fileLogs,
+    String userKey,
+    Map<int, int> vocabIdMap,
+  ) async {
+    if (fileLogs.isEmpty) return 0;
+    final table = _db.learningHistoryLogs;
+
+    String keyOf(int wordId, String sessionType, bool isCorrect, int level,
+            DateTime learnedDate, DateTime createdAt) =>
+        '$wordId|$sessionType|$isCorrect|$level|'
+        '${_seconds(learnedDate)}|${_seconds(createdAt)}';
+
+    final onDevice = <String, int>{};
+    final deviceLogs = await (_db.select(table)
+          ..where((t) => t.userKey.equals(userKey)))
+        .get();
+    for (final log in deviceLogs) {
+      final key = keyOf(log.wordId, log.sessionType, log.isCorrect,
+          log.wordLevelSnapshot, log.learnedDate, log.createdAt);
+      onDevice[key] = (onDevice[key] ?? 0) + 1;
+    }
+
+    final missing = <LearningHistoryLogsCompanion>[];
+    for (final log in fileLogs) {
+      // An answer for a word that is not in the file cannot be placed.
+      final wordId = vocabIdMap[log.wordId];
+      final learnedDate = log.learnedDate;
+      if (wordId == null || learnedDate == null) continue;
+
+      final sessionType = log.sessionType ?? '';
+      final isCorrect = log.isCorrect ?? false;
+      final level = log.wordLevelSnapshot ?? 0;
+      final createdAt = log.createdAt ?? learnedDate;
+
+      final key =
+          keyOf(wordId, sessionType, isCorrect, level, learnedDate, createdAt);
+      final alreadyThere = onDevice[key] ?? 0;
+      if (alreadyThere > 0) {
+        onDevice[key] = alreadyThere - 1;
+        continue;
+      }
+
+      missing.add(LearningHistoryLogsCompanion.insert(
+        userKey: userKey,
+        wordId: wordId,
+        wordLevelSnapshot: level,
+        sessionType: sessionType,
+        isCorrect: Value(isCorrect),
+        learnedDate: learnedDate,
+        createdAt: Value(createdAt),
+      ));
+    }
+
+    if (missing.isNotEmpty) {
+      await _db.batch((b) => b.insertAll(table, missing));
+    }
+    return missing.length;
+  }
+
+  /// Merges achievement progress so that nothing already reached is lost: the
+  /// higher value wins, an unlock stays unlocked and keeps its earliest time.
+  /// Returns how many rows were added or changed.
+  Future<int> _mergeAchievements(
+    List<AchievementProgressEntity> fileProgress,
+    String userKey,
+  ) async {
+    if (fileProgress.isEmpty) return 0;
+    final table = _db.userAchievementProgress;
+
+    final definitions = await _db.select(_db.achievementDefinitions).get();
+    final idByCode = {for (final d in definitions) d.code: d.id};
+    var merged = 0;
+
+    for (final progress in fileProgress) {
+      // An achievement this version of the app does not know is skipped.
+      final achievementId = idByCode[progress.code];
+      if (achievementId == null) continue;
+
+      final fileValue = math.max(progress.currentValue ?? 0, 0);
+      final fileUnlocked = progress.isUnlocked ?? false;
+      final fileUnlockedAt = fileUnlocked ? progress.unlockedAt : null;
+
+      final existing = await (_db.select(table)
+            ..where((t) =>
+                t.userKey.equals(userKey) &
+                t.achievementId.equals(achievementId)))
+          .getSingleOrNull();
+
+      if (existing == null) {
+        await _db.into(table).insert(UserAchievementProgressCompanion.insert(
+              userKey: userKey,
+              achievementId: achievementId,
+              currentValue: Value(fileValue),
+              isUnlocked: Value(fileUnlocked),
+              unlockedAt: Value(fileUnlockedAt),
+              updatedAt: Value.absentIfNull(progress.updatedAt),
+            ));
+        merged++;
+        continue;
+      }
+
+      final value = math.max(existing.currentValue, fileValue);
+      final unlocked = existing.isUnlocked || fileUnlocked;
+      final unlockedAt = _earlier(existing.unlockedAt, fileUnlockedAt);
+      if (value == existing.currentValue &&
+          unlocked == existing.isUnlocked &&
+          unlockedAt == existing.unlockedAt) {
+        continue;
+      }
+
+      await (_db.update(table)
+            ..where((t) =>
+                t.userKey.equals(userKey) &
+                t.achievementId.equals(achievementId)))
+          .write(UserAchievementProgressCompanion(
+        currentValue: Value(value),
+        isUnlocked: Value(unlocked),
+        unlockedAt: Value(unlockedAt),
+        updatedAt: Value(_later(existing.updatedAt, progress.updatedAt)),
+      ));
+      merged++;
+    }
+    return merged;
+  }
+
+  /// Restores the companion and the list of earlier companions. Returns how
+  /// many rows were added or replaced.
+  ///
+  /// A user has one companion. When both the device and the file have one,
+  /// the one that is further along stays; the device keeps its own on a tie.
+  Future<int> _mergeCompanion(BackupData backup, String userKey) async {
+    // Definition id in the file -> the same definition on this device. Ids
+    // of the file are never used directly.
+    final localDefinitions = await _db.select(_db.companionDefinitions).get();
+    final definitionOfFileId = <int, CompanionDefinition>{};
+    for (final CompanionDefinitionEntity fileDefinition
+        in backup.companionDefinitions ?? const []) {
+      final fileId = fileDefinition.id;
+      if (fileId == null) continue;
+      for (final local in localDefinitions) {
+        if (local.type == fileDefinition.type &&
+            local.name == fileDefinition.name) {
+          definitionOfFileId[fileId] = local;
+          break;
+        }
+      }
+    }
+    if (definitionOfFileId.isEmpty) return 0;
+
+    var merged = 0;
+
+    // ── Earlier companions ───────────────────────────────────────
+    final histories = _db.companionHistories;
+    String historyKey(
+            int definitionId, DateTime adoptedAt, DateTime deletedAt) =>
+        '$definitionId|${_seconds(adoptedAt)}|${_seconds(deletedAt)}';
+
+    final deviceHistories = await (_db.select(histories)
+          ..where((t) => t.userKey.equals(userKey)))
+        .get();
+    final knownHistories = {
+      for (final h in deviceHistories)
+        historyKey(h.definitionId, h.adoptedAt, h.deletedAt),
+    };
+
+    for (final CompanionHistoryEntity history
+        in backup.companionHistories ?? const []) {
+      final definition = definitionOfFileId[history.definitionId];
+      final adoptedAt = history.adoptedAt;
+      final deletedAt = history.deletedAt;
+      if (definition == null || adoptedAt == null || deletedAt == null) {
+        continue;
+      }
+      if (!knownHistories
+          .add(historyKey(definition.id, adoptedAt, deletedAt))) {
+        continue;
+      }
+
+      await _db.into(histories).insert(CompanionHistoriesCompanion.insert(
+            userKey: userKey,
+            definitionId: definition.id,
+            levelReached: math.max(history.levelReached ?? 1, 1),
+            totalFoodUsed: math.max(history.totalFoodUsed ?? 0, 0),
+            totalWordsLearned:
+                math.max(history.totalWordsLearned ?? 0, 0).toDouble(),
+            adoptedAt: adoptedAt,
+            deletedAt: Value(deletedAt),
+          ));
+      merged++;
+    }
+
+    // ── Current companion ────────────────────────────────────────
+    final fileActive = backup.activeCompanion;
+    final definition = definitionOfFileId[fileActive?.definitionId];
+    if (fileActive == null || definition == null) return merged;
+
+    final maxLevel = math.max(definition.maxLevel, 1);
+    final level = (fileActive.level ?? 1).clamp(1, maxLevel);
+    final totalFoodUsed = math.max(fileActive.totalFoodUsed ?? 0, 0);
+    final totalWordsLearned =
+        math.max(fileActive.totalWordsLearned ?? 0, 0).toDouble();
+
+    final local = await (_db.select(_db.activeCompanions)
+          ..where((t) => t.userKey.equals(userKey)))
+        .getSingleOrNull();
+
+    if (local != null) {
+      final fileIsFurther = level != local.level
+          ? level > local.level
+          : totalFoodUsed != local.totalFoodUsed
+              ? totalFoodUsed > local.totalFoodUsed
+              : totalWordsLearned > local.totalWordsLearned;
+      if (!fileIsFurther) return merged;
+
+      // Replacing another kind of companion is a switch: the one that
+      // leaves goes to the history, as it does when the user switches.
+      if (local.definitionId != definition.id) {
+        await _db.into(histories).insert(CompanionHistoriesCompanion.insert(
+              userKey: userKey,
+              definitionId: local.definitionId,
+              levelReached: local.level,
+              totalFoodUsed: local.totalFoodUsed,
+              totalWordsLearned: local.totalWordsLearned,
+              adoptedAt: local.adoptedAt,
+            ));
+      }
+    }
+
+    await _db.into(_db.activeCompanions).insertOnConflictUpdate(
+          ActiveCompanionsCompanion.insert(
+            userKey: userKey,
+            definitionId: definition.id,
+            level: Value(level),
+            foodInventory: Value((fileActive.foodInventory ?? 0)
+                .clamp(0, math.max(definition.maxFoodInventory, 0))),
+            pendingWords:
+                Value(math.max(fileActive.pendingWords ?? 0, 0).toDouble()),
+            foodUsedInCurrentLevel:
+                Value(math.max(fileActive.foodUsedInCurrentLevel ?? 0, 0)),
+            totalFoodUsed: Value(totalFoodUsed),
+            totalWordsLearned: Value(totalWordsLearned),
+            // Derived from the level, with this device's definition.
+            currentXpBonus: Value(definition.maxXpBonus * (level / maxLevel)),
+            isMaxLevel: Value(level >= maxLevel),
+            adoptedAt: Value.absentIfNull(fileActive.adoptedAt),
+            updatedAt: Value.absentIfNull(fileActive.updatedAt),
+          ),
+        );
+    return merged + 1;
+  }
+
+  /// Times are stored with second precision, so they are compared by it.
+  static int _seconds(DateTime time) => time.millisecondsSinceEpoch ~/ 1000;
+
+  /// The earlier of two optional times. Keeps [a] when both are the same
+  /// moment.
+  static DateTime? _earlier(DateTime? a, DateTime? b) {
+    if (a == null) return b;
+    if (b == null) return a;
+    return b.isBefore(a) ? b : a;
+  }
+
+  static DateTime _later(DateTime a, DateTime? b) =>
+      b != null && b.isAfter(a) ? b : a;
+
+  /// Adds the streak days from the file to the ones already on this device and
+  /// recomputes the streak columns from the combined set, so a restore can
+  /// only extend a streak.
+  ///
+  /// Files written before streak days were backed up have none. For those the
+  /// columns merged by [mergeUserStats] are left as they are.
+  Future<void> _mergeStreakDates(
+    SharedPreferences prefs,
+    List<String>? fileDates,
+  ) async {
+    if (fileDates == null) return;
+
+    final today = StreakDateHelper.dateOnly(DateTime.now());
+    final validDates = fileDates.where((key) {
+      final day = StreakDateHelper.tryParseKey(key);
+      return day != null && !day.isAfter(today);
+    }).toSet();
+    if (validDates.isEmpty) return;
+
+    final merged = {
+      ...?prefs.getStringList(StreakDateHelper.prefKey),
+      ...validDates,
+    }.toList()
+      ..sort();
+    await prefs.setStringList(StreakDateHelper.prefKey, merged);
+
+    await UserRepository(_db).syncStreak();
   }
 }
