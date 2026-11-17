@@ -5,6 +5,7 @@ import '../../commons/enums.dart';
 import '../../config/app_config.dart';
 import '../../components/login_bottom_sheet.dart';
 import '../../cubit/auth_cubit.dart';
+import '../../generated/l10n.dart';
 import '../../repository/backup_data_repository.dart';
 import 'backup_cubit.dart';
 
@@ -63,9 +64,9 @@ class _BackupPageState extends State<BackupPage> {
             elevation: 0,
             scrolledUnderElevation: 0,
             titleSpacing: 20,
-            title: const Text(
-              'Backup & Restore',
-              style: TextStyle(
+            title: Text(
+              S.of(context).save_data,
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w800,
                 color: Colors.black87,
@@ -95,22 +96,20 @@ class _BackupPageState extends State<BackupPage> {
                         ],
 
                         // ── Export section ──
-                        _buildSectionLabel('Xuất dữ liệu'),
+                        _buildSectionLabel(S.of(context).backup_export_section),
                         const SizedBox(height: 12),
                         _buildExportSection(backupState, authState),
                         const SizedBox(height: 28),
 
                         // ── Import section ──
-                        _buildSectionLabel('Nhập dữ liệu'),
+                        _buildSectionLabel(S.of(context).backup_import_section),
                         const SizedBox(height: 12),
                         _buildImportSection(backupState, authState),
                         const SizedBox(height: 20),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
                           child: Text(
-                            'Backup gồm từ vựng, unit, tag và tiến độ ôn. '
-                            'Companion, thành tích, lịch sử học và nhiệm vụ '
-                            'ngày chưa được sao lưu.',
+                            S.of(context).backup_scope_note,
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey.shade600,
@@ -212,15 +211,15 @@ class _BackupPageState extends State<BackupPage> {
               color: const Color(0xFF2E7D32).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.check_circle_rounded,
+                const Icon(Icons.check_circle_rounded,
                     color: Color(0xFF2E7D32), size: 14),
-                SizedBox(width: 4),
+                const SizedBox(width: 4),
                 Text(
-                  'Đã kết nối',
-                  style: TextStyle(
+                  S.of(context).backup_connected,
+                  style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF2E7D32),
@@ -281,9 +280,9 @@ class _BackupPageState extends State<BackupPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Chưa kết nối tài khoản',
-                  style: TextStyle(
+                Text(
+                  S.of(context).backup_not_connected,
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: Colors.black87,
@@ -291,7 +290,7 @@ class _BackupPageState extends State<BackupPage> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Đăng nhập để backup dữ liệu lên cloud',
+                  S.of(context).backup_login_to_cloud,
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade500,
@@ -302,9 +301,9 @@ class _BackupPageState extends State<BackupPage> {
           ),
           TextButton(
             onPressed: () => LoginBottomSheet.show(context),
-            child: const Text(
-              'Đăng nhập',
-              style: TextStyle(fontWeight: FontWeight.w700, color: _accent),
+            child: Text(
+              S.of(context).backup_sign_in,
+              style: const TextStyle(fontWeight: FontWeight.w700, color: _accent),
             ),
           ),
         ],
@@ -361,7 +360,7 @@ class _BackupPageState extends State<BackupPage> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Đăng nhập để dùng cloud backup theo tài khoản',
+                      S.of(context).backup_login_for_account_cloud,
                       style: TextStyle(
                           fontSize: 12, color: Colors.grey.shade500),
                     ),
@@ -394,13 +393,13 @@ class _BackupPageState extends State<BackupPage> {
       child: Row(
         children: [
           _modeTab(
-            label: 'File cục bộ',
+            label: S.of(context).backup_mode_file,
             icon: Icons.folder_outlined,
             value: BackupMode.file,
             active: state.mode,
           ),
           _modeTab(
-            label: 'Server',
+            label: S.of(context).backup_mode_server,
             icon: Icons.cloud_outlined,
             value: BackupMode.server,
             active: state.mode,
@@ -475,8 +474,8 @@ class _BackupPageState extends State<BackupPage> {
           _buildActionCard(
             icon: Icons.share_rounded,
             iconColor: _accent,
-            title: 'Chia sẻ file backup',
-            subtitle: 'Mở share sheet để lưu hoặc gửi file JSON',
+            title: S.of(context).backup_share_title,
+            subtitle: S.of(context).backup_share_subtitle,
             loading: state.isLoading,
             onTap: _cubit.exportAndShare,
           ),
@@ -484,8 +483,8 @@ class _BackupPageState extends State<BackupPage> {
           _buildActionCard(
             icon: Icons.download_rounded,
             iconColor: const Color(0xFF2E7D32),
-            title: 'Lưu vào bộ nhớ máy',
-            subtitle: 'Chọn nơi lưu file JSON trên máy',
+            title: S.of(context).backup_save_title,
+            subtitle: S.of(context).backup_save_subtitle,
             loading: state.isLoading,
             onTap: _cubit.exportToFile,
           ),
@@ -499,8 +498,8 @@ class _BackupPageState extends State<BackupPage> {
       return _buildActionCard(
         icon: Icons.cloud_upload_rounded,
         iconColor: _accent,
-        title: 'Upload lên cloud',
-        subtitle: 'Backup dữ liệu lên tài khoản của bạn',
+        title: S.of(context).backup_upload_title,
+        subtitle: S.of(context).backup_upload_subtitle,
         loading: state.isLoading,
         onTap: () => _cubit.exportToServer(),
       );
@@ -509,7 +508,7 @@ class _BackupPageState extends State<BackupPage> {
     return _buildLoginRequiredCard(
       icon: Icons.cloud_upload_rounded,
       iconColor: _accent,
-      title: 'Đăng nhập để backup',
+      title: S.of(context).backup_login_to_backup,
     );
   }
 
@@ -520,8 +519,8 @@ class _BackupPageState extends State<BackupPage> {
       return _buildActionCard(
         icon: Icons.upload_file_rounded,
         iconColor: const Color(0xFFF9A825),
-        title: 'Chọn file backup',
-        subtitle: 'Chọn file .json từ bộ nhớ máy để nhập dữ liệu',
+        title: S.of(context).backup_pick_file_title,
+        subtitle: S.of(context).backup_pick_file_subtitle,
         loading: state.isLoading,
         onTap: () => _confirmImport(
           context,
@@ -536,8 +535,8 @@ class _BackupPageState extends State<BackupPage> {
       return _buildActionCard(
         icon: Icons.cloud_download_rounded,
         iconColor: const Color(0xFF00838F),
-        title: 'Tải từ cloud',
-        subtitle: 'Khôi phục dữ liệu từ tài khoản của bạn',
+        title: S.of(context).backup_download_title,
+        subtitle: S.of(context).backup_download_subtitle,
         loading: state.isLoading,
         onTap: () => _confirmImport(
           context,
@@ -550,7 +549,7 @@ class _BackupPageState extends State<BackupPage> {
     return _buildLoginRequiredCard(
       icon: Icons.cloud_download_rounded,
       iconColor: const Color(0xFF00838F),
-      title: 'Đăng nhập để khôi phục',
+      title: S.of(context).backup_login_to_restore,
     );
   }
 
@@ -643,21 +642,18 @@ class _BackupPageState extends State<BackupPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Nhập dữ liệu',
-            style: TextStyle(fontWeight: FontWeight.w700)),
-        content: const Text(
-          'Dữ liệu sẽ được merge với dữ liệu hiện tại.\n'
-          'Bản ghi mới hơn sẽ được giữ lại. Bạn có muốn tiếp tục?',
-        ),
+        title: Text(S.of(ctx).backup_import_confirm_title,
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+        content: Text(S.of(ctx).backup_import_confirm_message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Hủy', style: TextStyle(color: Colors.grey.shade600)),
+            child: Text(S.of(ctx).cancel, style: TextStyle(color: Colors.grey.shade600)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Tiếp tục',
-                style: TextStyle(color: _accent, fontWeight: FontWeight.w700)),
+            child: Text(S.of(ctx).backup_continue,
+                style: const TextStyle(color: _accent, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -688,7 +684,9 @@ class _BackupPageState extends State<BackupPage> {
             ),
             const SizedBox(width: 8),
             Text(
-              isSuccess ? 'Thành công' : 'Thất bại',
+              isSuccess
+                  ? S.of(ctx).backup_result_success
+                  : S.of(ctx).backup_result_failed,
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
           ],
@@ -697,8 +695,8 @@ class _BackupPageState extends State<BackupPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK',
-                style: TextStyle(
+            child: Text(S.of(ctx).backup_ok,
+                style: const TextStyle(
                     color: _accent, fontWeight: FontWeight.w700)),
           ),
         ],
