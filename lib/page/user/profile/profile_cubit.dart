@@ -13,6 +13,7 @@ import 'package:test_abc/database/app_db.dart';
 import '../../../commons/enums.dart';
 import '../../../commons/user_sesion.dart';
 import '../../../repository/user_repository.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 part 'profile_state.dart';
 
@@ -41,7 +42,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       if (user == null) {
         emit(state.copyWith(
           status: ProfileStatus.error,
-          errorMessage: 'Không tìm thấy user',
+          errorMessage: S.current.user_not_found,
           isSaving: false,
         ));
         return;

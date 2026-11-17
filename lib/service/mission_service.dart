@@ -2,6 +2,7 @@ import '../page/daily_quest/data/daily_quest_repository.dart';
 import '../page/daily_quest/models/daily_quest_model.dart';
 import '../page/daily_quest/models/mission_pool.dart';
 import '../ultis/error_utils.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 // ═══════════════════════════════════════════════════════════════════════
 // MISSION SERVICE — Application Service (Orchestrator)
@@ -48,10 +49,14 @@ class MissionService {
   // → Cubit không cần try/catch, code sạch hơn.
   // ─────────────────────────────────────────────────────────────────
 
-  Future<QuestResult<List<DailyQuestModel>>> getTodayQuests() async {
+  Future<QuestResult<List<DailyQuestModel>>> getTodayQuests({
+    DateTime? now,
+  }) async {
     try {
+      final today = now ?? DateTime.now();
+
       // Bước 1: Hỏi Repository "có data hôm nay không?"
-      final cached = await _repository.loadTodayQuests();
+      final cached = await _repository.loadTodayQuests(now: today);
 
       if (cached != null) {
         // Có → trả về ngay, không tạo mới
@@ -59,7 +64,7 @@ class MissionService {
       }
 
       // Không có → ngày mới, cần generate
-      final quests = await _generateAndSave();
+      final quests = await _generateAndSave(today);
       return QuestResult.ok(quests);
     } catch (e) {
       // Lỗi xảy ra → bọc vào QuestResult.fail
@@ -69,11 +74,10 @@ class MissionService {
   }
 
   /// Generate 3 quest: 1 default + 2 random, rồi lưu qua Repository.
-  Future<List<DailyQuestModel>> _generateAndSave() async {
-    final today = DateTime.now();
+  Future<List<DailyQuestModel>> _generateAndSave(DateTime today) async {
     final randomQuests = MissionPool.pickDaily(today);
     final allQuests = [MissionPool.defaultMission, ...randomQuests];
-    await _repository.saveTodayQuests(allQuests);
+    await _repository.saveTodayQuests(allQuests, day: today);
     return allQuests;
   }
 
@@ -94,13 +98,18 @@ class MissionService {
   //    Service chỉ BÁO HIỆU: "hey, tất cả quest xong rồi đấy".
   //    Cubit nhận tín hiệu → tự quyết định gọi StreakCubit.
   //    → Đây là Separation of Concerns.
+  //
+  // [questDay] là ngày mà currentQuests thuộc về. Quest được lưu lại kèm
+  // đúng ngày đó, nên tiến độ của quest hôm qua không bao giờ bị ghi thành
+  // quest của hôm nay.
   // ─────────────────────────────────────────────────────────────────
 
   Future<QuestResult<QuestUpdateResult>> updateProgress(
     List<DailyQuestModel> currentQuests,
     String questId,
-    int newValue,
-  ) async {
+    int newValue, {
+    DateTime? questDay,
+  }) async {
     try {
       // Ghi nhớ trạng thái TRƯỚC khi update
       final wasAllCompleted = _areAllCompleted(currentQuests);
@@ -122,7 +131,7 @@ class MissionService {
       }).toList();
 
       // Persist xuống storage
-      await _repository.saveTodayQuests(updated);
+      await _repository.saveTodayQuests(updated, day: questDay);
 
       // Tính toán: có nên mark streak không?
       // Điều kiện: TRƯỚC chưa xong hết + SAU xong hết = vừa hoàn thành
@@ -147,8 +156,9 @@ class MissionService {
   // ─────────────────────────────────────────────────────────────────
 
   Future<QuestResult<QuestUpdateResult>> onTimerTick(
-    List<DailyQuestModel> currentQuests,
-  ) async {
+    List<DailyQuestModel> currentQuests, {
+    DateTime? questDay,
+  }) async {
     // Tìm quest mặc định chưa hoàn thành
     final defaultQuest = currentQuests
         .where((q) => q.isDefault && !q.isCompleted)
@@ -163,7 +173,12 @@ class MissionService {
     final quest = defaultQuest.first;
     final newValue = (quest.currentValue + 1).clamp(0, quest.targetValue);
 
-    return updateProgress(currentQuests, quest.id, newValue);
+    return updateProgress(
+      currentQuests,
+      quest.id,
+      newValue,
+      questDay: questDay,
+    );
   }
 
   // ─── 4. COMPLETE QUEST (SHORTCUT) ───────────────────────────────
@@ -172,13 +187,19 @@ class MissionService {
 
   Future<QuestResult<QuestUpdateResult>> completeQuest(
     List<DailyQuestModel> currentQuests,
-    String questId,
-  ) async {
+    String questId, {
+    DateTime? questDay,
+  }) async {
     final quest = currentQuests.where((q) => q.id == questId).toList();
     if (quest.isEmpty) {
-      return QuestResult.fail('Quest không tồn tại: $questId');
+      return QuestResult.fail(S.current.quest_not_found(questId));
     }
-    return updateProgress(currentQuests, questId, quest.first.targetValue);
+    return updateProgress(
+      currentQuests,
+      questId,
+      quest.first.targetValue,
+      questDay: questDay,
+    );
   }
 
   // ─── PRIVATE HELPERS ────────────────────────────────────────────

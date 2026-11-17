@@ -45,15 +45,25 @@ class _MyAppState extends State<MyApp> {
 
   final _db = AppDatabase();
   late final GoRouter _router;
+  late final AppLifecycleListener _lifecycleListener;
+
+  /// Set when the provider below creates the cubit (it is created lazily).
+  DailyQuestCubit? _dailyQuestCubit;
 
   @override
   void initState() {
     super.initState();
     _router = createGoRouter();
+    // The app can stay in the background past midnight; show today's quests
+    // as soon as it comes back instead of yesterday's.
+    _lifecycleListener = AppLifecycleListener(
+      onResume: () => _dailyQuestCubit?.refreshIfNewDay(),
+    );
   }
 
   @override
   void dispose() {
+    _lifecycleListener.dispose();
     _router.dispose();
     _db.close();
     super.dispose();
@@ -139,9 +149,10 @@ class _MyAppState extends State<MyApp> {
             create: (ctx) => BackupCubit(ctx.read<BackupRepository>()),
           ),
           BlocProvider<DailyQuestCubit>(
-            create: (ctx) => DailyQuestCubit(
+            create: (ctx) => _dailyQuestCubit = DailyQuestCubit(
               ctx.read<MissionService>(),
               onStreakCompleted: () => ctx.read<UserRepository>().markTodayStreak(),
+              onQuestRewarded: (gems) => ctx.read<XpCubit>().addGems(gems),
             )..initData(),
           ),
         ],

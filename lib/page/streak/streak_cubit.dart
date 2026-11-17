@@ -8,6 +8,7 @@ import 'package:test_abc/ultis/error_utils.dart';
 import '../../commons/enums.dart';
 import '../../database/app_db.dart';
 import '../../repository/user_repository.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 part 'streak_state.dart';
 
@@ -124,7 +125,7 @@ class StreakCubit extends Cubit<StreakState> {
       if (user == null) {
         emit(state.copyWith(
           loadStatus: LOADSTATUS.FAILED,
-          errorMessage: 'Không tìm thấy user',
+          errorMessage: S.current.user_not_found,
         ));
         return;
       }

@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/commons/user_sesion.dart';
 import 'package:test_abc/repository/user_repository.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 part 'splash_state.dart';
 
@@ -21,7 +22,7 @@ class SplashCubit extends Cubit<SplashState> {
       if (isClosed) return;
       emit(state.copyWith(
         status: SplashStatus.error,
-        errorMessage: 'Khởi tạo thất bại: $e\n\n$stackTrace',
+        errorMessage: S.current.error_init('$e\n\n$stackTrace'),
       ));
     }
   }

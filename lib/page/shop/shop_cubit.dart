@@ -7,6 +7,7 @@ import 'package:test_abc/ultis/error_utils.dart';
 import '../../commons/user_sesion.dart';
 import '../../models/items_entity.dart';
 import '../../repository/shop_repository.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 part 'shop_state.dart';
 
@@ -46,7 +47,7 @@ class ShopCubit extends Cubit<ShopState> {
       emit(state.copyWith(
         status: ShopStatus.error,
       ));
-      messageController.sink.add('Sản phẩm đã hết hàng');
+      messageController.sink.add(S.current.product_out_of_stock);
       return;
     }
 

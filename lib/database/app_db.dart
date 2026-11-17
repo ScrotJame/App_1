@@ -72,13 +72,6 @@ class AppDatabase extends _$AppDatabase {
         stock: Value(30)
       ),
       ItemsEntrieCompanion.insert(
-          name: 'Test Item',
-          description: Value('test'),
-          price: 1,
-          icon:'IC_FREEZE',
-          stock: Value(30)
-      ),
-      ItemsEntrieCompanion.insert(
         name: 'Double Gems',
         description: Value('Nhận gấp đôi đá quý trong 30 phút tiếp theo.'),
         price: 500,

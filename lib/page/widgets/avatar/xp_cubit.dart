@@ -1,5 +1,4 @@
 import 'package:bloc/bloc.dart';
-import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
 import 'package:test_abc/repository/user_repository.dart';
 import 'dart:async';
@@ -40,42 +39,24 @@ class XpCubit extends Cubit<XpState> {
     ));
   }
 
+  /// The sum and the level are written by the repository in one step, so
+  /// gains that arrive back to back are all kept.
   Future<void> addXp(int gain) async {
-    final user = await _userRepository.getCurrentUser();
-    if (user == null) return;
+    final result = await _userRepository.addXp(gain);
+    if (result == null || isClosed) return;
 
-    final totalXpNew = user.experience + gain;
-
-    await _userRepository.updateUser(UsersEntrieCompanion(
-      experience: Value(totalXpNew),
-    ));
-
-    final info = LevelHelper.calculate(totalXpNew);
-    final levelUp = info.level > user.level;
-
-    if (levelUp) {
-      await _userRepository.updateUser(UsersEntrieCompanion(
-        level: Value(info.level),
-      ));
-    }
-
+    final info = LevelHelper.calculate(result.experience);
     emit(state.copyWith(
-      level: info.level,
+      level: result.level,
       currentXp: info.currentXp,
       requiredXp: info.requiredXp,
       progress: info.progress,
-      justLeveledUp: levelUp,
+      justLeveledUp: result.leveledUp ? true : null,
     ));
   }
 
   Future<void> addGems(int gain) async {
-    final user = await _userRepository.getCurrentUser();
-    if (user == null) return;
-    final totalGemsNew = user.gems + gain;
-    await _userRepository.updateUser(UsersEntrieCompanion(
-      gems: Value(totalGemsNew),
-    ));
-    //await loadProfile();
+    await _userRepository.addGems(gain);
   }
 
   void acknowledgeLevelUp() {

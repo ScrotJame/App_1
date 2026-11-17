@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:test_abc/commons/enums.dart';
 import 'package:test_abc/page/daily_quest/daily_quest_cubit.dart';
@@ -5,6 +7,7 @@ import 'package:test_abc/page/daily_quest/data/daily_quest_repository.dart';
 import 'package:test_abc/page/daily_quest/data/quest_local_data_source.dart';
 import 'package:test_abc/service/active_time_tracker.dart';
 import 'package:test_abc/service/mission_service.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 class FakeQuestLocalDataSource implements QuestLocalDataSource {
   final Map<String, String> storage = {};
@@ -24,6 +27,11 @@ class FakeQuestLocalDataSource implements QuestLocalDataSource {
 }
 
 void main() {
+  // Cubit messages are localized, so the strings have to be loaded.
+  setUpAll(() async {
+    await S.load(const Locale('vi'));
+  });
+
   group('DailyQuestCubit Tests', () {
     late FakeQuestLocalDataSource fakeDataSource;
     late DailyQuestRepository repository;

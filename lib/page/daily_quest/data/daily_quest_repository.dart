@@ -21,9 +21,9 @@ class DailyQuestRepository {
   ///
   /// Logic "không lưu lịch sử" nằm ở đây:
   /// Nếu savedDate ≠ today → data cũ bị xóa, return null.
-  Future<List<DailyQuestModel>?> loadTodayQuests() async {
+  Future<List<DailyQuestModel>?> loadTodayQuests({DateTime? now}) async {
     final savedDate = await _dataSource.readString(_prefDateKey);
-    final today = _todayKey();
+    final today = _dayKey(now ?? DateTime.now());
 
     if (savedDate != today) {
       // Ngày cũ → xóa sạch, không giữ lịch sử
@@ -38,11 +38,18 @@ class DailyQuestRepository {
     return DailyQuestModel.decodeList(jsonStr);
   }
 
-  /// Lưu quest của ngày hôm nay.
-  Future<void> saveTodayQuests(List<DailyQuestModel> quests) async {
+  /// Lưu quest kèm ngày mà chúng thuộc về.
+  ///
+  /// [day] là ngày quest được tạo ra, KHÔNG phải thời điểm lưu. Nếu app còn
+  /// mở qua nửa đêm và lưu tiến độ của quest hôm qua, dữ liệu vẫn mang ngày
+  /// hôm qua nên lần load sau sẽ bỏ đi thay vì coi là quest của hôm nay.
+  Future<void> saveTodayQuests(
+    List<DailyQuestModel> quests, {
+    DateTime? day,
+  }) async {
     final jsonStr = DailyQuestModel.encodeList(quests);
     await _dataSource.writeString(_prefKey, jsonStr);
-    await _dataSource.writeString(_prefDateKey, _todayKey());
+    await _dataSource.writeString(_prefDateKey, _dayKey(day ?? DateTime.now()));
   }
 
   /// Clear tất cả quest data.
@@ -52,8 +59,7 @@ class DailyQuestRepository {
   }
 
   /// Format ngày: '2026-07-20'
-  String _todayKey() {
-    final now = DateTime.now();
+  String _dayKey(DateTime now) {
     return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
   }
 }
