@@ -10,16 +10,11 @@
 /// ══════════════════════════════════════════════════════════════════════════════
 import 'dart:convert';
 
-import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:test_abc/database/app_db.dart';
 import 'package:test_abc/database/backup_data.dart';
 import 'package:test_abc/models/entity/user_entity.dart';
-import 'package:test_abc/models/entity/vocabulary_entity.dart';
-import 'package:test_abc/models/entity/unit_entity.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
-import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/repository/backup_data_repository.dart';
 
 import 'test_helpers.dart';

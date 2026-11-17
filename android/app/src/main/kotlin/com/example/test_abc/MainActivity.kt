@@ -18,17 +18,32 @@ class MainActivity : FlutterActivity() {
         val scheduler = AndroidAlarmScheduler(this)
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
-            if (call.method == "scheduleAlarm") {
-                val message = call.argument<String>("message") ?: ""
-                val seconds = call.argument<Int>("delaySeconds") ?: 0
+            when (call.method) {
+                "scheduleAlarm" -> {
+                    val message = call.argument<String>("message") ?: ""
+                    val seconds = call.argument<Int>("delaySeconds") ?: 0
 
-                // Tính thời gian báo thức: Hiện tại + số giây truyền từ Flutter
-                val alarmTime = LocalDateTime.now().plusSeconds(seconds.toLong())
+                    // Tính thời gian báo thức: Hiện tại + số giây truyền từ Flutter
+                    val alarmTime = LocalDateTime.now().plusSeconds(seconds.toLong())
 
-                scheduler.schedule(AlarmItem(alarmTime, message))
-                result.success(true)
-            } else {
-                result.notImplemented()
+                    scheduler.schedule(AlarmItem(alarmTime, message))
+                    result.success(true)
+                }
+                "scheduleReviewAlarm" -> {
+                    val message = call.argument<String>("message") ?: ""
+                    val triggerAtMillis = call.argument<Number>("triggerAtMillis")?.toLong()
+                    if (triggerAtMillis == null) {
+                        result.error("bad_args", "triggerAtMillis is required", null)
+                    } else {
+                        scheduler.scheduleReview(triggerAtMillis, message)
+                        result.success(true)
+                    }
+                }
+                "cancelReviewAlarm" -> {
+                    scheduler.cancelReview()
+                    result.success(true)
+                }
+                else -> result.notImplemented()
             }
         }
     }

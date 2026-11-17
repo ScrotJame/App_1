@@ -44,23 +44,16 @@ class _TestView extends StatelessWidget {
     return BlocConsumer<TestCubit, TestState>(
       listenWhen: (p, c) => p.phase != c.phase && c.phase == TestPhase.result,
       listener: (context, state) async {
-        final int totalGems = state.leveledUpWords.fold(0, (sum, entry) {
-          return sum + state.gemsForLevel(entry.level);
-        });
-        final int totalXp = state.leveledUpWords.fold(0, (sum, entry) {
-          return sum + state.gemsForLevel(entry.level);
-        });
-
-        final int gemsEarned = totalGems > 0 ? totalGems : state.score * 10;
-        final int xpEarned = totalXp > 0 ? (totalXp / 2).toInt() : (state.score / 2).toInt();
-        context.read<TestCubit>().setRewards(xpEarned: xpEarned, gemsEarned: gemsEarned);
-
-        await context.read<XpCubit>().addXp(xpEarned);
-        await context.read<XpCubit>().addGems(gemsEarned);
-
+        // The cubit has already worked out the rewards: only words that
+        // levelled up pay out, a repeated test on words that are not due
+        // earns nothing.
+        final xpCubit = context.read<XpCubit>();
         try {
           context.read<DailyQuestCubit>().onProgressByType(QuestType.completeQuiz);
         } catch (_) {}
+
+        await xpCubit.addXp(state.xpEarned);
+        await xpCubit.addGems(state.gemsEarned);
       },
       buildWhen: (p, c) => p.phase != c.phase,
       builder: (_, s) => switch (s.phase) {

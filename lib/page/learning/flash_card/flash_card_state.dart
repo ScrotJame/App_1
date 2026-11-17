@@ -47,6 +47,20 @@ class FlashCardState extends Equatable{
   int countRating(DifficultyRating r) =>
       results.where((e) => e.rating == r).length;
 
+  // ── Rewards ─────────────────────────────────
+  // A card pays only when it was rated and the rating is not "again". The
+  // rating is self-assessed, so a card is worth less than a quiz answer.
+  static const int xpPerRememberedCard = 5;
+  static const int gemsPerRememberedCard = 1;
+
+  /// Cards of this session rated "hard", "good" or "easy".
+  int get rememberedCount =>
+      results.where((e) => e.rating != DifficultyRating.again).length;
+
+  int get xpEarned => rememberedCount * xpPerRememberedCard;
+
+  int get gemsEarned => rememberedCount * gemsPerRememberedCard;
+
   // ── copyWith ────────────────────────────────
   FlashCardState copyWith({
     ActiveCompanionEntity? activeCompanion,

@@ -4,26 +4,33 @@ import 'dart:math';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:test_abc/repository/learning_history_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/ultis/error_utils.dart';
 
 import '../../../commons/enums.dart';
+import '../../../commons/status_comon.dart';
+import '../../../commons/user_sesion.dart';
 import '../../../models/tag_vocab.dart';
 import '../learning_cubit.dart';
 import '../../../models/quiz_models.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 part 'quiz_game_state.dart';
 
 class QuizGameCubit extends Cubit<QuizGameState> {
   final VocabularyRepository _repo;
+  final LearningHistoryRepository? _repoHistory;
   final LearningConfig? config;
 
   final PublishSubject<String> messageController = PublishSubject();
 
   QuizGameCubit(
     this._repo, {
+    LearningHistoryRepository? historyRepository,
     this.config,
-  }) : super(const QuizGameState());
+  })  : _repoHistory = historyRepository,
+        super(const QuizGameState());
 
   // ─── Init ──────────────────────────────────────────
 
@@ -50,7 +57,7 @@ class QuizGameCubit extends Cubit<QuizGameState> {
       if (filtered.length < 2) {
         emit(state.copyWith(
           loadStatus: LOADSTATUS.FAILED,
-          errorMessage: 'Cần ít nhất 2 từ vựng để tạo quiz',
+          errorMessage: S.current.quiz_needs_two_words,
         ));
         return;
       }
@@ -120,6 +127,8 @@ class QuizGameCubit extends Cubit<QuizGameState> {
       final allOptions = [...wrongOptions, correctOption]..shuffle(random);
 
       questions.add(QuizQuestion(
+        wordId: target.word.id,
+        wordLevel: target.word.level,
         word: target.word.word,
         pronunciation: target.word.pronunciation,
         imageUrl: null,
@@ -161,11 +170,30 @@ class QuizGameCubit extends Cubit<QuizGameState> {
       wrongCount: isCorrect ? state.wrongCount : state.wrongCount + 1,
       battleAnimState: battleAnim,
     ));
+    unawaited(_recordAnswer(isCorrect));
 
     // Auto next after delay
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (!isClosed) nextQuestion();
     });
+  }
+
+  Future<void> _recordAnswer(bool isCorrect) async {
+    final history = _repoHistory;
+    final question = state.currentQuestion;
+    final wordId = question?.wordId;
+    if (history == null || question == null || wordId == null) return;
+    try {
+      await history.recordAnswer(
+        userKey: UserSession.instance.userKey,
+        wordId: wordId,
+        wordLevelSnapshot: question.wordLevel,
+        sessionType: SessionType.quiz,
+        isCorrect: isCorrect,
+      );
+    } catch (_) {
+      // Statistics must never interrupt the quiz.
+    }
   }
 
   // ─── Navigation ──────────────────────────────────────

@@ -1,7 +1,21 @@
+import 'dart:math' as math;
+
 import 'package:drift/drift.dart';
 import '../commons/status_comon.dart';
 import '../database/app_db.dart';
+import '../helper/set_time_helper.dart';
 import '../models/tag_vocab.dart';
+
+/// What a review did to a word's level.
+class WordLevelChange {
+  const WordLevelChange({required this.word, required this.previousLevel});
+
+  /// The word as stored after the change.
+  final VocabularyEntry word;
+  final int previousLevel;
+
+  bool get leveledUp => word.level > previousLevel;
+}
 
 abstract class IVocabularyRepository {
   Future<int> insertWord({
@@ -34,18 +48,36 @@ abstract class IVocabularyRepository {
   Future<void> detachTag({required int wordId, required int tagId});
   Future<void> detachAllTags({required int wordId});
   Future<List<int>> getTagIdsByWordId(int wordId);
-  Future<VocabularyEntry?> incrementWordLevel(int id);
-  Future<void> changeWordState(int wordId, int newLevel, String? userId);
-  Future<void> countWordLearn( String userId);
+  // ── Word progress ────────────────────────────────────────────────────────
+  // `level` on the word is the only progress measure. Every method below
+  // changes it in one transaction together with what is derived from it: the
+  // user's status row and the `totalLearned` counter. All of them return null
+  // for an unknown word.
+
+  /// A correct Test answer: raises the level by one, but only when the word
+  /// is due (see [SetTimeHelper.isDue]). A word that is not due is left as is.
+  Future<WordLevelChange?> levelUpIfDue(int wordId, String userId,
+      {DateTime? now});
+
+  /// A wrong Test answer: the level stays, the wait before the next level-up
+  /// starts over.
+  Future<WordLevelChange?> restartReviewWait(int wordId, String userId,
+      {DateTime? now});
+
+  /// "Đã thuộc": lifts the word to the mastered level.
+  Future<WordLevelChange?> markWordMastered(int wordId, String userId,
+      {DateTime? now});
+
+  /// "Ôn lại": takes a mastered word back to learning. Other words are
+  /// already in review and keep their level.
+  Future<WordLevelChange?> returnWordToReview(int wordId, String userId,
+      {DateTime? now});
+
   Future<bool> isWordAlreadyMastered(int wordId, String userId);
 
-  Future<void> updateWordSM2Progress({
-    required int wordId,
-    required double easeFactor,
-    required int repetitions,
-    required int interval,
-    required DateTime nextReview,
-  });
+  /// The earliest moment after [now] at which a reviewed word is worth a
+  /// reminder, or null when there is none.
+  Future<DateTime?> nextReviewReminderTime({DateTime? now});
 
   Future<void> getLanguageTags();
   Future<List<VocabularyEntry>> getWordsByLanguageTags(String? tags);
@@ -127,18 +159,22 @@ class VocabularyRepository implements IVocabularyRepository {
     required String meaning,
     String? pronunciation,
     String? language,
-  }) =>
-      _db.update(_db.vocabularyEntries).replace(
-        VocabularyEntriesCompanion(
-          id: Value(id),
-          word: Value(word),
-          meaning: Value(meaning),
-          pronunciation: pronunciation != null
-              ? Value(pronunciation)
-              : const Value.absent(),
-          language: Value(language),
-        ),
-      );
+  }) async {
+    // Writes only the edited columns. `replace()` would also reset every
+    // column that has a default (level, counters, SM-2 schedule, createdAt).
+    final count = await (_db.update(_db.vocabularyEntries)
+          ..where((t) => t.id.equals(id)))
+        .write(
+      VocabularyEntriesCompanion(
+        word: Value(word),
+        meaning: Value(meaning),
+        pronunciation: Value(pronunciation),
+        language: Value(language),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+    return count > 0;
+  }
 
   @override
   Future<void> attachTag({required int wordId, required int tagId}) =>
@@ -170,66 +206,116 @@ class VocabularyRepository implements IVocabularyRepository {
   }
 
   @override
-  Future<VocabularyEntry?> incrementWordLevel(int id) async {
-    final word = await (_db.select(_db.vocabularyEntries)
-      ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
-
-    if (word == null) return null;
-
-    final newLevel = (word.level) + 1;
-
-    await (_db.update(_db.vocabularyEntries)
-      ..where((t) => t.id.equals(id)))
-        .write(VocabularyEntriesCompanion(level: Value(newLevel)));
-
-    // Trả về bản ghi mới nhất từ DB
-    return (_db.select(_db.vocabularyEntries)
-      ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
-  }
-
-  @override
-  Future<void> updateWordSM2Progress({
-    required int wordId,
-    required double easeFactor,
-    required int repetitions,
-    required int interval,
-    required DateTime nextReview,
-  }) async {
-    await (_db.update(_db.vocabularyEntries)
-          ..where((t) => t.id.equals(wordId)))
-        .write(VocabularyEntriesCompanion(
-      easeFactor: Value(easeFactor),
-      repetitions: Value(repetitions),
-      interval: Value(interval),
-      nextReview: Value(nextReview),
-      lastReviewed: Value(DateTime.now()),
-    ));
-  }
-
-  @override
-  Future<void> changeWordState(int wordId, int newLevel, String? userId) async {
-    final newStatus = _resolveStatus(newLevel);
-
-    final companion = UserWordProgressEntrieCompanion(
-      userId: Value(userId ?? ''),
-      wordId: Value(wordId),
-      status: Value(newStatus),
-      lastPracticed: Value(DateTime.now()),
-      updatedAt: Value(DateTime.now()),
+  Future<WordLevelChange?> levelUpIfDue(int wordId, String userId,
+      {DateTime? now}) {
+    final at = now ?? DateTime.now();
+    return _changeLevel(
+      wordId,
+      userId,
+      at,
+      (word) => SetTimeHelper.isDue(word.level, word.lastReviewed, at)
+          ? word.level + 1
+          : word.level,
     );
-
-    await _db.into(_db.userWordProgressEntrie).insertOnConflictUpdate(companion);
   }
 
   @override
-  Future<void> countWordLearn(String userId) async {
-    await (_db.update(_db.usersEntrie)
-      ..where((t) => t.keyOpen.equals(userId)))
-        .write(UsersEntrieCompanion.custom(
-      totalLearned: _db.usersEntrie.totalLearned + const Constant(1),
-    ));
+  Future<WordLevelChange?> restartReviewWait(int wordId, String userId,
+      {DateTime? now}) {
+    return _changeLevel(
+      wordId,
+      userId,
+      now ?? DateTime.now(),
+      (word) => word.level,
+      restartWait: true,
+    );
+  }
+
+  @override
+  Future<WordLevelChange?> markWordMastered(int wordId, String userId,
+      {DateTime? now}) {
+    return _changeLevel(
+      wordId,
+      userId,
+      now ?? DateTime.now(),
+      (word) => math.max(word.level, WordStatus.masteredLevel),
+    );
+  }
+
+  @override
+  Future<WordLevelChange?> returnWordToReview(int wordId, String userId,
+      {DateTime? now}) {
+    return _changeLevel(
+      wordId,
+      userId,
+      now ?? DateTime.now(),
+      (word) => math.min(word.level, WordStatus.masteredLevel - 1),
+    );
+  }
+
+  /// The single place where a word's level is written. `lastReviewed` moves
+  /// to [at] whenever the level changes or [restartWait] is set, the user's
+  /// status row follows the level, and `totalLearned` moves by one each time
+  /// the word crosses the mastered level, in either direction.
+  Future<WordLevelChange?> _changeLevel(
+    int wordId,
+    String userId,
+    DateTime at,
+    int Function(VocabularyEntry word) decideLevel, {
+    bool restartWait = false,
+  }) {
+    final words = _db.vocabularyEntries;
+    final users = _db.usersEntrie;
+
+    return _db.transaction(() async {
+      final before = await (_db.select(words)
+            ..where((t) => t.id.equals(wordId)))
+          .getSingleOrNull();
+      if (before == null) return null;
+
+      final level = decideLevel(before);
+
+      if (level != before.level || restartWait) {
+        await (_db.update(words)..where((t) => t.id.equals(wordId))).write(
+          VocabularyEntriesCompanion(
+            level: Value(level),
+            lastReviewed: Value(at),
+          ),
+        );
+      }
+
+      await _db.into(_db.userWordProgressEntrie).insertOnConflictUpdate(
+            UserWordProgressEntrieCompanion(
+              userId: Value(userId),
+              wordId: Value(wordId),
+              status: Value(WordStatus.fromLevel(level)),
+              lastPracticed: Value(at),
+              updatedAt: Value(at),
+            ),
+          );
+
+      final wasMastered = before.level >= WordStatus.masteredLevel;
+      final isMastered = level >= WordStatus.masteredLevel;
+      if (isMastered && !wasMastered) {
+        await (_db.update(users)..where((t) => t.keyOpen.equals(userId)))
+            .write(UsersEntrieCompanion.custom(
+          totalLearned: users.totalLearned + const Constant(1),
+        ));
+      } else if (wasMastered && !isMastered) {
+        await (_db.update(users)
+              ..where((t) =>
+                  t.keyOpen.equals(userId) &
+                  t.totalLearned.isBiggerThanValue(0)))
+            .write(UsersEntrieCompanion.custom(
+          totalLearned: users.totalLearned - const Constant(1),
+        ));
+      }
+
+      final after = await (_db.select(words)
+            ..where((t) => t.id.equals(wordId)))
+          .getSingle();
+      return WordLevelChange(word: after, previousLevel: before.level);
+    });
   }
 
   @override
@@ -241,10 +327,22 @@ class VocabularyRepository implements IVocabularyRepository {
     return row?.status == WordStatus.mastered;
   }
 
-  int _resolveStatus(int level) {
-    if (level >= 5) return WordStatus.mastered;
-    if (level >= 1) return WordStatus.learning;
-    return WordStatus.notStarted;
+  @override
+  Future<DateTime?> nextReviewReminderTime({DateTime? now}) async {
+    final at = now ?? DateTime.now();
+    final reviewed = await (_db.select(_db.vocabularyEntries)
+          ..where((t) => t.lastReviewed.isNotNull()))
+        .get();
+
+    DateTime? earliest;
+    for (final word in reviewed) {
+      final lastReviewed = word.lastReviewed;
+      if (lastReviewed == null) continue;
+      final time = SetTimeHelper.reminderTime(word.level, lastReviewed);
+      if (!time.isAfter(at)) continue;
+      if (earliest == null || time.isBefore(earliest)) earliest = time;
+    }
+    return earliest;
   }
 
   @override

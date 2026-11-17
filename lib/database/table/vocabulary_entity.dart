@@ -14,10 +14,14 @@ class VocabularyEntries extends Table {
   IntColumn get wrongCount => integer().withDefault(const Constant(0))();
 
   BoolColumn get isFavorite => boolean().nullable()();
+  /// Last review that counted for the level: a level change or a wrong Test
+  /// answer. The next review is derived from this and `level`.
   DateTimeColumn get lastReviewed => dateTime().nullable()();
-  DateTimeColumn get nextReview => dateTime().nullable()();
 
-  // SM-2 properties
+  // Legacy: no longer part of the progress logic, which is `level` only.
+  // Kept (and still carried through backups) so the schema and old backup
+  // files stay compatible.
+  DateTimeColumn get nextReview => dateTime().nullable()();
   RealColumn get easeFactor => real().withDefault(const Constant(2.5))();
   IntColumn get repetitions => integer().withDefault(const Constant(0))();
   IntColumn get interval => integer().withDefault(const Constant(0))();

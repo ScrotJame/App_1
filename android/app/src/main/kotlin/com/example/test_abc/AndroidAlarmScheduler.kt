@@ -36,4 +36,33 @@ class AndroidAlarmScheduler(private val context: Context) : AlarmScheduler {
         )
     }
 
+    override fun scheduleReview(triggerAtMillis: Long, message: String) {
+        // Cùng request code nên lần đặt sau thay cho lần trước.
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerAtMillis,
+            reviewPendingIntent(message)
+        )
+    }
+
+    override fun cancelReview() {
+        alarmManager.cancel(reviewPendingIntent(""))
+    }
+
+    private fun reviewPendingIntent(message: String): PendingIntent {
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            putExtra("Extra", message)
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            REVIEW_REQUEST_CODE,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    companion object {
+        private const val REVIEW_REQUEST_CODE = 1001
+    }
+
 }

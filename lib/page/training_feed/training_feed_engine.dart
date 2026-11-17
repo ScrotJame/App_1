@@ -1,6 +1,8 @@
 import 'dart:math';
 
+import 'package:test_abc/commons/status_comon.dart';
 import 'package:test_abc/generated/l10n.dart';
+import 'package:test_abc/helper/set_time_helper.dart';
 import 'package:test_abc/page/training_feed/widgets/training_feed_audio_quizz.dart';
 
 import '../../models/tag_vocab.dart';
@@ -8,6 +10,10 @@ import 'widgets/training_feed_card.dart';
 
 class TrainingFeedEngine {
   TrainingFeedEngine({Random? random}) : _random = random ?? Random();
+
+  /// A quiz needs the asked word and three distractors. With fewer words
+  /// the answer could be picked without knowing it, so no quiz is built.
+  static const int minWordsForQuiz = 4;
 
   final Random _random;
   int _sequence = 0;
@@ -34,8 +40,10 @@ class TrainingFeedEngine {
 
     final bool blockSpecial = previousType == TrainingFeedCardType.reward ||
         previousType == TrainingFeedCardType.breakPoint;
+    final bool canQuiz = words.length >= minWordsForQuiz;
 
-    if (currentIndex > 0 && currentIndex % 7 == 0) {
+    // A bonus is unlocked by quiz answers, so it only shows up when quizzes do.
+    if (canQuiz && currentIndex > 0 && currentIndex % 7 == 0) {
       if (!blockSpecial) {
         return _rewardCard();
       }
@@ -54,17 +62,13 @@ class TrainingFeedEngine {
     _rememberWord(selectedWord.word.id);
 
     if (currentIndex == 0 && type == TrainingFeedCardType.breakPoint) {
-      type = _random.nextDouble() < 0.5
-          ? TrainingFeedCardType.learn
-          : TrainingFeedCardType.quiz;
+      type = _learnOrQuiz(canQuiz);
     }
 
     if (blockSpecial &&
         (type == TrainingFeedCardType.reward ||
             type == TrainingFeedCardType.breakPoint)) {
-      type = _random.nextDouble() < 0.5
-          ? TrainingFeedCardType.learn
-          : TrainingFeedCardType.quiz;
+      type = _learnOrQuiz(canQuiz);
     }
 
     return switch (type) {
@@ -85,14 +89,17 @@ class TrainingFeedEngine {
     };
   }
 
+  TrainingFeedCardType _learnOrQuiz(bool canQuiz) {
+    final pickLearn = _random.nextDouble() < 0.5;
+    if (!canQuiz || pickLearn) return TrainingFeedCardType.learn;
+    return TrainingFeedCardType.quiz;
+  }
+
   TrainingFeedCardType _rollCardType(int wordCount) {
     final roll = _random.nextDouble();
 
-    if (wordCount < 4) {
-      return roll < 0.72
-          ? TrainingFeedCardType.learn
-          : TrainingFeedCardType.reward;
-    }
+    // Too few words for a quiz: the feed only shows the words.
+    if (wordCount < minWordsForQuiz) return TrainingFeedCardType.learn;
 
     if (roll < 0.36) return TrainingFeedCardType.learn;
     if (roll < 0.66) return TrainingFeedCardType.quiz;
@@ -148,13 +155,15 @@ class TrainingFeedEngine {
     final word = item.word;
     var score = 1.0;
 
-    if (word.nextReview != null && word.nextReview!.isBefore(DateTime.now())) {
+    // A word that was reviewed before and has rested long enough.
+    if (word.lastReviewed != null &&
+        SetTimeHelper.isDue(word.level, word.lastReviewed, DateTime.now())) {
       score += 4.0;
     }
 
     if (word.level == 0) {
       score += 2.2;
-    } else if (word.level < 5) {
+    } else if (word.level < WordStatus.masteredLevel) {
       score += 1.4;
     } else {
       score += 0.4;
@@ -180,7 +189,7 @@ class TrainingFeedEngine {
       VocabularyWithTags word,
       TrainingFeedEvent event,
       ) {
-    final baseXp = word.word.level == 0 ? 8 : 5;
+    // Revealing a meaning is not an answer, so a learn card carries no reward.
     return TrainingFeedCard(
       id: 'feed_${_sequence++}',
       type: TrainingFeedCardType.learn,
@@ -188,8 +197,6 @@ class TrainingFeedEngine {
       subtitle: S.current.swipe_after_reveal,
       word: word,
       event: event,
-      xpPreview: (baseXp * event.multiplier).round(),
-      gemsPreview: event.isActive ? 2 : 1,
     );
   }
 
@@ -224,18 +231,13 @@ class TrainingFeedEngine {
     final rewardRoll = _random.nextDouble();
     int xp = 0;
     int gems = 0;
-    int food = 0;
     if (rewardRoll < 0.4) {
       xp = 15 + _random.nextInt(15);
     } else if (rewardRoll < 0.8) {
       gems = 5 + _random.nextInt(10);
-    }
-    else if (rewardRoll < 0.2) {
-      food = 2 + _random.nextInt(10);
-    }else {
+    } else {
       xp = 20 + _random.nextInt(20);
       gems = 10 + _random.nextInt(10);
-      food = 15 + _random.nextInt(15);
     }
 
     return TrainingFeedCard(

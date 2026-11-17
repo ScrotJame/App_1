@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
@@ -6,6 +8,8 @@ import '../../commons/enums.dart';
 import '../../database/app_db.dart';
 import '../../models/unit_entity.dart';
 import '../../repository/unit_repository.dart';
+import '../../service/alarm_service.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 part 'list_unit_state.dart';
 
@@ -27,7 +31,7 @@ class ListUnitCubit extends Cubit<ListUnitState> {
     } catch (e, stackTrace) {
       emit(state.copyWith(
         loadStatus: LOADSTATUS.FAILED,
-        errorMessage: 'Tải dữ liệu thất bại: $e\n$stackTrace',
+        errorMessage: S.current.error_load_data('$e\n$stackTrace'),
       ));
     }
   }
@@ -84,7 +88,7 @@ class ListUnitCubit extends Cubit<ListUnitState> {
     } catch (e) {
       emit(state.copyWith(
         loadStatus: LOADSTATUS.FAILED,
-        errorMessage: 'Thêm unit thất bại: $e',
+        errorMessage: S.current.error_add_unit(e.toString()),
       ));
     }
   }
@@ -96,7 +100,7 @@ class ListUnitCubit extends Cubit<ListUnitState> {
     } catch (e) {
       emit(state.copyWith(
         loadStatus: LOADSTATUS.FAILED,
-        errorMessage: 'Cập nhật unit thất bại: $e',
+        errorMessage: S.current.error_update_unit(e.toString()),
       ));
     }
   }
@@ -105,6 +109,8 @@ class ListUnitCubit extends Cubit<ListUnitState> {
     try {
       if (!isClosed) emit(state.copyWith(loadStatus: LOADSTATUS.LOADING));
       await _repo.deleteUnit(id);
+      // The unit's words are deleted with it.
+      unawaited(AlarmService.syncReviewReminder(_vocabRepo));
       final current = Set<int>.from(state.expandedUnitIds)..remove(id);
       if (!isClosed) {
         emit(state.copyWith(
@@ -115,7 +121,7 @@ class ListUnitCubit extends Cubit<ListUnitState> {
     } catch (e) {
       emit(state.copyWith(
         loadStatus: LOADSTATUS.FAILED,
-        errorMessage: 'Xóa unit thất bại: $e',
+        errorMessage: S.current.error_delete_unit(e.toString()),
       ));
     }
   }
@@ -193,7 +199,7 @@ class ListUnitCubit extends Cubit<ListUnitState> {
     } catch (e) {
       emit(state.copyWith(
         loadStatus: LOADSTATUS.FAILED,
-        errorMessage: 'Thêm từ thất bại: $e',
+        errorMessage: S.current.error_add_word(e.toString()),
       ));
     }
   }
@@ -209,7 +215,7 @@ class ListUnitCubit extends Cubit<ListUnitState> {
     } catch (e) {
       emit(state.copyWith(
         loadStatus: LOADSTATUS.FAILED,
-        errorMessage: 'Gán từ thất bại: $e',
+        errorMessage: S.current.error_assign_word(e.toString()),
       ));
     }
   }
@@ -222,7 +228,7 @@ class ListUnitCubit extends Cubit<ListUnitState> {
     } catch (e) {
       emit(state.copyWith(
         loadStatus: LOADSTATUS.FAILED,
-        errorMessage: 'Tháo từ thất bại: $e',
+        errorMessage: S.current.error_unassign_word(e.toString()),
       ));
     }
   }

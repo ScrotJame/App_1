@@ -4,14 +4,20 @@ import 'package:test_abc/models/entity/learning_history_entity.dart';
 import '../database/app_db.dart';
 
 abstract class ILearningHistoryRepository {
-  /// Ghi log sau mỗi lần user trả lời 1 từ (trong Test)
-  Future<void> logWordLearned({
-    String? userKey,
-    int? wordId,
-    int? wordLevelSnapshot,
-    String? sessionType,
-    bool? isCorrect,
-    bool? isLeveledUp,
+  /// Records one answer from any learning mode: bumps the word's
+  /// correct/wrong counter and adds a history row for the day.
+  ///
+  /// The level is left alone: only a Test and the feed's buttons change it,
+  /// through VocabularyRepository.
+  /// An unknown [wordId] records nothing. An empty [userKey] only updates the
+  /// counter, because a history row needs a user.
+  Future<void> recordAnswer({
+    required String userKey,
+    required int wordId,
+    required int wordLevelSnapshot,
+    required String sessionType,
+    required bool isCorrect,
+    DateTime? now,
   });
 
   /// Lấy danh sách ngày đã học (để render calendar/heatmap)
@@ -34,24 +40,40 @@ class LearningHistoryRepository implements ILearningHistoryRepository {
   LearningHistoryRepository(this._db);
 
   @override
-  Future<void> logWordLearned({
-    String? userKey,
-    int? wordId,
-    int? wordLevelSnapshot,
-    String? sessionType,
-    bool? isCorrect,
-    bool? isLeveledUp,
+  Future<void> recordAnswer({
+    required String userKey,
+    required int wordId,
+    required int wordLevelSnapshot,
+    required String sessionType,
+    required bool isCorrect,
+    DateTime? now,
   }) async {
-    await _db.into(_db.learningHistoryLogs).insert(
-      LearningHistoryLogsCompanion.insert(
-        userKey: userKey ?? '',
-        wordId: wordId ?? 0,
-        wordLevelSnapshot: wordLevelSnapshot ?? 0,
-        sessionType: sessionType ?? '',
-        isCorrect: Value(isCorrect ?? false),
-        learnedDate: DateTime.utc(DateTime.now().year, DateTime.now().month, DateTime.now().day),
-      ),
-    );
+    final at = now ?? DateTime.now();
+    final words = _db.vocabularyEntries;
+    await _db.transaction(() async {
+      // Incremented in SQL so answers recorded back to back are not lost.
+      final updated = await (_db.update(words)
+            ..where((t) => t.id.equals(wordId)))
+          .write(
+        VocabularyEntriesCompanion.custom(
+          correctCount:
+              isCorrect ? words.correctCount + const Constant(1) : null,
+          wrongCount: isCorrect ? null : words.wrongCount + const Constant(1),
+        ),
+      );
+      if (updated == 0 || userKey.isEmpty) return;
+
+      await _db.into(_db.learningHistoryLogs).insert(
+            LearningHistoryLogsCompanion.insert(
+              userKey: userKey,
+              wordId: wordId,
+              wordLevelSnapshot: wordLevelSnapshot,
+              sessionType: sessionType,
+              isCorrect: Value(isCorrect),
+              learnedDate: DateTime.utc(at.year, at.month, at.day),
+            ),
+          );
+    });
   }
 
   @override
@@ -115,4 +137,4 @@ class LearningHistoryRepository implements ILearningHistoryRepository {
     final result = await query.map((row) => row.read(countExp)).getSingle();
     return result ?? 0;
   }
-}
+}

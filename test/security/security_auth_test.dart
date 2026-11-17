@@ -6,10 +6,8 @@
 /// Kiểm tra các guard clause khi key không tồn tại hoặc null.
 /// ══════════════════════════════════════════════════════════════════════════════
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:test_abc/database/app_db.dart';
-import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/repository/inventory_repository.dart';
 import 'package:test_abc/repository/companion_repository.dart';
@@ -65,7 +63,7 @@ void main() {
       // Tạo word và ghi progress cho user A
       final wordId = await seedWord(db, word: 'apple', meaning: 'quả táo');
       final vocabRepo = VocabularyRepository(db);
-      await vocabRepo.changeWordState(wordId, 5, keyA); // mastered
+      await vocabRepo.markWordMastered(wordId, keyA);
 
       // User B check
       final isMastered =

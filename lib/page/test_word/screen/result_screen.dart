@@ -5,6 +5,7 @@ import 'package:test_abc/commons/app_images.dart';
 
 import '../../../commons/app_colors.dart';
 import '../../../database/app_db.dart';
+import '../../../generated/l10n.dart';
 import '../../../router/router.dart';
 import '../test_cubit.dart';
 import '../widgets/app_bar_widget.dart';
@@ -225,6 +226,35 @@ class ResultScreenState extends State<ResultScreen> {
     );
   }
 
+  // ── Correct answers that were not due ───────────────────────────────────────
+
+  Widget _buildNotDueNote(int count) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.kAmber.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.kAmber.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.schedule_rounded, color: AppColors.kAmber, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              S.of(context).test_words_not_due(count),
+              style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: AppColors.kAmber),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildGetRewards(int? xpLabel, int? gemsLabel){
     return Container(
       decoration: BoxDecoration(
@@ -327,6 +357,11 @@ class ResultScreenState extends State<ResultScreen> {
 
                 if (s.leveledUpWords.isNotEmpty) ...[
                   _buildLevelUpSection(s.leveledUpWords),
+                  const SizedBox(height: 20),
+                ],
+
+                if (s.notDueCount > 0) ...[
+                  _buildNotDueNote(s.notDueCount),
                   const SizedBox(height: 20),
                 ],
 

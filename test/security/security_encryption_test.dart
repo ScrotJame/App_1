@@ -18,16 +18,16 @@
 ///   TC-SEC-010: Format ':' lồng nhau / giả mạo
 /// ══════════════════════════════════════════════════════════════════════════════
 import 'dart:convert';
-import 'dart:math';
-import 'package:encrypt/encrypt.dart' as enc;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:test_abc/service/sercurity_service.dart';
 
 void main() {
-  setUpAll(() async {
-    // Load .env để SecurityService có thể đọc BACKUP_SECRET_KEY
-    await dotenv.load(fileName: '.env');
+  setUpAll(() {
+    // Test-only value; the real key is no longer packaged with the app.
+    dotenv.loadFromString(
+      envString: 'BACKUP_SECRET_KEY=test-only-0123456789abcdefghijkl',
+    );
   });
 
   group('🔐 [Nhóm 1] Encryption & Data Tampering', () {

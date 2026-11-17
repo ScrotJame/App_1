@@ -6,11 +6,14 @@ import 'package:rxdart/rxdart.dart';
 import 'package:test_abc/generated/l10n.dart';
 
 import '../../commons/enums.dart';
+import '../../commons/status_comon.dart';
 import '../../commons/user_sesion.dart';
 import '../../helper/language_helper.dart';
 import '../../models/entity/active_companion_entity.dart';
 import '../../repository/companion_repository.dart';
+import '../../repository/learning_history_repository.dart';
 import '../../repository/vocabulary_repository.dart';
+import '../../service/alarm_service.dart';
 import '../../service/tts_service.dart';
 import '../widgets/avatar/xp_cubit.dart';
 import 'widgets/training_feed_card.dart';
@@ -27,8 +30,10 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
       this._companionRepository,
       this._ttsService, {
         TrainingFeedEngine? engine,
+        LearningHistoryRepository? historyRepository,
         this.onQuizAnswered,
       })  : _engine = engine ?? TrainingFeedEngine(),
+        _historyRepository = historyRepository,
         super(const TrainingFeedState());
 
   final VocabularyRepository _vocabularyRepository;
@@ -36,6 +41,7 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
   final CompanionRepository _companionRepository;
   final TtsService _ttsService;
   final TrainingFeedEngine _engine;
+  final LearningHistoryRepository? _historyRepository;
 
   final PublishSubject<String> messageController = PublishSubject();
   final PublishSubject<int> confettiController = PublishSubject();
@@ -87,11 +93,11 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     final card = index != -1 ? state.cards[index] : state.currentCard;
     if (card == null || card.type != TrainingFeedCardType.learn || card.isRevealed) return;
 
+    // Revealing the meaning is not an answer, so it pays nothing.
     _replaceCard(card.copyWith(
       isRevealed: true,
       isCompleted: true,
     ));
-    _grantReward(card.xpPreview, card.gemsPreview);
   }
 
   void revealCurrentCard() {
@@ -108,7 +114,8 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     if (userKey.isEmpty) return;
 
     try {
-      await _vocabularyRepository.changeWordState(card.word!.word.id, 5, userKey);
+      await _vocabularyRepository.markWordMastered(card.word!.word.id, userKey);
+      unawaited(AlarmService.syncReviewReminder(_vocabularyRepository));
       messageController.add(S.current.memorized);
       confettiController.add(10);
     } catch (e) {
@@ -124,7 +131,8 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     if (userKey.isEmpty) return;
 
     try {
-      await _vocabularyRepository.changeWordState(card.word!.word.id, 1, userKey);
+      await _vocabularyRepository.returnWordToReview(card.word!.word.id, userKey);
+      unawaited(AlarmService.syncReviewReminder(_vocabularyRepository));
       messageController.add(S.current.saved_for_review);
     } catch (e) {
       messageController.add(S.current.error_save_review(e.toString()));
@@ -170,16 +178,9 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
 
     _replaceCard(answered);
     onQuizAnswered?.call();
+    unawaited(_recordAnswer(card, isCorrect));
 
-    if (isCorrect) {
-      final comboBonus = state.combo >= 3 ? 3 : 0;
-      _grantReward(card.xpPreview + comboBonus, card.gemsPreview);
-      emit(state.copyWith(combo: state.combo + 1));
-      confettiController.add(14);
-    } else {
-      emit(state.copyWith(combo: 0));
-      messageController.add(S.current.quiz_incorrect_hint);
-    }
+    _settleAnswer(card, isCorrect, S.current.quiz_incorrect_hint);
   }
 
   void answerCurrentQuiz(int selectedIndex) {
@@ -205,16 +206,9 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
 
     _replaceCard(answered);
     onQuizAnswered?.call();
+    unawaited(_recordAnswer(card, isCorrect));
 
-    if (isCorrect) {
-      final comboBonus = state.combo >= 3 ? 3 : 0;
-      _grantReward(card.xpPreview + comboBonus, card.gemsPreview);
-      emit(state.copyWith(combo: state.combo + 1));
-      confettiController.add(14);
-    } else {
-      emit(state.copyWith(combo: 0));
-      messageController.add(S.current.audio_quiz_incorrect_hint);
-    }
+    _settleAnswer(card, isCorrect, S.current.audio_quiz_incorrect_hint);
   }
 
   void answerAudioQuiz(int selectedIndex) {
@@ -229,7 +223,16 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     if (card == null || card.type != TrainingFeedCardType.reward) return;
     if (card.isCompleted) return;
 
+    // The bonus has to be earned with quiz answers; swiping to it is not
+    // enough.
+    if (!state.isBonusUnlocked) {
+      messageController
+          .add(S.current.reward_locked_hint(state.bonusAnswersLeft));
+      return;
+    }
+
     _replaceCard(card.copyWith(isCompleted: true));
+    emit(state.copyWith(bonusProgress: 0));
     _grantReward(card.xpPreview, card.gemsPreview);
     confettiController.add(48);
 
@@ -247,6 +250,34 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
     if (state.currentCard != null) {
       claimRewardCard(state.currentCard!.id);
     }
+  }
+
+  /// Reward, combo and bonus progress of an answered quiz card.
+  void _settleAnswer(
+    TrainingFeedCard card,
+    bool isCorrect,
+    String incorrectHint,
+  ) {
+    if (!isCorrect) {
+      emit(state.copyWith(combo: 0));
+      messageController.add(incorrectHint);
+      return;
+    }
+
+    // With a single choice there was nothing to get wrong.
+    if (card.choices.length < 2) return;
+
+    final comboBonus = state.combo >= 3 ? 3 : 0;
+    final bonusProgress =
+        state.bonusProgress >= TrainingFeedState.bonusRequirement
+            ? state.bonusProgress
+            : state.bonusProgress + 1;
+    emit(state.copyWith(
+      combo: state.combo + 1,
+      bonusProgress: bonusProgress,
+    ));
+    _grantReward(card.xpPreview + comboBonus, card.gemsPreview);
+    confettiController.add(14);
   }
 
   Future<void> _appendMoreCards() async {
@@ -287,6 +318,24 @@ class TrainingFeedCubit extends Cubit<TrainingFeedState> {
   }
 
   void _replaceCurrentCard(TrainingFeedCard card) => _replaceCard(card);
+
+  /// Writes the answer to the word's counters and the learning history.
+  Future<void> _recordAnswer(TrainingFeedCard card, bool isCorrect) async {
+    final history = _historyRepository;
+    final word = card.word?.word;
+    if (history == null || word == null) return;
+    try {
+      await history.recordAnswer(
+        userKey: UserSession.instance.userKey,
+        wordId: word.id,
+        wordLevelSnapshot: word.level,
+        sessionType: SessionType.feed,
+        isCorrect: isCorrect,
+      );
+    } catch (_) {
+      // Statistics must never interrupt the feed.
+    }
+  }
 
   Future<void> _grantReward(int xp, int gems) async {
     if (xp <= 0 && gems <= 0) return;

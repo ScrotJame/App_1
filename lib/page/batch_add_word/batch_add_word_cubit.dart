@@ -6,6 +6,7 @@ import 'package:test_abc/repository/tag_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 
 import '../scan_vocab/scan_vocab_cubit.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 part 'batch_add_word_state.dart';
 
@@ -26,7 +27,7 @@ class BatchAddWordCubit extends Cubit<BatchAddWordState> {
       final tags = await _tagRepository.getAllTags();
       emit(state.copyWith(tags: tags));
     } catch (e) {
-      emit(state.copyWith(status: LOADSTATUS.FAILED, errorMessage: 'Tải tag thất bại: $e'));
+      emit(state.copyWith(status: LOADSTATUS.FAILED, errorMessage: S.current.error_load_tags(e.toString())));
     }
   }
 
@@ -69,7 +70,7 @@ class BatchAddWordCubit extends Cubit<BatchAddWordState> {
     if (invalidCount > 0) {
       emit(state.copyWith(
         status: LOADSTATUS.FAILED,
-        errorMessage: '$invalidCount từ đang thiếu Từ vựng hoặc Nghĩa',
+        errorMessage: S.current.batch_missing_fields(invalidCount),
       ));
       return;
     }
@@ -93,7 +94,7 @@ class BatchAddWordCubit extends Cubit<BatchAddWordState> {
       }
       emit(state.copyWith(status: LOADSTATUS.SUCCESS, savedCount: count));
     } catch (e) {
-      emit(state.copyWith(status: LOADSTATUS.FAILED, errorMessage: 'Lưu thất bại: $e'));
+      emit(state.copyWith(status: LOADSTATUS.FAILED, errorMessage: S.current.error_save(e.toString())));
     }
   }
 }

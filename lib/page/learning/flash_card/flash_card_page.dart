@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/components/popup_dialog.dart';
+import 'package:test_abc/config/app_config.dart';
 import 'package:test_abc/repository/learning_history_repository.dart';
 import '../../../commons/enums.dart';
 import '../../../repository/companion_repository.dart';
@@ -14,9 +15,6 @@ import '../../widgets/avatar/xp_cubit.dart';
 import '../learning_cubit.dart';
 import 'flash_card_cubit.dart';
 import 'flash_card_widget.dart';
-
-
-const int _kXpSessionBonus = 2;
 
 class FlashCardPage extends StatefulWidget {
   const FlashCardPage({super.key});
@@ -71,19 +69,29 @@ class _FlashCardPageState extends State<FlashCardPage> {
           prev.status != cur.status &&
               cur.status == FlashcardArenaStatus.completed,
           listener: (context, state) async {
-            final count = state.totalCards * 10;
-            final xpEarned = _kXpSessionBonus * count;
-            final gemsEarned = count;
-            final foodEarned = count / 100;
+            // Rewards follow the ratings: skipped cards and cards rated
+            // "again" earn nothing.
+            final xpEarned = state.xpEarned;
+            final gemsEarned = state.gemsEarned;
+            final foodEarned = state.rememberedCount / 10;
+            final xpCubit = context.read<XpCubit>();
 
             try {
               context.read<DailyQuestCubit>().onProgressByType(
                     QuestType.learnWords,
-                    increment: state.totalCards,
+                    increment: state.results.length,
                   );
             } catch (_) {}
 
             _showResultDialog(context, state, xpEarned, gemsEarned, foodEarned);
+
+            // Paid once, when the session ends, whichever button closes the
+            // summary afterwards.
+            await xpCubit.addXp(xpEarned);
+            await xpCubit.addGems(gemsEarned);
+            if (AppConfig.companionEnabled) {
+              await _cubit.earnFood(foodEarned);
+            }
           },
 
           builder: (context, state) {
@@ -302,17 +310,13 @@ class _FlashCardPageState extends State<FlashCardPage> {
               Text("💎 $gemsEarned gems"),
               const SizedBox(width: 8),
               Text("⭐ $xpEarned xp"),
-              const SizedBox(width: 8),
-              Text("🍖 ${foodEarned.toStringAsFixed(1)} food"),
+              if (AppConfig.companionEnabled) ...[
+                const SizedBox(width: 8),
+                Text("🍖 ${foodEarned.toStringAsFixed(1)} food"),
+              ],
             ],
           ),
         ],
-          onGetResult: () async {
-            final xpCubit = context.read<XpCubit>();
-            await xpCubit.addXp(xpEarned);
-            await xpCubit.addGems(gemsEarned);
-            await _cubit.earnFood(foodEarned);
-          },
         onRestart: () {
           Navigator.of(context).pop();
           context.read<FlashCardCubit>().restart();

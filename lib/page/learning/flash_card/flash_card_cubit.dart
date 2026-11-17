@@ -5,10 +5,10 @@ import 'package:rxdart/rxdart.dart';
 import 'package:test_abc/repository/companion_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/repository/learning_history_repository.dart';
-import 'package:test_abc/service/sm2/sm2_algorithm.dart';
 import 'package:test_abc/ultis/error_utils.dart';
 
 import '../../../commons/enums.dart';
+import '../../../commons/status_comon.dart';
 import '../../../commons/user_sesion.dart';
 import '../../../models/entity/active_companion_entity.dart';
 import '../../../models/flash_card_model.dart';
@@ -32,6 +32,9 @@ class FlashCardCubit extends Cubit<FlashCardState> {
   }) : super(FlashCardState());
 
   final userKey = UserSession.instance.userKey;
+
+  /// True from a tap on a rating until the next card is shown.
+  bool _isRating = false;
 
   Future<void> start() async {
     emit(state.copyWith(loadstatus: LOADSTATUS.LOADING));
@@ -61,6 +64,8 @@ class FlashCardCubit extends Cubit<FlashCardState> {
         cards: finalWords,
         currentIndex: 0,
         isFlipped: false,
+        // A new session starts its own summary and its own rewards.
+        results: const [],
         status: finalWords.isEmpty
             ? FlashcardArenaStatus.completed
             : FlashcardArenaStatus.inProgress,
@@ -79,6 +84,7 @@ class FlashCardCubit extends Cubit<FlashCardState> {
 
   /// Lật / lật lại card hiện tại
   void flipCard() {
+    if (_isRating) return;
     if (state.status == FlashcardArenaStatus.completed) return;
     final flipped = !state.isFlipped;
     emit(state.copyWith(
@@ -114,8 +120,13 @@ class FlashCardCubit extends Cubit<FlashCardState> {
 
   // ── Navigation ──────────────────────────────
 
-  /// Chuyển sang thẻ tiếp theo
-  void nextCard() => _advance();
+  /// Chuyển sang thẻ tiếp theo mà không chấm. Thẻ bị bỏ qua không được tính
+  /// vào kết quả nên không có thưởng.
+  void nextCard() {
+    if (_isRating) return;
+    if (state.status == FlashcardArenaStatus.completed) return;
+    _advance();
+  }
 
   // ── Private ─────────────────────────────────
 
@@ -159,38 +170,23 @@ class FlashCardCubit extends Cubit<FlashCardState> {
     }
   }
 
-  /// Rate difficulty of recall using SM-2
+  /// Self-rating of a card. It is recorded as an answer and shown in the
+  /// session summary; the word's level only moves in a Test.
   Future<void> rateCard(DifficultyRating rating) async {
+    // A second tap during the highlight delay would rate the next card
+    // without it ever being shown.
+    if (_isRating) return;
+    if (state.status == FlashcardArenaStatus.completed) return;
     final card = state.currentCard;
     if (card == null) return;
 
-    emit(state.copyWith(pendingRating: rating));
-
-    // Wait a brief delay for user feedback visual transitions
-    await Future.delayed(const Duration(milliseconds: 350));
-
+    _isRating = true;
     try {
-      // Retrieve previous SM-2 values (or use Drift default values if newly created)
-      final int prevRep = card.word.repetitions;
-      final int prevInt = card.word.interval;
-      final double prevEF = card.word.easeFactor;
+      emit(state.copyWith(pendingRating: rating));
 
-      // Calculate new parameters using SM-2 spaced repetition algorithm
-      final sm2 = SM2Algorithm.calculate(
-        rating: rating,
-        prevRepetitions: prevRep,
-        prevInterval: prevInt,
-        prevEaseFactor: prevEF,
-      );
-
-      // Save calculations to Drift Database
-      await _repo.updateWordSM2Progress(
-        wordId: card.word.id,
-        easeFactor: sm2.easeFactor,
-        repetitions: sm2.repetitions,
-        interval: sm2.interval,
-        nextReview: sm2.nextReview,
-      );
+      // Wait a brief delay for user feedback visual transitions
+      await Future.delayed(const Duration(milliseconds: 350));
+      if (isClosed) return;
 
       // Save local session results for display
       final cardModel = FlashcardModel(
@@ -208,13 +204,30 @@ class FlashCardCubit extends Cubit<FlashCardState> {
       emit(state.copyWith(
         results: updatedResults,
       ));
-    } catch (e) {
-      final errMsg = ErrorUtils.networkErrorToMessage(e);
-      messageController.sink.add(errMsg);
-    }
 
-    // Slide to the next card
-    _advance();
+      // "Again" means the word was not recalled.
+      await _recordAnswer(card, rating != DifficultyRating.again);
+      if (isClosed) return;
+
+      // Slide to the next card
+      _advance();
+    } finally {
+      _isRating = false;
+    }
+  }
+
+  Future<void> _recordAnswer(VocabularyWithTags card, bool isCorrect) async {
+    try {
+      await _repoHistory.recordAnswer(
+        userKey: userKey,
+        wordId: card.word.id,
+        wordLevelSnapshot: card.word.level,
+        sessionType: SessionType.flashcard,
+        isCorrect: isCorrect,
+      );
+    } catch (_) {
+      // Statistics must never interrupt the session.
+    }
   }
 
   @override

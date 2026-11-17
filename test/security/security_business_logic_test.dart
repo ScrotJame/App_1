@@ -8,20 +8,16 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:test_abc/database/app_db.dart';
 import 'package:test_abc/database/backup_data.dart';
 import 'package:test_abc/models/entity/user_entity.dart';
-import 'package:test_abc/models/entity/vocabulary_entity.dart';
-import 'package:test_abc/models/entity/unit_entity.dart';
 import 'package:test_abc/models/items_entity.dart';
 import 'package:test_abc/repository/backup_data_repository.dart';
 import 'package:test_abc/repository/shop_repository.dart';
 import 'package:test_abc/repository/companion_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/repository/achievement_repository.dart';
-import 'package:test_abc/repository/user_repository.dart';
 
 import 'test_helpers.dart';
 
@@ -190,11 +186,11 @@ void main() {
     });
 
     // ─────────────────────────────────────────────────────────────────────────
-    // TC-BIZ-006: incrementWordLevel trên word không tồn tại
+    // TC-BIZ-006: levelUpIfDue trên word không tồn tại
     // ─────────────────────────────────────────────────────────────────────────
-    test('TC-BIZ-006: incrementWordLevel(99999) → phải return null', () async {
+    test('TC-BIZ-006: levelUpIfDue(99999) → phải return null', () async {
       final vocabRepo = VocabularyRepository(db);
-      final result = await vocabRepo.incrementWordLevel(99999);
+      final result = await vocabRepo.levelUpIfDue(99999, 'no-user');
       expect(result, isNull, reason: 'Word không tồn tại phải return null');
     });
 
@@ -328,7 +324,7 @@ void main() {
       final vocabRepo = VocabularyRepository(db);
 
       // Ghi progress
-      await vocabRepo.changeWordState(wordId, 3, userKey);
+      await vocabRepo.markWordMastered(wordId, userKey);
 
       // Verify progress tồn tại
       var progress = await (db.select(db.userWordProgressEntrie)

@@ -4,10 +4,14 @@
 /// plus common seed utilities.
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test_abc/database/app_db.dart';
 
 /// Create a fresh in-memory [AppDatabase] per test.
 AppDatabase createTestDatabase() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
   return AppDatabase.forTesting(NativeDatabase.memory());
 }
 

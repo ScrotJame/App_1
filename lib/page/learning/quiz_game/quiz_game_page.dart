@@ -7,6 +7,7 @@ import 'package:test_abc/generated/l10n.dart';
 
 import '../../../commons/enums.dart';
 import '../../../models/quiz_models.dart';
+import '../../../repository/learning_history_repository.dart';
 import '../../../repository/vocabulary_repository.dart';
 import '../learning_cubit.dart';
 import 'quiz_game_cubit.dart';
@@ -30,6 +31,7 @@ class _QuizGamePageState extends State<QuizGamePage>
     final config = context.read<LearningCubit>().state.config;
     _cubit = QuizGameCubit(
       context.read<VocabularyRepository>(),
+      historyRepository: context.read<LearningHistoryRepository>(),
       config: config,
     );
     _messageSubscription = _cubit.messageController.stream.listen((message) {

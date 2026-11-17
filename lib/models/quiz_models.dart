@@ -16,6 +16,10 @@ class AnswerOption extends Equatable {
 }
 
 class QuizQuestion extends Equatable {
+  /// Id of the vocabulary entry being asked; null for questions that do not
+  /// come from the word list.
+  final int? wordId;
+  final int wordLevel;
   final String word;
   final String? pronunciation;
   final String? imageUrl;
@@ -23,6 +27,8 @@ class QuizQuestion extends Equatable {
   final List<AnswerOption> options;
 
   const QuizQuestion({
+    this.wordId,
+    this.wordLevel = 0,
     required this.word,
     this.pronunciation,
     this.imageUrl,
@@ -31,5 +37,6 @@ class QuizQuestion extends Equatable {
   });
 
   @override
-  List<Object?> get props => [word, pronunciation, imageUrl, questionText, options];
+  List<Object?> get props =>
+      [wordId, wordLevel, word, pronunciation, imageUrl, questionText, options];
 }

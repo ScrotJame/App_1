@@ -10,6 +10,7 @@ import '../../models/model_local/support_language_local.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../../service/pronunciation_service.dart';
 import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 part 'add_word_state.dart';
 
@@ -32,6 +33,9 @@ class AddWordCubit extends Cubit<AddWordState> {
       vocabulary: entry.word,
       furigana: entry.pronunciation ?? '',
       meaning: entry.meaning,
+      // Without this, saving an edit that never retypes the word would write
+      // a null language over the stored one.
+      detectedLanguage: entry.language,
       loadstatus: LOADSTATUS.INITAL,
     ));
     final tagIds = await _repo.getTagIdsByWordId(entry.id);
@@ -46,7 +50,7 @@ class AddWordCubit extends Cubit<AddWordState> {
     } catch (e) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Tải tag thất bại: $e',
+        errorMessage: S.current.error_load_tags(e.toString()),
       ));
     }
   }
@@ -148,7 +152,7 @@ class AddWordCubit extends Cubit<AddWordState> {
     } catch (e) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Lưu thất bại: $e',
+        errorMessage: S.current.error_save(e.toString()),
       ));
     }
   }
@@ -162,7 +166,9 @@ class AddWordCubit extends Cubit<AddWordState> {
     if (word.trim().isEmpty || meaning.trim().isEmpty) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: word.trim().isEmpty ? 'Vui lòng nhập từ vựng' : 'Vui lòng nhập nghĩa',
+        errorMessage: word.trim().isEmpty
+            ? S.current.errorEnterWord
+            : S.current.errorEnterMeaning,
       ));
       return;
     }
@@ -179,7 +185,7 @@ class AddWordCubit extends Cubit<AddWordState> {
     } catch (e) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Thêm từ thất bại: $e',
+        errorMessage: S.current.error_add_word(e.toString()),
       ));
     }
   }
@@ -207,7 +213,7 @@ class AddWordCubit extends Cubit<AddWordState> {
     } catch (e) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Cập nhật thất bại: $e',
+        errorMessage: S.current.error_update(e.toString()),
       ));
     }
   }
@@ -224,14 +230,14 @@ class AddWordCubit extends Cubit<AddWordState> {
     if (state.vocabulary.trim().isEmpty) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Vui lòng nhập từ vựng',
+        errorMessage: S.current.errorEnterWord,
       ));
       return false;
     }
     if (state.meaning.trim().isEmpty) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Vui lòng nhập nghĩa',
+        errorMessage: S.current.errorEnterMeaning,
       ));
       return false;
     }

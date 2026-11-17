@@ -21,6 +21,7 @@ import 'package:test_abc/ultis/extension/label_extension.dart';
 
 import '../../commons/app_colors.dart';
 import '../../commons/enums.dart';
+import '../../repository/learning_history_repository.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../../config/app_config.dart';
 import '../../router/router.dart';
@@ -47,6 +48,7 @@ class TrainingFeedPage extends StatelessWidget {
         context.read<XpCubit>(),
         context.read<CompanionRepository>(),
         context.read<TtsService>(),
+        historyRepository: context.read<LearningHistoryRepository>(),
         onQuizAnswered: () {
           try {
             context.read<DailyQuestCubit>().onProgressByType(QuestType.feedQuiz);
@@ -190,11 +192,12 @@ class _TrainingFeedViewState extends State<_TrainingFeedView> {
               if (!widget.isEmbedInHome) const _TopBar(),
 
               // ── Companion Bubble Button ──
-              Positioned(
-                bottom: 115,
-                left: 20,
-                child: _CompanionBubbleButton(key: _companionKey),
-              ),
+              if (AppConfig.companionEnabled)
+                Positioned(
+                  bottom: 115,
+                  left: 20,
+                  child: _CompanionBubbleButton(key: _companionKey),
+                ),
 
               // ── Scroll hint ──
               ValueListenableBuilder<bool>(

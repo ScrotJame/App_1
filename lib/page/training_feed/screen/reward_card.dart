@@ -15,6 +15,43 @@ class RewardCard extends StatelessWidget {
 
   final TrainingFeedCard card;
 
+  /// The bonus stays locked until enough quiz cards were answered correctly.
+  Widget _buildClaimButton(BuildContext context) {
+    return BlocBuilder<TrainingFeedCubit, TrainingFeedState>(
+      buildWhen: (previous, current) =>
+          previous.bonusProgress != current.bonusProgress,
+      builder: (context, state) {
+        final isLocked = !card.isCompleted && !state.isBonusUnlocked;
+        final String label;
+        final IconData icon;
+        if (card.isCompleted) {
+          label = S.of(context).claimed;
+          icon = Icons.check_rounded;
+        } else if (isLocked) {
+          label = S.of(context).reward_locked_progress(
+                state.bonusProgress,
+                TrainingFeedState.bonusRequirement,
+              );
+          icon = Icons.lock_rounded;
+        } else {
+          label = S.of(context).claim_reward;
+          icon = Icons.card_giftcard_rounded;
+        }
+
+        return Opacity(
+          opacity: isLocked ? 0.6 : 1,
+          child: XoayButton(
+            label: label,
+            icon: icon,
+            onTap: () {
+              context.read<TrainingFeedCubit>().claimRewardCard(card.id);
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return CardShell(
@@ -111,17 +148,7 @@ class RewardCard extends StatelessWidget {
             ),
             const SizedBox(height: 28),
             // Claim
-            XoayButton(
-              label: card.isCompleted
-                  ? S.of(context).claimed
-                  : S.of(context).claim_reward,
-              icon: card.isCompleted
-                  ? Icons.check_rounded
-                  : Icons.card_giftcard_rounded,
-              onTap: () {
-                context.read<TrainingFeedCubit>().claimPassiveReward();
-              },
-            ),
+            _buildClaimButton(context),
           ],
         ),
       ),

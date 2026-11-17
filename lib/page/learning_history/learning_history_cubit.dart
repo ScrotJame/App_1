@@ -6,6 +6,7 @@ import 'package:test_abc/commons/user_sesion.dart';
 import 'package:test_abc/models/entity/learning_history_entity.dart';
 import 'package:test_abc/repository/learning_history_repository.dart';
 import 'package:test_abc/service/personalization_service.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 part 'learning_history_state.dart';
 
@@ -27,7 +28,7 @@ class LearningHistoryCubit extends Cubit<LearningHistoryState> {
     } catch (e) {
       emit(state.copyWith(
         loadStatus: LOADSTATUS.FAILED,
-        errorMessage: 'Tải dữ liệu thất bại: $e',
+        errorMessage: S.current.error_load_data(e.toString()),
       ));
     }
   }

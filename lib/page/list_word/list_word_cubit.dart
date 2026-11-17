@@ -13,6 +13,7 @@ import '../../models/tag_vocab.dart';
 import '../../models/unit_entity.dart';
 import '../../repository/unit_repository.dart';
 import '../../repository/vocabulary_repository.dart';
+import '../../service/alarm_service.dart';
 
 part 'list_word_state.dart';
 
@@ -61,7 +62,7 @@ class ListWordCubit extends Cubit<ListWordState> {
       },
       onError: (e) => emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Tải dữ liệu thất bại: $e',
+        errorMessage: S.current.error_load_data(e.toString()),
       )),
     );
   }
@@ -88,7 +89,7 @@ class ListWordCubit extends Cubit<ListWordState> {
     } catch (e) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Tải dữ liệu thất bại: $e',
+        errorMessage: S.current.error_load_data(e.toString()),
       ));
     }
   }
@@ -105,7 +106,7 @@ class ListWordCubit extends Cubit<ListWordState> {
     } catch (e) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Tải dữ liệu thất bại: $e',
+        errorMessage: S.current.error_load_data(e.toString()),
       ));
     }
   }
@@ -131,30 +132,19 @@ class ListWordCubit extends Cubit<ListWordState> {
     } catch (e) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Tải tag thất bại: $e',
+        errorMessage: S.current.error_load_tags(e.toString()),
       ));
     }
   }
 
-  void onLanguageChanged(String? language) async {
+  /// Filters the words already on screen. In a unit that is the unit's own
+  /// list, so the filter can never bring in words from outside the unit.
+  void onLanguageChanged(String? language) {
+    final filtered = _applyFilter(state.allWords, language, state.searchQuery);
     if (language == null) {
-      final filtered = _applyFilter(state.allWords, null, state.searchQuery);
       emit(state.copyWith(clearActiveLanguage: true, filteredWords: filtered));
     } else {
-      try {
-        final res = await _repo.getWordsByLanguageTags(language);
-        final wordsWithTags = res
-            .map((e) => VocabularyWithTags(word: e, languageTags: e.language))
-            .toList();
-
-        final filtered = _applyFilter(wordsWithTags, null, state.searchQuery);
-        emit(state.copyWith(activeLanguage: language, filteredWords: filtered));
-      } catch (e) {
-        emit(state.copyWith(
-          loadstatus: LOADSTATUS.FAILED,
-          errorMessage: 'Tải dữ liệu thất bại: $e',
-        ));
-      }
+      emit(state.copyWith(activeLanguage: language, filteredWords: filtered));
     }
   }
 
@@ -182,7 +172,7 @@ class ListWordCubit extends Cubit<ListWordState> {
     } catch (e) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Cập nhật thất bại: $e',
+        errorMessage: S.current.error_update(e.toString()),
       ));
     }
   }
@@ -190,6 +180,7 @@ class ListWordCubit extends Cubit<ListWordState> {
   Future<void> deleteWord(int id) async {
     try {
       await _repo.deleteWord(id);
+      unawaited(AlarmService.syncReviewReminder(_repo));
       if (_unitId != null) {
         await reloadUnit();
       } else {
@@ -198,7 +189,7 @@ class ListWordCubit extends Cubit<ListWordState> {
     } catch (e) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Xóa thất bại: $e',
+        errorMessage: S.current.error_delete(e.toString()),
       ));
     }
   }
@@ -270,6 +261,7 @@ class ListWordCubit extends Cubit<ListWordState> {
     final ids = state.selectedWordIds.toList();
     try {
       final count = await _repo.deleteWords(ids);
+      unawaited(AlarmService.syncReviewReminder(_repo));
       emit(state.copyWith(isSelectionMode: false, selectedWordIds: const {}));
       if (_unitId != null) {
         await reloadUnit();
@@ -280,7 +272,7 @@ class ListWordCubit extends Cubit<ListWordState> {
     } catch (e) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Xóa hàng loạt thất bại: $e',
+        errorMessage: S.current.error_delete_many(e.toString()),
       ));
       return 0;
     }
@@ -303,7 +295,7 @@ class ListWordCubit extends Cubit<ListWordState> {
     } catch (e) {
       emit(state.copyWith(
         loadstatus: LOADSTATUS.FAILED,
-        errorMessage: 'Thêm vào unit thất bại: $e',
+        errorMessage: S.current.error_add_to_unit(e.toString()),
       ));
       return 0;
     }

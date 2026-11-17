@@ -12,7 +12,6 @@
 ///   - Concurrent createLocalUser(): tạo user đồng thời
 /// ══════════════════════════════════════════════════════════════════════════════
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:test_abc/database/app_db.dart';
 import 'package:test_abc/models/items_entity.dart';
@@ -173,20 +172,23 @@ void main() {
     );
 
     // ─────────────────────────────────────────────────────────────────────────
-    // TC-RACE-004: Concurrent countWordLearn
-    // Gọi 20 lần đồng thời → totalLearned phải tăng đúng 20
+    // TC-RACE-004: Concurrent markWordMastered
+    // 20 từ được đánh dấu thuộc đồng thời → totalLearned phải tăng đúng 20
     // ─────────────────────────────────────────────────────────────────────────
     test(
-      'TC-RACE-004: Concurrent countWordLearn x20 → totalLearned phải tăng đúng 20',
+      'TC-RACE-004: Concurrent markWordMastered x20 → totalLearned phải tăng đúng 20',
       () async {
         final userKey =
             await seedUser(db, keyOpen: 'race-count-user', totalLearned: 0);
         final vocabRepo = VocabularyRepository(db);
+        final wordIds = [
+          for (var i = 0; i < 20; i++)
+            await seedWord(db, word: 'race-$i', meaning: 'nghĩa $i'),
+        ];
 
-        final futures = List.generate(
-          20,
-          (_) => vocabRepo.countWordLearn(userKey),
-        );
+        final futures = [
+          for (final id in wordIds) vocabRepo.markWordMastered(id, userKey),
+        ];
 
         await Future.wait(futures);
 

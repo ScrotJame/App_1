@@ -84,12 +84,14 @@ class TestQuestion extends Equatable {
 
   /// Câu hỏi hướng dẫn phía dưới thẻ
   String get questionLabel => questionType == QuestionType.wordToMeaning
-      ? 'Nghĩa của từ trên là gì?'
-      : 'Từ nào có nghĩa trên?';
+      ? S.current.test_question_word_to_meaning
+      : S.current.test_question_meaning_to_word;
 
   /// Label nhỏ trên thẻ
   String get cardLabel =>
-      questionType == QuestionType.wordToMeaning ? 'Từ vựng' : 'Nghĩa';
+      questionType == QuestionType.wordToMeaning
+          ? S.current.fieldVocabulary
+          : S.current.fieldMeaning;
 
   /// Phiên âm — chỉ hiện khi hỏi từ → nghĩa
   String? get pronunciationDisplay =>
@@ -127,8 +129,9 @@ class TestState extends Equatable {
     this.maxHints = 3,
 
     // Level up — danh sách VocabularyEntry SAU KHI đã được tăng level
-    // Chỉ chứa các từ có isFavorite == true và đã trả lời đúng
+    // Chỉ chứa các từ trả lời đúng và đã đến hạn ôn
     this.leveledUpWords = const [],
+    this.notDueCount = 0,
     this.isLevelingUp = false,
 
     // Rewards — tính khi chuyển sang phase result
@@ -159,6 +162,9 @@ class TestState extends Equatable {
   final int maxHints;
 
   final List<VocabularyEntry> leveledUpWords;
+
+  /// Số câu trả lời đúng nhưng từ chưa đến hạn ôn nên không tăng level.
+  final int notDueCount;
   final bool isLevelingUp;
 
   final int xpEarned;
@@ -189,7 +195,8 @@ class TestState extends Equatable {
   double get progressPercent =>
       totalQuestions == 0 ? 0 : (currentIndex + 1) / totalQuestions;
 
-  int gemsForLevel(int level) {
+  /// Gems paid for a word that reached [level] in this test.
+  static int gemsForLevel(int level) {
     return switch (level) {
       0 => 5,
       1 => 10,
@@ -197,6 +204,19 @@ class TestState extends Equatable {
       3 => 35,
       4 => 50,
       _ => 75,
+    };
+  }
+
+  /// XP paid for a word that reached [level] in this test. It has its own
+  /// scale: XP feeds the user's level, gems are the shop currency.
+  static int xpForLevel(int level) {
+    return switch (level) {
+      0 => 5,
+      1 => 5,
+      2 => 10,
+      3 => 15,
+      4 => 25,
+      _ => 40,
     };
   }
 
@@ -228,6 +248,7 @@ class TestState extends Equatable {
     int? hintsUsed,
     int? maxHints,
     List<VocabularyEntry>? leveledUpWords,
+    int? notDueCount,
     bool? isLevelingUp,
     int? xpEarned,
     int? gemsEarned,
@@ -251,6 +272,7 @@ class TestState extends Equatable {
       hintsUsed: hintsUsed ?? this.hintsUsed,
       maxHints: maxHints ?? this.maxHints,
       leveledUpWords: leveledUpWords ?? this.leveledUpWords,
+      notDueCount: notDueCount ?? this.notDueCount,
       isLevelingUp: isLevelingUp ?? this.isLevelingUp,
       xpEarned: xpEarned ?? this.xpEarned,
       gemsEarned: gemsEarned ?? this.gemsEarned,
@@ -266,7 +288,7 @@ class TestState extends Equatable {
     phase, config, allTags, availableLanguages,
     questions, currentIndex, selectedAnswerIndex, answerStatuses,
     score, remainingSeconds, eliminatedIndexes, hintsUsed, maxHints,
-    leveledUpWords, isLevelingUp, loadStatus, errorMessage,
+    leveledUpWords, notDueCount, isLevelingUp, loadStatus, errorMessage,
     xpEarned, gemsEarned,
   ];
 }

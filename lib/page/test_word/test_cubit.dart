@@ -4,14 +4,15 @@ import 'dart:math';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:test_abc/database/app_db.dart';
-import 'package:test_abc/helper/set_time_helper.dart';
 
 import '../../commons/enums.dart';
+import '../../commons/status_comon.dart';
 import '../../commons/user_sesion.dart';
 import '../../models/tag_vocab.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../../repository/learning_history_repository.dart';
 import '../../service/alarm_service.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 part 'test_state.dart';
 
@@ -111,8 +112,7 @@ class TestCubit extends Cubit<TestState> {
       if (pool.length < 4) {
         emit(state.copyWith(
           loadStatus: LOADSTATUS.FAILED,
-          errorMessage:
-          'Không đủ từ vựng (cần ít nhất 4 từ) với bộ lọc đã chọn.',
+          errorMessage: S.current.test_not_enough_words,
         ));
         return;
       }
@@ -133,6 +133,9 @@ class TestCubit extends Cubit<TestState> {
         hintsUsed: 0,
         eliminatedIndexes: {},
         leveledUpWords: [],
+        notDueCount: 0,
+        xpEarned: 0,
+        gemsEarned: 0,
         isLevelingUp: false,
         remainingSeconds: cfg.timeLimitSeconds,
         loadStatus: LOADSTATUS.SUCCESS,
@@ -143,7 +146,7 @@ class TestCubit extends Cubit<TestState> {
     } catch (e) {
       emit(state.copyWith(
         loadStatus: LOADSTATUS.FAILED,
-        errorMessage: 'Tải dữ liệu thất bại: $e',
+        errorMessage: S.current.error_load_data(e.toString()),
       ));
     }
   }
@@ -160,10 +163,14 @@ class TestCubit extends Cubit<TestState> {
 
     switch (cfg.wordFilter) {
       case WordFilter.learned:
-        result = result.where((w) => w.word.level >= 5).toList();
+        result = result
+            .where((w) => w.word.level >= WordStatus.masteredLevel)
+            .toList();
         break;
       case WordFilter.notLearned:
-        result = result.where((w) => w.word.level < 5).toList();
+        result = result
+            .where((w) => w.word.level < WordStatus.masteredLevel)
+            .toList();
         break;
       case WordFilter.all:
         break;
@@ -227,6 +234,7 @@ class TestCubit extends Cubit<TestState> {
   // ─────────────────────────────────────────────────────────────────────────────
 
   void selectAnswer(int choiceIndex) {
+    if (state.phase != TestPhase.testing || state.isLevelingUp) return;
     if (state.hasAnsweredCurrent) return;
     final question = state.currentQuestion;
     if (question == null) return;
@@ -250,6 +258,7 @@ class TestCubit extends Cubit<TestState> {
   // ─────────────────────────────────────────────────────────────────────────────
 
   void nextQuestion() {
+    if (state.phase != TestPhase.testing || state.isLevelingUp) return;
     if (!state.hasAnsweredCurrent) return;
 
     if (state.isLastQuestion) {
@@ -274,99 +283,93 @@ class TestCubit extends Cubit<TestState> {
 
   // ─────────────────────────────────────────────────────────────────────────────
   // FINISH → LEVEL UP
-  // Tất cả từ trả lời đúng đều được +1 level.
+  // Một câu đúng chỉ +1 level khi từ đã đến hạn ôn; câu sai tính lại thời
+  // gian chờ. Level, status và totalLearned đều do repository ghi.
+  // Phần thưởng chỉ tính trên các từ vừa lên level.
   // ─────────────────────────────────────────────────────────────────────────────
 
   Future<void> _finishTest() async {
+    // The timer running out and a tap on "next" can both end the test. Only
+    // the first one may write levels and history.
+    if (state.phase != TestPhase.testing || state.isLevelingUp) return;
+    _stopTimer();
     emit(state.copyWith(isLevelingUp: true));
 
     final userKey = UserSession.instance.userKey;
 
     if (userKey.isEmpty) {
-      emit(state.copyWith(isLevelingUp: false));
+      // Without a user nothing can be saved, but the score is still shown.
+      emit(state.copyWith(
+        phase: TestPhase.result,
+        leveledUpWords: const [],
+        notDueCount: 0,
+        xpEarned: 0,
+        gemsEarned: 0,
+        isLevelingUp: false,
+      ));
       return;
     }
 
     final leveledUpWords = <VocabularyEntry>[];
-    // Map từ vựng → trạng thái đúng/sai để tính DifficultyRating cho SM-2
-    final wordsToSchedule = <VocabularyEntry, AnswerStatus>{};
+    int notDueCount = 0;
 
-    int correctCount = 0;
-    int masteredCount = 0;
     for (final entry in state.answerStatuses.entries) {
       final vocabEntry = state.questions[entry.key].word.word;
 
-      if (entry.value == AnswerStatus.correct) {
-        correctCount++;
-        try {
-          final alreadyMastered = await _repo.isWordAlreadyMastered(
-            vocabEntry.id,
-            userKey,
-          );
-
-          final updated = await _repo.incrementWordLevel(vocabEntry.id);
-          if (updated != null) {
-            leveledUpWords.add(updated);
-            wordsToSchedule[updated] = AnswerStatus.correct;
-            await _repo.changeWordState(updated.id, updated.level, userKey);
-            if (updated.level >= 5 && !alreadyMastered) {
-              masteredCount++;
-            }
+      try {
+        if (entry.value == AnswerStatus.correct) {
+          final change = await _repo.levelUpIfDue(vocabEntry.id, userKey);
+          if (change == null) continue;
+          if (change.leveledUp) {
+            leveledUpWords.add(change.word);
           } else {
-            wordsToSchedule[vocabEntry] = AnswerStatus.correct;
-            await _repo.changeWordState(vocabEntry.id, vocabEntry.level, userKey);
+            notDueCount++;
           }
-        } catch (_) {
-          wordsToSchedule[vocabEntry] = AnswerStatus.correct;
-          await _repo.changeWordState(vocabEntry.id, vocabEntry.level, userKey);
+        } else {
+          await _repo.restartReviewWait(vocabEntry.id, userKey);
         }
-      } else {
-        wordsToSchedule[vocabEntry] = AnswerStatus.incorrect;
-        await _repo.changeWordState(vocabEntry.id, vocabEntry.level, userKey);
+      } catch (_) {
+        // Một từ lỗi không được chặn các từ còn lại.
       }
     }
 
-    if (correctCount > 0) {
-      for (var i = 0; i < masteredCount; i++) {
-        await _repo.countWordLearn(userKey);
-      }
-    }
-
-    if (wordsToSchedule.isNotEmpty) {
-      _scheduleIndividualNotifications(wordsToSchedule);
-    }
+    await AlarmService.syncReviewReminder(_repo);
 
     // ── Ghi log lịch sử học (Test) ──────────────────────────────────────────
     try {
       for (final entry in state.answerStatuses.entries) {
         final vocabEntry = state.questions[entry.key].word.word;
         final isCorrect = entry.value == AnswerStatus.correct;
-        final isLeveledUp = leveledUpWords.any((w) => w.id == vocabEntry.id);
 
-        await _repoHistory.logWordLearned(
+        // Also bumps the word's correct/wrong counter.
+        await _repoHistory.recordAnswer(
           userKey: userKey,
           wordId: vocabEntry.id,
           wordLevelSnapshot: vocabEntry.level,
-          sessionType: 'Test',
+          sessionType: SessionType.test,
           isCorrect: isCorrect,
-          /// true = từ đã được lên cấp (trả lời đúng + incrementWordLevel thành công)
-          /// false = từ chưa lên cấp (trả lời sai hoặc increment thất bại)
-          isLeveledUp: isLeveledUp,
         );
       }
     } catch (_) {
       // Không block flow chính nếu log history thất bại
     }
 
+    if (isClosed) return;
+
+    // Each entry holds the level the word has just reached.
+    final xpEarned = leveledUpWords.fold<int>(
+        0, (sum, word) => sum + TestState.xpForLevel(word.level));
+    final gemsEarned = leveledUpWords.fold<int>(
+        0, (sum, word) => sum + TestState.gemsForLevel(word.level));
+
     emit(state.copyWith(
       phase: TestPhase.result,
       leveledUpWords: leveledUpWords,
+      notDueCount: notDueCount,
+      xpEarned: xpEarned,
+      gemsEarned: gemsEarned,
       isLevelingUp: false,
     ));
-  }
-
-  void setRewards({required int xpEarned, required int gemsEarned}) {
-    emit(state.copyWith(xpEarned: xpEarned, gemsEarned: gemsEarned));
   }
   // ─────────────────────────────────────────────────────────────────────────────
   // HINT
@@ -412,6 +415,9 @@ class TestCubit extends Cubit<TestState> {
       eliminatedIndexes: {},
       hintsUsed: 0,
       leveledUpWords: [],
+      notDueCount: 0,
+      xpEarned: 0,
+      gemsEarned: 0,
       isLevelingUp: false,
       remainingSeconds: state.config.timeLimitSeconds,
       loadStatus: LOADSTATUS.INITAL,
@@ -434,6 +440,10 @@ class TestCubit extends Cubit<TestState> {
   }
 
   void _onTick() {
+    if (state.phase != TestPhase.testing || state.isLevelingUp) {
+      _stopTimer();
+      return;
+    }
     if (state.remainingSeconds <= 0) {
       _stopTimer();
       _onTimeUp();
@@ -464,39 +474,6 @@ class TestCubit extends Cubit<TestState> {
     }
   }
 
-  void _scheduleIndividualNotifications(
-    Map<VocabularyEntry, AnswerStatus> wordsWithStatus,
-  ) {
-    final now = DateTime.now();
-
-    for (final mapEntry in wordsWithStatus.entries) {
-      final entry = mapEntry.key;
-      final answerStatus = mapEntry.value;
-
-      // Map AnswerStatus → DifficultyRating cho SM-2
-      final rating = answerStatus == AnswerStatus.correct
-          ? DifficultyRating.good
-          : DifficultyRating.again;
-
-      final result = SetTimeHelper.calculateNextReviewTime(
-        entry.level,
-        rating: rating,
-        prevRepetitions: entry.repetitions,
-        prevInterval: entry.interval,
-        prevEaseFactor: entry.easeFactor,
-      );
-
-      final secondsToWait = result.nextReview.difference(now).inSeconds;
-      _handleSchedule(secondsToWait, entry.word);
-
-      print(' Đã set thông báo ID: ${entry.id} cho từ "${entry.word}" (Lv.${entry.level}) vào lúc: ${result.nextReview} (Sau $secondsToWait giây)');
-    }
-  }
-
-  void _handleSchedule(int seconds, String? label) {
-    AlarmService.schedule("Đã đến lúc ôn lại từ $label", seconds);
-  }
-  
   void _stopTimer() {
     _timer?.cancel();
     _timer = null;

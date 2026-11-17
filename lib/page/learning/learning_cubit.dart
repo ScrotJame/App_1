@@ -5,6 +5,7 @@ import 'package:rxdart/rxdart.dart';
 import '../../commons/enums.dart';
 import '../../repository/vocabulary_repository.dart';
 import '../../models/tag_vocab.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 part 'learning_state.dart';
 
@@ -83,7 +84,7 @@ class LearningCubit extends Cubit<LearningState> {
       };
 
       if (totalAvailable < minRequired) {
-        final errMsg = 'Không đủ số lượng từ để học. Cần ít nhất $minRequired từ (hiện có $totalAvailable từ).';
+        final errMsg = S.current.not_enough_words_to_learn(minRequired, totalAvailable);
         emit(state.copyWith(
           loadStatus: LOADSTATUS.FAILED,
           errorMessage: errMsg,
@@ -106,7 +107,7 @@ class LearningCubit extends Cubit<LearningState> {
         loadStatus: LOADSTATUS.SUCCESS,
       ));
     } catch (e) {
-      final errMsg = 'Có lỗi xảy ra: $e';
+      final errMsg = S.current.error_generic(e.toString());
       emit(state.copyWith(
         loadStatus: LOADSTATUS.FAILED,
         errorMessage: errMsg,

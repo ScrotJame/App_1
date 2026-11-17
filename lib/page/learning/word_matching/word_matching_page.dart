@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:test_abc/commons/app_images.dart';
 import 'package:test_abc/components/popup_dialog.dart';
+import 'package:test_abc/config/app_config.dart';
 import 'package:test_abc/repository/learning_history_repository.dart';
 import '../../../commons/enums.dart';
 import '../../../repository/companion_repository.dart';
@@ -453,8 +454,10 @@ class _WordMatchingPageState extends State<WordMatchingPage> {
                   Text("💎 $gemsEarned gems"),
                   const SizedBox(width: 12),
                   Text("⭐ $xpEarned xp"),
-                  const SizedBox(width: 12),
-                  Text("🍖 ${foodEarned.toStringAsFixed(1)} food"),
+                  if (AppConfig.companionEnabled) ...[
+                    const SizedBox(width: 12),
+                    Text("🍖 ${foodEarned.toStringAsFixed(1)} food"),
+                  ],
                 ],
               ),
             ],
@@ -464,7 +467,9 @@ class _WordMatchingPageState extends State<WordMatchingPage> {
           final xpCubit = context.read<XpCubit>();
           await xpCubit.addXp(xpEarned);
           await xpCubit.addGems(gemsEarned);
-          await _cubit.earnFood(foodEarned);
+          if (AppConfig.companionEnabled) {
+            await _cubit.earnFood(foodEarned);
+          }
         },
         onRestart: () {
           Navigator.of(context).pop();

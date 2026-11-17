@@ -10,6 +10,7 @@ import 'package:test_abc/repository/learning_history_repository.dart';
 import 'package:test_abc/ultis/error_utils.dart';
 
 import '../../../commons/enums.dart';
+import '../../../commons/status_comon.dart';
 import '../../../commons/user_sesion.dart';
 import '../../../models/entity/active_companion_entity.dart';
 import '../../../models/tag_vocab.dart';
@@ -160,12 +161,17 @@ class WordMatchingCubit extends Cubit<WordMatchingState> {
         clearLeftSelection: true,
         clearRightSelection: true,
       ));
+      unawaited(_recordAnswer(leftId, true));
 
       if (updatedMatched.length == state.leftItems.length) {
         _stopTimer();
         emit(state.copyWith(gameStatus: WordMatchingGameStatus.roundComplete));
 
         await Future.delayed(const Duration(milliseconds: 1000));
+
+        // The game may have been closed or restarted during the pause.
+        if (isClosed) return;
+        if (state.gameStatus != WordMatchingGameStatus.roundComplete) return;
 
         if (state.level >= 5) {
           await _completeSession();
@@ -190,6 +196,9 @@ class WordMatchingCubit extends Cubit<WordMatchingState> {
         leftItems: leftItems,
         rightItems: rightItems,
       ));
+      // The miss is counted for the word being matched (left column), not for
+      // the meaning that was picked by mistake.
+      unawaited(_recordAnswer(leftId, false));
 
       await Future.delayed(const Duration(milliseconds: 500));
 
@@ -205,13 +214,36 @@ class WordMatchingCubit extends Cubit<WordMatchingState> {
         return e;
       }).toList();
 
+      // The timer keeps running during the animation. If it ran out in the
+      // meantime the game is over and must stay over.
+      final animationStillRunning =
+          state.gameStatus == WordMatchingGameStatus.wrongAnimation;
+
       emit(state.copyWith(
-        gameStatus: WordMatchingGameStatus.playing,
+        gameStatus: animationStillRunning
+            ? WordMatchingGameStatus.playing
+            : state.gameStatus,
         leftItems: resetLeft,
         rightItems: resetRight,
         clearLeftSelection: true,
         clearRightSelection: true,
       ));
+    }
+  }
+
+  Future<void> _recordAnswer(int wordId, bool isCorrect) async {
+    final matches = state.allVocab.where((v) => v.word.id == wordId);
+    if (matches.isEmpty) return;
+    try {
+      await _repoHistory.recordAnswer(
+        userKey: userKey,
+        wordId: wordId,
+        wordLevelSnapshot: matches.first.word.level,
+        sessionType: SessionType.matching,
+        isCorrect: isCorrect,
+      );
+    } catch (_) {
+      // Statistics must never interrupt the game.
     }
   }
 

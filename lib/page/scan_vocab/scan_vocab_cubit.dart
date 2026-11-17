@@ -10,6 +10,7 @@ import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 
 import '../../commons/enums.dart';
 import '../../models/model_local/support_language_local.dart';
+import 'package:test_abc/generated/l10n.dart';
 
 part 'scan_vocab_state.dart';
 
@@ -55,7 +56,7 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
         clearLanguage: true,
       ));
     } catch (e) {
-      emit(state.copyWith(status: SCANSTATUS.error, errorMessage: 'OCR thất bại: $e'));
+      emit(state.copyWith(status: SCANSTATUS.error, errorMessage: S.current.error_ocr(e.toString())));
     }
   }
 
