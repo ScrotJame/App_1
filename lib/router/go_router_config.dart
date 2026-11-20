@@ -6,6 +6,10 @@ import '../page/achievement/achievement_page.dart';
 import '../page/add_word/add_word_page.dart';
 import '../page/backup/backup_page.dart';
 import '../page/companion/companion_page.dart';
+import '../page/daily_quest/daily_quest_cubit.dart';
+import '../page/daily_review/daily_review_cubit.dart';
+import '../page/daily_review/daily_review_page.dart';
+import '../page/daily_review/data/daily_review_repository.dart';
 import '../page/home_cubit.dart';
 import '../page/home_page.dart';
 import '../page/learning_history/learning_history_page.dart';
@@ -19,7 +23,10 @@ import '../page/streak/streak_page.dart';
 import '../page/test_word/test_page.dart';
 import '../page/user/inventory/inventory_page.dart';
 import '../page/user/profile/profile_page.dart';
+import '../page/widgets/avatar/xp_cubit.dart';
+import '../repository/learning_history_repository.dart';
 import '../repository/user_repository.dart';
+import '../repository/vocabulary_repository.dart';
 import '../config/app_config.dart';
 import 'router.dart';
 
@@ -137,6 +144,23 @@ GoRouter createGoRouter() {
       GoRoute(
         path: Routes.backup,
         builder: (context, state) => const BackupPage(),
+      ),
+
+      // ── Daily Review ───────────────────────────────────────
+      GoRoute(
+        path: Routes.dailyReview,
+        builder: (context, state) {
+          return BlocProvider(
+            create: (ctx) => DailyReviewCubit(
+              ctx.read<DailyReviewRepository>(),
+              ctx.read<VocabularyRepository>(),
+              ctx.read<LearningHistoryRepository>(),
+              ctx.read<XpCubit>(),
+              ctx.read<DailyQuestCubit>(),
+            )..load(),
+            child: const DailyReviewPage(),
+          );
+        },
       ),
     ],
 

@@ -18,4 +18,18 @@ void main() {
     expect(paths, isNot(contains(Routes.inventory)));
     expect(paths, contains(Routes.backup));
   });
+
+  test('the daily review has a route', () {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final router = createGoRouter();
+    addTearDown(router.dispose);
+
+    final paths = router.configuration.routes
+        .whereType<GoRoute>()
+        .map((route) => route.path)
+        .toList();
+
+    expect(Routes.dailyReview, '/daily_review');
+    expect(paths, contains(Routes.dailyReview));
+  });
 }

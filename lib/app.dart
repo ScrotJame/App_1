@@ -30,6 +30,8 @@ import 'main.dart' show pronunciationService;
 import 'page/daily_quest/daily_quest_cubit.dart';
 import 'page/daily_quest/data/daily_quest_repository.dart';
 import 'page/daily_quest/data/quest_local_data_source.dart';
+import 'page/daily_review/data/daily_review_local_data_source.dart';
+import 'page/daily_review/data/daily_review_repository.dart';
 import 'page/widgets/avatar/xp_cubit.dart';
 import 'router/go_router_config.dart';
 import 'service/pronunciation_service.dart';
@@ -121,6 +123,18 @@ class _MyAppState extends State<MyApp> {
           create: (ctx) => MissionService(
             ctx.read<DailyQuestRepository>(),
           ),
+        ),
+        // ── Daily Review ────────────────────────────────────
+        RepositoryProvider<DailyReviewLocalDataSource>(
+          create: (_) => SharedPrefsDailyReviewDataSource(),
+        ),
+        RepositoryProvider<DailyReviewRepository>(
+          create: (ctx) => DailyReviewRepository(
+            ctx.read<DailyReviewLocalDataSource>(),
+            ctx.read<VocabularyRepository>(),
+            ctx.read<LearningHistoryRepository>(),
+          ),
+          dispose: (repository) => repository.close(),
         ),
       ],
       child: MultiBlocProvider(

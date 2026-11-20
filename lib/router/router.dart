@@ -15,6 +15,7 @@ class Routes {
   static const String inventory = '/inventory';
   static const String achievement = '/achievement';
   static const String backup = '/backup';
+  static const String dailyReview = '/daily_review';
 
   /// Helper to build companion path with actual userKey
   static String companionPath(String userKey) => '/companion/$userKey';
