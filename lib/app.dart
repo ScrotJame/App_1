@@ -21,6 +21,7 @@ import 'package:test_abc/service/auth_service.dart';
 import 'package:test_abc/service/mission_service.dart';
 import 'package:test_abc/service/tts_service.dart';
 import 'commons/enums.dart';
+import 'commons/user_sesion.dart';
 import 'components/side_bar.dart';
 import 'cubit/app_cubit.dart';
 import 'cubit/auth_cubit.dart';
@@ -52,6 +53,9 @@ class _MyAppState extends State<MyApp> {
   /// Set when the provider below creates the cubit (it is created lazily).
   DailyQuestCubit? _dailyQuestCubit;
 
+  /// Set when the provider below creates the repository (lazily).
+  DailyReviewRepository? _dailyReviewRepository;
+
   @override
   void initState() {
     super.initState();
@@ -59,7 +63,11 @@ class _MyAppState extends State<MyApp> {
     // The app can stay in the background past midnight; show today's quests
     // as soon as it comes back instead of yesterday's.
     _lifecycleListener = AppLifecycleListener(
-      onResume: () => _dailyQuestCubit?.refreshIfNewDay(),
+      onResume: () {
+        _dailyQuestCubit?.refreshIfNewDay();
+        // Past midnight the badge must stop showing yesterday's review.
+        _dailyReviewRepository?.refreshStatus(UserSession.instance.userKey);
+      },
     );
   }
 
@@ -129,7 +137,7 @@ class _MyAppState extends State<MyApp> {
           create: (_) => SharedPrefsDailyReviewDataSource(),
         ),
         RepositoryProvider<DailyReviewRepository>(
-          create: (ctx) => DailyReviewRepository(
+          create: (ctx) => _dailyReviewRepository = DailyReviewRepository(
             ctx.read<DailyReviewLocalDataSource>(),
             ctx.read<VocabularyRepository>(),
             ctx.read<LearningHistoryRepository>(),

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../commons/app_colors.dart';
 import '../../../commons/enums.dart';
 import '../../../database/app_db.dart';
+import '../../daily_review/widgets/daily_review_banner.dart';
 import '../test_cubit.dart' hide TimerMode, WordFilter, QuestionType;
 import '../widgets/app_bar_widget.dart';
 import '../widgets/button_widget.dart';
@@ -241,6 +242,9 @@ class ConfigScreenState extends State<ConfigScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const DailyReviewBanner(),
+                const SizedBox(height: 16),
+
                 // Header
                 GradientCard(
                   child: Row(children: [

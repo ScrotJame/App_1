@@ -11,6 +11,8 @@ import 'package:test_abc/page/user/profile/profile_cubit.dart';
 import 'package:test_abc/page/widgets/avatar/xp_cubit.dart';
 import 'package:test_abc/config/app_config.dart';
 import 'package:test_abc/router/router.dart';
+import 'package:test_abc/page/daily_review/widgets/daily_review_badge.dart';
+import 'package:test_abc/page/daily_review/widgets/daily_review_status_builder.dart';
 
 import 'daily_segmented_progress.dart';
 import 'gacha_streak_badge.dart';
@@ -187,6 +189,16 @@ class TiktokTopHud extends StatelessWidget {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Daily Review Badge
+            DailyReviewStatusBuilder(
+              builder: (context, status) => DailyReviewBadge(
+                status: status,
+                onTap: () => context.push(Routes.dailyReview),
+              ),
+            ),
+
+            const SizedBox(width: 6),
+
             // Gems Badge
             GestureDetector(
               onTap: AppConfig.shopEnabled
