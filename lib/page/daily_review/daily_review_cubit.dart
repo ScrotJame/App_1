@@ -45,6 +45,9 @@ class DailyReviewCubit extends Cubit<DailyReviewState> {
   /// One-shot messages: toasts and errors.
   final PublishSubject<String> messageController = PublishSubject();
 
+  /// Partly saved answers by word id, so a retry never grades a word twice.
+  final Map<int, _Attempt> _attempts = {};
+
   String get _userKey => UserSession.instance.userKey;
 
   // ── Load ──────────────────────────────────────────────────────────────────
@@ -177,26 +180,38 @@ class DailyReviewCubit extends Cubit<DailyReviewState> {
     emit(state.copyWith(selectedAnswerIndex: index, isSubmitting: true));
     try {
       final userKey = _userKey;
+      // A word is graded once. If an earlier attempt got past a step, that
+      // step is never repeated; a retry only finishes the missing ones.
+      final attempt = _attempts.putIfAbsent(wordId, () => _Attempt(isCorrect));
       // Database first (level, then log), SharedPreferences last.
-      final change = isCorrect
-          ? await _vocabulary.levelUpIfDue(wordId, userKey)
-          : await _vocabulary.levelDown(wordId, userKey);
-      final before = change?.previousLevel ?? question.word.level;
-      final after = change?.word.level ?? question.word.level;
-      await _history.recordAnswer(
-        userKey: userKey,
-        wordId: wordId,
-        wordLevelSnapshot: before,
-        sessionType: SessionType.dailyReview,
-        isCorrect: isCorrect,
-      );
+      if (attempt.step == null) {
+        final change = attempt.isCorrect
+            ? await _vocabulary.levelUpIfDue(wordId, userKey)
+            : await _vocabulary.levelDown(wordId, userKey);
+        attempt.step = LevelStep(
+          change?.previousLevel ?? question.word.level,
+          change?.word.level ?? question.word.level,
+        );
+      }
+      final step = attempt.step!;
+      if (!attempt.logged) {
+        await _history.recordAnswer(
+          userKey: userKey,
+          wordId: wordId,
+          wordLevelSnapshot: step.before,
+          sessionType: SessionType.dailyReview,
+          isCorrect: attempt.isCorrect,
+        );
+        attempt.logged = true;
+      }
       final next = await _reviews.saveAnswer(
         userKey,
         session,
         wordId: wordId,
-        isCorrect: isCorrect,
-        level: LevelStep(before, after),
+        isCorrect: attempt.isCorrect,
+        level: step,
       );
+      _attempts.remove(wordId);
       if (isClosed) return;
       emit(state.copyWith(session: next, isSubmitting: false));
     } catch (e) {
@@ -317,4 +332,12 @@ class DailyReviewCubit extends Cubit<DailyReviewState> {
     messageController.close();
     return super.close();
   }
+}
+
+class _Attempt {
+  _Attempt(this.isCorrect);
+
+  final bool isCorrect;
+  LevelStep? step;
+  bool logged = false;
 }

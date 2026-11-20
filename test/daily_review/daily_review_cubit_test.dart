@@ -23,6 +23,32 @@ import '../repository/backup_test_support.dart';
 
 class _MockDailyQuestCubit extends Mock implements DailyQuestCubit {}
 
+class _FlakyHistory extends LearningHistoryRepository {
+  _FlakyHistory(super.db);
+  bool fail = true;
+  int calls = 0;
+
+  @override
+  Future<void> recordAnswer({
+    required String userKey,
+    required int wordId,
+    required int wordLevelSnapshot,
+    required String sessionType,
+    required bool isCorrect,
+    DateTime? now,
+  }) async {
+    calls++;
+    if (fail) throw Exception('disk');
+    return super.recordAnswer(
+        userKey: userKey,
+        wordId: wordId,
+        wordLevelSnapshot: wordLevelSnapshot,
+        sessionType: sessionType,
+        isCorrect: isCorrect,
+        now: now);
+  }
+}
+
 class _FakeDataSource implements DailyReviewLocalDataSource {
   final Map<String, String> storage = {};
 
@@ -249,5 +275,31 @@ void main() {
     expect(cubit.state.preset, 10);
     expect(await reviews.readPreset(userKey), 10);
     expect(cubit.state.session?.target, 20);
+  });
+
+  test('a retry after a failed save does not grade the word twice', () async {
+    final flaky = _FlakyHistory(db);
+    reviews = DailyReviewRepository(_FakeDataSource(), vocabulary, flaky,
+        random: Random(5));
+    addTearDown(reviews.close);
+    final cubit = DailyReviewCubit(reviews, vocabulary, flaky, xpCubit, quest,
+        random: Random(3));
+    addTearDown(cubit.close);
+    await cubit.load();
+    await cubit.start();
+    final q = cubit.state.currentQuestion!;
+
+    await cubit.selectAnswer(q.correctIndex);
+    expect(cubit.state.hasAnsweredCurrent, isFalse);
+    expect((await word(q.word.id)).level, 3);
+
+    flaky.fail = false;
+    await cubit.selectAnswer(q.correctIndex);
+
+    expect((await word(q.word.id)).level, 3);
+    expect((await word(q.word.id)).correctCount, 1);
+    expect(cubit.state.session?.answeredCount, 1);
+    expect(flaky.calls, 2);
+    expect(await db.select(db.learningHistoryLogs).get(), hasLength(1));
   });
 }
