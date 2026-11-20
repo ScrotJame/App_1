@@ -50,6 +50,19 @@ abstract class IVocabularyRepository {
   Future<void> detachTag({required int wordId, required int tagId});
   Future<void> detachAllTags({required int wordId});
   Future<List<int>> getTagIdsByWordId(int wordId);
+
+  /// Whether a word with this identity (`word + meaning + unit`, the same
+  /// identity a backup import uses) is already stored. [unitId] null means a
+  /// word that is in no unit.
+  Future<bool> wordExists({
+    required String word,
+    required String meaning,
+    int? unitId,
+  });
+
+  /// Runs [action] in one database transaction: if it throws, every write it
+  /// made (through any repository on the same database) is rolled back.
+  Future<T> transaction<T>(Future<T> Function() action);
   // ── Word progress ────────────────────────────────────────────────────────
   // `level` on the word is the only progress measure. Every method below
   // changes it in one transaction together with what is derived from it: the
@@ -211,6 +224,26 @@ class VocabularyRepository implements IVocabularyRepository {
         .get();
     return rows.map((r) => r.tagId).toList();
   }
+
+  @override
+  Future<bool> wordExists({
+    required String word,
+    required String meaning,
+    int? unitId,
+  }) async {
+    final row = await (_db.select(_db.vocabularyEntries)
+          ..where((t) =>
+              t.word.equals(word) &
+              t.meaning.equals(meaning) &
+              (unitId == null ? t.unitId.isNull() : t.unitId.equals(unitId)))
+          ..limit(1))
+        .getSingleOrNull();
+    return row != null;
+  }
+
+  @override
+  Future<T> transaction<T>(Future<T> Function() action) =>
+      _db.transaction(action);
 
   @override
   Future<WordLevelChange?> levelUpIfDue(int wordId, String userId,
