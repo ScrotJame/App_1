@@ -423,6 +423,8 @@
   "unknown_error": "Unknown error",
   "user_not_found": "User not found",
   "batch_missing_fields": "{count} entries are missing the word or the meaning",
+  "batch_saved_count": "Saved {count} words",
+  "batch_saved_with_skipped": "Saved {saved} words · skipped {skipped} duplicates",
   "backup_key_missing_retry": "No backup key yet. Please try again later.",
   "backup_key_missing_login_or_enter": "Could not get the backup key. Please sign in or enter a key.",
   "backup_key_missing_login": "Could not get the backup key. Please sign in.",

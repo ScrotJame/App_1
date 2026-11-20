@@ -824,7 +824,9 @@ class _ListWordPageState extends State<ListWordPage> {
                       final added = await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const ScanVocabPage(),
+                          builder: (_) => ScanVocabPage(
+                            unitId: widget.unit?.unit.id,
+                          ),
                         ),
                       );
                       if (added == true && widget.unit != null) {

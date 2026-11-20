@@ -10,21 +10,27 @@ import '../batch_add_word/batch_add_word_page.dart';
 import 'scan_vocab_cubit.dart';
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
+/// Pops with `true` when scanned words were saved.
 class ScanVocabPage extends StatelessWidget {
-  const ScanVocabPage({super.key});
+  /// Unit the scanned words go into; null saves them outside any unit.
+  final int? unitId;
+
+  const ScanVocabPage({super.key, this.unitId});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => ScanVocabCubit(),
-      child: const _ScanVocabView(),
+      child: _ScanVocabView(unitId: unitId),
     );
   }
 }
 
 // ─── View ─────────────────────────────────────────────────────────────────────
 class _ScanVocabView extends StatefulWidget {
-  const _ScanVocabView();
+  final int? unitId;
+
+  const _ScanVocabView({this.unitId});
 
   @override
   State<_ScanVocabView> createState() => _ScanVocabViewState();
@@ -75,19 +81,22 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
     }
   }
 
-  void _goToBatch(ScanVocabState state) {
+  Future<void> _goToBatch(ScanVocabState state) async {
     if (state.vocabItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Chưa có từ nào'), backgroundColor: Colors.orange),
       );
       return;
     }
-    Navigator.push(context, MaterialPageRoute(
+    final saved = await Navigator.push<bool>(context, MaterialPageRoute(
       builder: (_) => BatchAddWordPage(
         items: List.from(state.vocabItems),
         detectedLanguage: state.detectedLanguage,
+        unitId: widget.unitId,
       ),
     ));
+    // Saved: go back to the screen that opened the scan, which reloads.
+    if (saved == true && mounted) Navigator.of(context).pop(true);
   }
 
   // ─── Bottom sheet chọn ngôn ngữ ──────────────────────────────────────────

@@ -1,18 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_abc/commons/app_colors.dart';
 import 'package:test_abc/commons/enums.dart';
+import 'package:test_abc/generated/l10n.dart';
 import 'package:test_abc/repository/tag_repository.dart';
+import 'package:test_abc/repository/unit_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 
 import '../../helper/language_helper.dart';
 import '../scan_vocab/scan_vocab_cubit.dart';
 import 'batch_add_word_cubit.dart';
 
+/// Reviews scanned words and saves them. Pops with `true` once the save went
+/// through, so the screen that opened the scan can reload.
 class BatchAddWordPage extends StatelessWidget {
   final List<ScannedVocabItem> items;
   final String? detectedLanguage;
 
-  const BatchAddWordPage({super.key, required this.items, this.detectedLanguage});
+  /// Unit the words go into; null saves them outside any unit.
+  final int? unitId;
+
+  const BatchAddWordPage({
+    super.key,
+    required this.items,
+    this.detectedLanguage,
+    this.unitId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,40 +35,67 @@ class BatchAddWordPage extends StatelessWidget {
       create: (_) => BatchAddWordCubit(
         context.read<VocabularyRepository>(),
         context.read<TagRepository>(),
+        context.read<UnitRepository>(),
         items,
         detectedLanguage,
+        unitId: unitId,
       )..loadTags(),
       child: const _BatchAddWordView(),
     );
   }
 }
 
-class _BatchAddWordView extends StatelessWidget {
+class _BatchAddWordView extends StatefulWidget {
   const _BatchAddWordView();
+
+  @override
+  State<_BatchAddWordView> createState() => _BatchAddWordViewState();
+}
+
+class _BatchAddWordViewState extends State<_BatchAddWordView> {
+  StreamSubscription<String>? _messageSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _messageSub = context.read<BatchAddWordCubit>().messageController.listen((message) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: AppColors.kRed,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _messageSub?.cancel();
+    super.dispose();
+  }
+
+  void _onSaved(BatchAddWordState state) {
+    final message = state.skippedCount > 0
+        ? S.current.batch_saved_with_skipped(state.savedCount, state.skippedCount)
+        : S.current.batch_saved_count(state.savedCount);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.kGreen,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    Navigator.of(context).pop(true);
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<BatchAddWordCubit, BatchAddWordState>(
-      listener: (context, state) {
-        if (state.status == LOADSTATUS.SUCCESS) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Đã lưu ${state.savedCount} từ thành công!'),
-              backgroundColor: const Color(0xFF50C040),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          Navigator.of(context).popUntil((r) => r.isFirst);
-        } else if (state.status == LOADSTATUS.FAILED && state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      },
+      listenWhen: (previous, current) =>
+          previous.status != current.status && current.status == LOADSTATUS.SUCCESS,
+      listener: (context, state) => _onSaved(state),
       child: BlocBuilder<BatchAddWordCubit, BatchAddWordState>(
         builder: (context, state) {
           return Scaffold(
