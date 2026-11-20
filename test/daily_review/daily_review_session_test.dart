@@ -19,6 +19,7 @@ void main() {
     },
     answers: const {12: true, 7: false},
     levels: const {12: LevelStep(2, 3), 7: LevelStep(4, 3)},
+    createdAt: DateTime(2026, 11, 19, 8, 15, 30),
     completedAt: DateTime(2026, 11, 19, 10, 30),
     rewardClaimed: true,
   );
@@ -69,6 +70,14 @@ void main() {
     expect(decoded?.levels, isEmpty);
     expect(decoded?.isCompleted, isFalse);
     expect(decoded?.rewardClaimed, isFalse);
+    expect(decoded?.createdAt, isNull);
+  });
+
+  test('createdAt is stored as an ISO string', () {
+    final json = jsonDecode(session.encode()) as Map<String, dynamic>;
+    expect(json['createdAt'], '2026-11-19T08:15:30.000');
+    expect(DailyReviewSession.tryDecode(session.encode())?.createdAt,
+        DateTime(2026, 11, 19, 8, 15, 30));
   });
 
   test('counters only look at words still in the review', () {

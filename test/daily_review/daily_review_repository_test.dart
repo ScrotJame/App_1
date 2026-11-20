@@ -193,6 +193,114 @@ void main() {
     expect(word.wrongCount, 1);
   });
 
+  test('answers given after midnight never fill the next day\'s review',
+      () async {
+    for (var i = 0; i < 3; i++) {
+      await addLearnedWord('w$i');
+    }
+    now = DateTime(2026, 11, 19, 23, 50);
+    final yesterday = await open();
+    final lateId = yesterday.wordIds.first;
+    // The review of the 19th is still on screen; its answer lands after
+    // midnight, so the log carries the day key of the 20th.
+    now = DateTime(2026, 11, 20, 0, 10);
+    await history.recordAnswer(
+      userKey: userKey,
+      wordId: lateId,
+      wordLevelSnapshot: 1,
+      sessionType: SessionType.dailyReview,
+      isCorrect: true,
+      now: now,
+    );
+    await repo.saveAnswer(userKey, yesterday,
+        wordId: lateId, isCorrect: true, level: const LevelStep(1, 2));
+
+    now = DateTime(2026, 11, 20, 9);
+    final today = await open();
+    expect(today.date, '2026-11-20');
+    expect(today.wordIds, contains(lateId));
+
+    now = DateTime(2026, 11, 20, 10);
+    final resumed = await open();
+
+    expect(resumed.answers, isEmpty);
+    expect(resumed.levels, isEmpty);
+  });
+
+  test('a review stored without createdAt recovers answers since midnight',
+      () async {
+    for (var i = 0; i < 3; i++) {
+      await addLearnedWord('w$i');
+    }
+    final session = await open();
+    final key = DailyReviewRepository.sessionKey(userKey);
+    source.storage[key] =
+        jsonEncode({...session.toJson()}..remove('createdAt'));
+    final todayId = session.wordIds.first;
+    final yesterdayId = session.wordIds[1];
+    Future<void> log(int wordId, DateTime at) => history.recordAnswer(
+          userKey: userKey,
+          wordId: wordId,
+          wordLevelSnapshot: 1,
+          sessionType: SessionType.dailyReview,
+          isCorrect: true,
+          now: at,
+        );
+    await log(todayId, DateTime(2026, 11, 19, 0, 5));
+    await log(yesterdayId, DateTime(2026, 11, 18, 23, 55));
+
+    final resumed = await open();
+
+    expect(resumed.answers, {todayId: true});
+  });
+
+  test('a finished review stays done when all its words are deleted',
+      () async {
+    final only = await addLearnedWord('w0');
+    final answered = await answerAll(await open(), isCorrect: true);
+    final done = await repo.complete(userKey, answered);
+    await repo.markRewardClaimed(userKey, done);
+    await vocabulary.deleteWord(only);
+
+    final emptied = await repo.openToday(userKey);
+
+    expect(emptied?.isCompleted, isTrue);
+    expect(emptied?.rewardClaimed, isTrue);
+    expect(emptied?.wordIds, isEmpty);
+
+    // Learning a word later the same day does not make a second review.
+    await addLearnedWord('w1');
+    final again = await repo.openToday(userKey);
+
+    expect(again?.isCompleted, isTrue);
+    expect(again?.rewardClaimed, isTrue);
+    expect(again?.wordIds, isEmpty);
+    expect(await repo.readRecentAccuracies(userKey), [1.0]);
+  });
+
+  test('completing or claiming a stale copy keeps what is stored', () async {
+    await addLearnedWord('w0');
+    final answered = await answerAll(await open(), isCorrect: true);
+    final done = await repo.complete(userKey, answered);
+    final claim = await repo.markRewardClaimed(userKey, done);
+    expect(claim.claimedNow, isTrue);
+
+    // `answered` is the copy from before completion: neither completed nor
+    // claimed.
+    final again = await repo.complete(userKey, answered);
+    final secondClaim = await repo.markRewardClaimed(userKey, answered);
+
+    expect(again.isCompleted, isTrue);
+    expect(again.rewardClaimed, isTrue);
+    expect(secondClaim.claimedNow, isFalse);
+    expect(secondClaim.session.rewardClaimed, isTrue);
+    expect(await repo.readRecentAccuracies(userKey), [1.0]);
+    final stored = DailyReviewSession.tryDecode(
+        source.storage[DailyReviewRepository.sessionKey(userKey)]);
+    expect(stored?.isCompleted, isTrue);
+    expect(stored?.rewardClaimed, isTrue);
+  });
+
   test('a deleted word leaves the review', () async {
     for (var i = 0; i < 3; i++) {
       await addLearnedWord('w$i');

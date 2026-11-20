@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:test_abc/generated/l10n.dart';
 
@@ -176,13 +177,15 @@ class DailyReviewCubit extends Cubit<DailyReviewState> {
     }
 
     final session = state.session;
-    if (session == null) return;
+    // A word already in the review is never graded again.
+    if (session == null || session.answers.containsKey(wordId)) return;
     emit(state.copyWith(selectedAnswerIndex: index, isSubmitting: true));
     try {
       final userKey = _userKey;
       // A word is graded once. If an earlier attempt got past a step, that
       // step is never repeated; a retry only finishes the missing ones.
-      final attempt = _attempts.putIfAbsent(wordId, () => _Attempt(isCorrect));
+      final attempt =
+          _attempts.putIfAbsent(wordId, () => _Attempt(isCorrect, index));
       // Database first (level, then log), SharedPreferences last.
       if (attempt.step == null) {
         final change = attempt.isCorrect
@@ -213,7 +216,12 @@ class DailyReviewCubit extends Cubit<DailyReviewState> {
       );
       _attempts.remove(wordId);
       if (isClosed) return;
-      emit(state.copyWith(session: next, isSubmitting: false));
+      // The graded choice is the first tap's, even on a retry.
+      emit(state.copyWith(
+        session: next,
+        selectedAnswerIndex: attempt.choiceIndex,
+        isSubmitting: false,
+      ));
     } catch (e) {
       if (isClosed) return;
       emit(state.copyWith(selectedAnswerIndex: null, isSubmitting: false));
@@ -227,9 +235,10 @@ class DailyReviewCubit extends Cubit<DailyReviewState> {
         !state.hasAnsweredCurrent) {
       return;
     }
-    if (!state.isLastQuestion) {
+    final nextIndex = _nextQuestionIndex();
+    if (nextIndex != null) {
       emit(state.copyWith(
-        currentIndex: state.currentIndex + 1,
+        currentIndex: nextIndex,
         selectedAnswerIndex: null,
       ));
       return;
@@ -241,6 +250,19 @@ class DailyReviewCubit extends Cubit<DailyReviewState> {
     await _finishOfficial();
   }
 
+  /// The next question to ask, or null at the end. The official run skips
+  /// words the review already has an answer for.
+  int? _nextQuestionIndex() {
+    final answers =
+        state.isPractice ? const <int, bool>{} : state.session?.answers;
+    for (var i = state.currentIndex + 1; i < state.questions.length; i++) {
+      if (!(answers?.containsKey(state.questions[i].word.id) ?? false)) {
+        return i;
+      }
+    }
+    return null;
+  }
+
   Future<void> _finishOfficial() async {
     final session = state.session;
     if (session == null) return;
@@ -248,6 +270,9 @@ class DailyReviewCubit extends Cubit<DailyReviewState> {
     try {
       final userKey = _userKey;
       var done = await _reviews.complete(userKey, session);
+      // Kept in state at once, so a retry after a later failure starts from
+      // what is saved.
+      if (!isClosed) emit(state.copyWith(session: done));
       await AlarmService.syncReviewReminder(_vocabulary);
       done = await _grantRewardIfNeeded(done);
       final words = await _vocabulary.getAllWords();
@@ -271,18 +296,24 @@ class DailyReviewCubit extends Cubit<DailyReviewState> {
   Future<DailyReviewSession> _grantRewardIfNeeded(
       DailyReviewSession session) async {
     if (!session.isCompleted || session.rewardClaimed) return session;
-    final claimed = await _reviews.markRewardClaimed(_userKey, session);
+    final claim = await _reviews.markRewardClaimed(_userKey, session);
+    final claimed = claim.session;
+    if (!isClosed) emit(state.copyWith(session: claimed));
+    // Storage already had the claim: it was paid before.
+    if (!claim.claimedNow) return claimed;
     final reward = DailyReviewRewards.of(claimed);
     try {
       if (reward.totalXp > 0) await _xpCubit.addXp(reward.totalXp);
       if (reward.totalGems > 0) await _xpCubit.addGems(reward.totalGems);
-    } catch (_) {
+    } catch (e) {
       // The claim is saved: never retry, never pay twice.
+      debugPrint('Daily review reward not paid: $e');
     }
     try {
       await _questCubit.onProgressByType(QuestType.completeQuiz);
-    } catch (_) {
+    } catch (e) {
       // Quest progress must not block the result.
+      debugPrint('Daily review quest progress not saved: $e');
     }
     if (!isClosed) {
       messageController.add(S.current
@@ -335,9 +366,12 @@ class DailyReviewCubit extends Cubit<DailyReviewState> {
 }
 
 class _Attempt {
-  _Attempt(this.isCorrect);
+  _Attempt(this.isCorrect, this.choiceIndex);
 
   final bool isCorrect;
+
+  /// The choice of the first tap, which is the one graded.
+  final int choiceIndex;
   LevelStep? step;
   bool logged = false;
 }

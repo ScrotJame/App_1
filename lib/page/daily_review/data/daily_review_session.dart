@@ -30,6 +30,7 @@ class DailyReviewSession extends Equatable {
     this.groupCounts = const {},
     this.answers = const {},
     this.levels = const {},
+    this.createdAt,
     this.completedAt,
     this.rewardClaimed = false,
   });
@@ -54,6 +55,9 @@ class DailyReviewSession extends Equatable {
 
   /// Level before and after each graded answer, by word id.
   final Map<int, LevelStep> levels;
+
+  /// When the review was made. Null in a review stored before this field.
+  final DateTime? createdAt;
   final DateTime? completedAt;
   final bool rewardClaimed;
 
@@ -96,6 +100,7 @@ class DailyReviewSession extends Equatable {
       groupCounts: groupCounts,
       answers: answers ?? this.answers,
       levels: levels ?? this.levels,
+      createdAt: createdAt,
       completedAt: completedAt ?? this.completedAt,
       rewardClaimed: rewardClaimed ?? this.rewardClaimed,
     );
@@ -115,6 +120,7 @@ class DailyReviewSession extends Equatable {
           for (final e in levels.entries)
             '${e.key}': [e.value.before, e.value.after],
         },
+        'createdAt': createdAt?.toIso8601String(),
         'completedAt': completedAt?.toIso8601String(),
         'rewardClaimed': rewardClaimed,
       };
@@ -132,6 +138,7 @@ class DailyReviewSession extends Equatable {
       if (date is! String || StreakDateHelper.tryParseKey(date) == null) {
         return null;
       }
+      final createdAt = json['createdAt'];
       final completedAt = json['completedAt'];
       return DailyReviewSession(
         date: date,
@@ -141,6 +148,7 @@ class DailyReviewSession extends Equatable {
         groupCounts: _decodeGroups(json['groupCounts']),
         answers: _decodeAnswers(json['answers']),
         levels: _decodeLevels(json['levels']),
+        createdAt: createdAt is String ? DateTime.parse(createdAt) : null,
         completedAt: completedAt is String ? DateTime.parse(completedAt) : null,
         rewardClaimed: json['rewardClaimed'] as bool? ?? false,
       );
@@ -184,6 +192,7 @@ class DailyReviewSession extends Equatable {
         groupCounts,
         answers,
         levels,
+        createdAt,
         completedAt,
         rewardClaimed,
       ];

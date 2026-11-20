@@ -70,7 +70,9 @@ class DailyReviewRepository {
     var session = await _readToday(userKey);
     if (session != null) {
       session = await _reconcile(userKey, session, byId);
-      if (session.wordIds.isEmpty) session = null;
+      // A finished review stays today's review even with no word left, so a
+      // second payable review is never made the same day.
+      if (session.wordIds.isEmpty && !session.isCompleted) session = null;
     }
     session ??= await _create(userKey, words);
 
@@ -96,20 +98,26 @@ class DailyReviewRepository {
   }
 
   /// Closes the official run and remembers its accuracy for the adaptive N.
+  /// A review already closed in storage is returned as stored, untouched.
   Future<DailyReviewSession> complete(
       String userKey, DailyReviewSession session) async {
-    if (session.isCompleted) return session;
-    final next = session.copyWith(completedAt: _clock());
+    final current = await _latest(userKey, session);
+    if (current.isCompleted) return current;
+    final next = current.copyWith(completedAt: _clock());
     await _save(userKey, next);
     await _pushRecentAccuracy(userKey, next.accuracy);
     return next;
   }
 
-  Future<DailyReviewSession> markRewardClaimed(
+  /// Saves the claim of the reward. [claimedNow] is false when storage
+  /// already had it: the caller must not pay again.
+  Future<({DailyReviewSession session, bool claimedNow})> markRewardClaimed(
       String userKey, DailyReviewSession session) async {
-    final next = session.copyWith(rewardClaimed: true);
+    final current = await _latest(userKey, session);
+    if (current.rewardClaimed) return (session: current, claimedNow: false);
+    final next = current.copyWith(rewardClaimed: true);
     await _save(userKey, next);
-    return next;
+    return (session: next, claimedNow: true);
   }
 
   // ── Settings ──────────────────────────────────────────────────────────────
@@ -147,8 +155,27 @@ class DailyReviewRepository {
     return session;
   }
 
+  /// The stored copy of [session], which is never behind a copy a caller
+  /// kept; [session] itself when storage holds another review.
+  Future<DailyReviewSession> _latest(
+      String userKey, DailyReviewSession session) async {
+    final stored = DailyReviewSession.tryDecode(
+        await _dataSource.readString(sessionKey(userKey)));
+    if (stored == null ||
+        stored.date != session.date ||
+        stored.createdAt != session.createdAt) {
+      return session;
+    }
+    return stored;
+  }
+
   /// Drops deleted words and copies answers that reached the history log but
   /// not SharedPreferences. Copied answers are never graded again.
+  ///
+  /// Only logs made since this review was created count, whatever their day
+  /// key: an answer to yesterday's review given after midnight is not one of
+  /// today's, and an answer to this review given after midnight still is.
+  /// A review stored without `createdAt` counts from the start of its day.
   Future<DailyReviewSession> _reconcile(
     String userKey,
     DailyReviewSession session,
@@ -168,13 +195,17 @@ class DailyReviewRepository {
     if (open.isNotEmpty) {
       final logged = await _history.getDailyReviewAnswers(
         userKey: userKey,
-        day: StreakDateHelper.tryParseKey(session.date) ?? _clock(),
+        since: session.createdAt ??
+            StreakDateHelper.tryParseKey(session.date) ??
+            _clock(),
+        wordIds: open,
       );
       for (final id in open) {
         final log = logged[id];
         if (log == null) continue;
         answers[id] = log.isCorrect;
-        levels[id] = LevelStep(log.levelBefore, byId[id]?.level ?? log.levelBefore);
+        levels[id] =
+            LevelStep(log.levelBefore, byId[id]?.level ?? log.levelBefore);
       }
     }
     return session.copyWith(wordIds: wordIds, answers: answers, levels: levels);
@@ -215,6 +246,7 @@ class DailyReviewRepository {
     );
     return DailyReviewSession(
       date: _today,
+      createdAt: _clock(),
       target: decision.target,
       adaptive: decision.isAdaptive,
       wordIds: pick.wordIds,

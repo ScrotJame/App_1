@@ -45,11 +45,15 @@ abstract class ILearningHistoryRepository {
   /// Đếm tổng số từ đã học trong 1 ngày cụ thể (để tính totalPage)
   Future<int> getHistoryCountByDate({String? userKey, DateTime? date});
 
-  /// Official daily-review answers of [userKey] on the calendar day of [day],
-  /// keyed by word id. When a word has several rows that day, the first wins.
+  /// Official daily-review answers of [userKey] to [wordIds] logged at or
+  /// after [since], keyed by word id, whatever their day key (a review kept
+  /// open past midnight logs under the next day). `createdAt` is stored in
+  /// whole seconds, so [since] is compared in whole seconds too. When a word
+  /// has several rows, the first wins.
   Future<Map<int, LoggedReviewAnswer>> getDailyReviewAnswers({
     required String userKey,
-    required DateTime day,
+    required DateTime since,
+    required Iterable<int> wordIds,
   });
 }
 
@@ -89,6 +93,8 @@ class LearningHistoryRepository implements ILearningHistoryRepository {
               sessionType: sessionType,
               isCorrect: Value(isCorrect),
               learnedDate: DateTime.utc(at.year, at.month, at.day),
+              // The answer's own time, so a log and its day key agree.
+              createdAt: Value(at),
             ),
           );
     });
@@ -159,15 +165,19 @@ class LearningHistoryRepository implements ILearningHistoryRepository {
   @override
   Future<Map<int, LoggedReviewAnswer>> getDailyReviewAnswers({
     required String userKey,
-    required DateTime day,
+    required DateTime since,
+    required Iterable<int> wordIds,
   }) async {
-    // Same day key as recordAnswer: the local date stored as UTC midnight.
-    final startOfDay = DateTime.utc(day.year, day.month, day.day);
+    final ids = wordIds.toSet();
+    if (ids.isEmpty) return {};
+    final sinceSecond = DateTime.fromMillisecondsSinceEpoch(
+        since.millisecondsSinceEpoch ~/ 1000 * 1000);
     final rows = await (_db.select(_db.learningHistoryLogs)
           ..where((t) =>
               t.userKey.equals(userKey) &
               t.sessionType.equals(SessionType.dailyReview) &
-              t.learnedDate.equals(startOfDay))
+              t.wordId.isIn(ids) &
+              t.createdAt.isBiggerOrEqualValue(sinceSecond))
           ..orderBy([(t) => OrderingTerm.asc(t.id)]))
         .get();
 
