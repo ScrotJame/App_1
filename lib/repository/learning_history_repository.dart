@@ -1,7 +1,18 @@
 import 'package:drift/drift.dart';
 import 'package:test_abc/models/entity/learning_history_entity.dart';
 
+import '../commons/status_comon.dart';
 import '../database/app_db.dart';
+
+/// One official daily-review answer, as the history log has it.
+class LoggedReviewAnswer {
+  const LoggedReviewAnswer({required this.isCorrect, required this.levelBefore});
+
+  final bool isCorrect;
+
+  /// `wordLevelSnapshot` of the log: the level before the answer was graded.
+  final int levelBefore;
+}
 
 abstract class ILearningHistoryRepository {
   /// Records one answer from any learning mode: bumps the word's
@@ -33,6 +44,13 @@ abstract class ILearningHistoryRepository {
 
   /// Đếm tổng số từ đã học trong 1 ngày cụ thể (để tính totalPage)
   Future<int> getHistoryCountByDate({String? userKey, DateTime? date});
+
+  /// Official daily-review answers of [userKey] on the calendar day of [day],
+  /// keyed by word id. When a word has several rows that day, the first wins.
+  Future<Map<int, LoggedReviewAnswer>> getDailyReviewAnswers({
+    required String userKey,
+    required DateTime day,
+  });
 }
 
 class LearningHistoryRepository implements ILearningHistoryRepository {
@@ -136,5 +154,33 @@ class LearningHistoryRepository implements ILearningHistoryRepository {
           _db.learningHistoryLogs.learnedDate.equals(startOfDay));
     final result = await query.map((row) => row.read(countExp)).getSingle();
     return result ?? 0;
+  }
+
+  @override
+  Future<Map<int, LoggedReviewAnswer>> getDailyReviewAnswers({
+    required String userKey,
+    required DateTime day,
+  }) async {
+    // Same day key as recordAnswer: the local date stored as UTC midnight.
+    final startOfDay = DateTime.utc(day.year, day.month, day.day);
+    final rows = await (_db.select(_db.learningHistoryLogs)
+          ..where((t) =>
+              t.userKey.equals(userKey) &
+              t.sessionType.equals(SessionType.dailyReview) &
+              t.learnedDate.equals(startOfDay))
+          ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+        .get();
+
+    final answers = <int, LoggedReviewAnswer>{};
+    for (final row in rows) {
+      answers.putIfAbsent(
+        row.wordId,
+        () => LoggedReviewAnswer(
+          isCorrect: row.isCorrect,
+          levelBefore: row.wordLevelSnapshot,
+        ),
+      );
+    }
+    return answers;
   }
 }
