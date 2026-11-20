@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:bloc/bloc.dart';
@@ -10,6 +11,7 @@ import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 
 import '../../commons/enums.dart';
 import '../../models/model_local/support_language_local.dart';
+import 'ocr_text_join.dart';
 import 'package:test_abc/generated/l10n.dart';
 
 part 'scan_vocab_state.dart';
@@ -29,8 +31,25 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
   /// Khoảng chạm cho phép quanh một mảnh chữ (pixel trên màn hình).
   static const double _tapTolerance = 8;
 
+  /// Tăng mỗi lần quét / reset; kết quả của lần quét cũ hơn bị bỏ.
+  int _scanSeq = 0;
+
+  /// Tăng mỗi lần nhận diện ngôn ngữ hoặc đổi ngôn ngữ; kết quả cũ bị bỏ.
+  int _languageSeq = 0;
+
+  @override
+  Future<void> close() async {
+    _scanSeq++;
+    _languageSeq++;
+    await _languageDetector.close();
+    return super.close();
+  }
+
   // ─── OCR + load kích thước ảnh gốc ───────────────────────────────────────
   Future<void> runOcr(File imageFile) async {
+    if (isClosed) return;
+    final seq = ++_scanSeq;
+    _languageSeq++;
     emit(state.copyWith(
       status: SCANSTATUS.scanning,
       blocks: [],
@@ -40,6 +59,7 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
 
     try {
       final result = await _recognizer.recognize(imageFile);
+      if (isClosed || seq != _scanSeq) return;
       emit(state.copyWith(
         imageSize: result.imageSize,
         blocks: result.blocks,
@@ -48,6 +68,7 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
         clearLanguage: true,
       ));
     } catch (e) {
+      if (isClosed || seq != _scanSeq) return;
       emit(state.copyWith(
         status: SCANSTATUS.error,
         errorMessage: S.current.error_ocr(e.toString()),
@@ -197,6 +218,7 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
   }
 
   void setLanguageManually(String langCode) {
+    _languageSeq++;
     emit(state.copyWith(
       detectedLanguage: langCode,
       isLanguageManuallySet: true,
@@ -212,29 +234,27 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
   Future<void> _detectLanguageFromWordBlocks() async {
     if (state.isLanguageManuallySet) return;
 
-    final wordText = state.blocks
-        .where((b) => b.role == TokenRole.word)
-        .map((b) => b.text)
-        .join(' ');
-
-    await _autoDetectLanguage(wordText);
+    await _autoDetectLanguage(state.textForRole(TokenRole.word));
   }
 
   Future<void> _autoDetectLanguage(String text) async {
+    if (isClosed) return;
+    final seq = ++_languageSeq;
     if (text.trim().length < 2) {
       emit(state.copyWith(clearLanguage: true));
       return;
     }
     try {
       final lang = await _languageDetector.identify(text.trim());
-      // Người dùng đã chọn tay trong lúc đang nhận diện → không ghi đè.
-      if (state.isLanguageManuallySet) return;
+      // Có lần nhận diện mới hơn, người dùng đã chọn tay, hoặc cubit đã đóng.
+      if (isClosed || seq != _languageSeq || state.isLanguageManuallySet) return;
       emit(state.copyWith(
         detectedLanguage: lang,
         clearLanguage: lang == null,
         isLanguageManuallySet: false,
       ));
     } catch (_) {
+      if (isClosed || seq != _languageSeq || state.isLanguageManuallySet) return;
       emit(state.copyWith(clearLanguage: true));
     }
   }
@@ -258,11 +278,15 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
   }
 
   // ─── Reset ────────────────────────────────────────────────────────────────
-  void resetScan() => emit(state.copyWith(
-    blocks: [],
-    status: SCANSTATUS.idle,
-    clearDragRect: true,
-    clearError: true,
-    clearLanguage: true,
-  ));
+  void resetScan() {
+    _scanSeq++;
+    _languageSeq++;
+    emit(state.copyWith(
+      blocks: [],
+      status: SCANSTATUS.idle,
+      clearDragRect: true,
+      clearError: true,
+      clearLanguage: true,
+    ));
+  }
 }

@@ -91,16 +91,16 @@ class ScanVocabState extends Equatable {
   });
 
   // ─── Preview từ đang được chọn ────────────────────────────────────────────
+  /// Chữ của các mảnh mang [role], nối theo thứ tự OCR (xem [joinOcrTokens]).
+  String textForRole(TokenRole role) =>
+      joinOcrTokens(blocks.where((b) => b.role == role).map((b) => b.text));
+
   ScannedVocabItem get currentPreview {
-    final languageFromBlocks = blocks
-        .where((b) => b.role == TokenRole.language)
-        .map((b) => b.text)
-        .join(' ');
     return ScannedVocabItem(
-      word: blocks.where((b) => b.role == TokenRole.word).map((b) => b.text).join(' '),
-      pronunciation: blocks.where((b) => b.role == TokenRole.pronunciation).map((b) => b.text).join(' '),
-      meaning: blocks.where((b) => b.role == TokenRole.meaning).map((b) => b.text).join(' '),
-      language: languageFromBlocks,
+      word: textForRole(TokenRole.word),
+      pronunciation: textForRole(TokenRole.pronunciation),
+      meaning: textForRole(TokenRole.meaning),
+      language: textForRole(TokenRole.language),
     );
   }
 

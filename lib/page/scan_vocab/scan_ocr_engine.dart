@@ -20,24 +20,38 @@ abstract class ScanLanguageDetector {
   Future<void> close();
 }
 
+/// Đọc rộng x cao của ảnh đã mã hoá (jpg/png...) mà không giải mã điểm ảnh.
+///
+/// Đi cùng đường với `ui.instantiateImageCodec` (ImmutableBuffer →
+/// ImageDescriptor.encoded) nên ra đúng kích thước mà bản cũ lấy từ
+/// `frame.image`, chỉ khác là không giải mã cả ảnh.
+Future<Size> readEncodedImageSize(Uint8List bytes) async {
+  final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+  ui.ImageDescriptor? descriptor;
+  try {
+    descriptor = await ui.ImageDescriptor.encoded(buffer);
+    return Size(descriptor.width.toDouble(), descriptor.height.toDouble());
+  } finally {
+    descriptor?.dispose();
+    buffer.dispose();
+  }
+}
+
 // ─── Bản thật: ML Kit ────────────────────────────────────────────────────────
 class MlKitScanTextRecognizer implements ScanTextRecognizer {
   const MlKitScanTextRecognizer();
 
   @override
   Future<OcrScanResult> recognize(File imageFile) async {
-    final bytes = await imageFile.readAsBytes();
-    final codec = await ui.instantiateImageCodec(bytes);
-    final frame = await codec.getNextFrame();
-    final imgSize = Size(
-      frame.image.width.toDouble(),
-      frame.image.height.toDouble(),
-    );
+    final imgSize = await readEncodedImageSize(await imageFile.readAsBytes());
 
-    final inputImage = InputImage.fromFile(imageFile);
     final recognizer = TextRecognizer(script: TextRecognitionScript.japanese);
-    final result = await recognizer.processImage(inputImage);
-    await recognizer.close();
+    final RecognizedText result;
+    try {
+      result = await recognizer.processImage(InputImage.fromFile(imageFile));
+    } finally {
+      await recognizer.close();
+    }
 
     final blocks = <OcrBlock>[];
     for (final block in result.blocks) {
@@ -54,17 +68,26 @@ class MlKitScanTextRecognizer implements ScanTextRecognizer {
   }
 }
 
+/// Giữ một [LanguageIdentifier] suốt vòng đời cubit; đóng trong [close].
 class MlKitScanLanguageDetector implements ScanLanguageDetector {
   MlKitScanLanguageDetector();
 
+  LanguageIdentifier? _identifier;
+  bool _closed = false;
+
   @override
   Future<String?> identify(String text) async {
-    final identifier = LanguageIdentifier(confidenceThreshold: 0.5);
+    if (_closed) return null;
+    final identifier = _identifier ??= LanguageIdentifier(confidenceThreshold: 0.5);
     final lang = await identifier.identifyLanguage(text);
-    await identifier.close();
     return lang == 'und' ? null : lang;
   }
 
   @override
-  Future<void> close() async {}
+  Future<void> close() async {
+    _closed = true;
+    final identifier = _identifier;
+    _identifier = null;
+    await identifier?.close();
+  }
 }
