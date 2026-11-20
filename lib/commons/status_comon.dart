@@ -22,4 +22,7 @@ class SessionType {
   static const String quiz = 'Quiz';
   static const String matching = 'Matching';
   static const String flashcard = 'Flashcard';
+
+  /// The official run of the daily review. Practice runs are not logged.
+  static const String dailyReview = 'DailyReview';
 }

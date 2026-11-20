@@ -15,6 +15,8 @@ class WordLevelChange {
   final int previousLevel;
 
   bool get leveledUp => word.level > previousLevel;
+
+  bool get leveledDown => word.level < previousLevel;
 }
 
 abstract class IVocabularyRepository {
@@ -62,6 +64,11 @@ abstract class IVocabularyRepository {
   /// A wrong Test answer: the level stays, the wait before the next level-up
   /// starts over.
   Future<WordLevelChange?> restartReviewWait(int wordId, String userId,
+      {DateTime? now});
+
+  /// A wrong answer in the daily review: the level drops by one (never below
+  /// 0) and the wait before the next level-up starts over, even at level 0.
+  Future<WordLevelChange?> levelDown(int wordId, String userId,
       {DateTime? now});
 
   /// "Đã thuộc": lifts the word to the mastered level.
@@ -227,6 +234,18 @@ class VocabularyRepository implements IVocabularyRepository {
       userId,
       now ?? DateTime.now(),
       (word) => word.level,
+      restartWait: true,
+    );
+  }
+
+  @override
+  Future<WordLevelChange?> levelDown(int wordId, String userId,
+      {DateTime? now}) {
+    return _changeLevel(
+      wordId,
+      userId,
+      now ?? DateTime.now(),
+      (word) => math.max(word.level - 1, 0),
       restartWait: true,
     );
   }
