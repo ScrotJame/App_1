@@ -71,6 +71,8 @@ class ScanVocabState extends Equatable {
   final SCANSTATUS status;
   final String? errorMessage;
   final Rect? dragRect;
+  /// Điểm bắt đầu kéo (toạ độ widget); dragRect luôn dựng từ điểm này.
+  final Offset? dragOrigin;
   final String? detectedLanguage;
   /// true khi user đã chọn ngôn ngữ thủ công → auto-detect sẽ không ghi đè
   final bool isLanguageManuallySet;
@@ -83,6 +85,7 @@ class ScanVocabState extends Equatable {
     this.status = SCANSTATUS.idle,
     this.errorMessage,
     this.dragRect,
+    this.dragOrigin,
     this.detectedLanguage,
     this.isLanguageManuallySet = false,
   });
@@ -102,6 +105,11 @@ class ScanVocabState extends Equatable {
   }
 
   bool get hasAnySelection => blocks.any((b) => b.isSelected);
+
+  /// Quét xong nhưng không tìm thấy chữ nào.
+  bool get hasNoText => status == SCANSTATUS.scanned && blocks.isEmpty;
+
+  String get errorText => errorMessage ?? '';
   String get detectedLanguageLabel => LanguageHelper.getDetectedLanguageLabel(detectedLanguage);
 
   /// Label hiển thị cho badge, ưu tiên kSupportedLanguages
@@ -119,6 +127,7 @@ class ScanVocabState extends Equatable {
     SCANSTATUS? status,
     String? errorMessage,
     Rect? dragRect,
+    Offset? dragOrigin,
     bool clearDragRect = false,
     bool clearError = false,
     String? detectedLanguage,
@@ -133,6 +142,7 @@ class ScanVocabState extends Equatable {
       status: status ?? this.status,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       dragRect: clearDragRect ? null : (dragRect ?? this.dragRect),
+      dragOrigin: clearDragRect ? null : (dragOrigin ?? this.dragOrigin),
       detectedLanguage: clearLanguage ? null : (detectedLanguage ?? this.detectedLanguage),
       isLanguageManuallySet: clearLanguage ? false : (isLanguageManuallySet ?? this.isLanguageManuallySet),
     );
@@ -141,7 +151,7 @@ class ScanVocabState extends Equatable {
   @override
   List<Object?> get props => [
     imageSize, blocks, activeRole, vocabItems,
-    status, errorMessage, dragRect,
+    status, errorMessage, dragRect, dragOrigin,
     detectedLanguage, isLanguageManuallySet,
   ];
 }

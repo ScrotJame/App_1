@@ -511,5 +511,6 @@
   "daily_review_save_failed": "Không lưu được câu trả lời: {error}",
   "daily_review_banner_new": "Kiểm tra lại các từ đã học",
   "daily_review_banner_progress": "Đã làm {done}/{total}",
-  "daily_review_banner_done": "Hôm nay đã xong"
+  "daily_review_banner_done": "Hôm nay đã xong",
+  "scan_no_text_found": "Không tìm thấy chữ nào trong ảnh. Hãy thử ảnh khác."
 }

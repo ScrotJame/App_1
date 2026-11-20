@@ -510,5 +510,6 @@
   "daily_review_save_failed": "Could not save the answer: {error}",
   "daily_review_banner_new": "Check the words you have learned",
   "daily_review_banner_progress": "{done}/{total} done",
-  "daily_review_banner_done": "Done for today"
+  "daily_review_banner_done": "Done for today",
+  "scan_no_text_found": "No text found in this image. Try another photo."
 }
