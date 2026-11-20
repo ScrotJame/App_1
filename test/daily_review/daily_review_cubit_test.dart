@@ -1,0 +1,253 @@
+import 'dart:math';
+import 'dart:ui';
+
+import 'package:drift/drift.dart' show Value;
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:test_abc/commons/status_comon.dart';
+import 'package:test_abc/commons/user_sesion.dart';
+import 'package:test_abc/database/app_db.dart';
+import 'package:test_abc/generated/l10n.dart';
+import 'package:test_abc/page/daily_quest/daily_quest_cubit.dart';
+import 'package:test_abc/page/daily_quest/models/daily_quest_model.dart';
+import 'package:test_abc/page/daily_review/daily_review_cubit.dart';
+import 'package:test_abc/page/daily_review/data/daily_review_local_data_source.dart';
+import 'package:test_abc/page/daily_review/data/daily_review_repository.dart';
+import 'package:test_abc/page/widgets/avatar/xp_cubit.dart';
+import 'package:test_abc/repository/learning_history_repository.dart';
+import 'package:test_abc/repository/user_repository.dart';
+import 'package:test_abc/repository/vocabulary_repository.dart';
+
+import '../repository/backup_test_support.dart';
+
+class _MockDailyQuestCubit extends Mock implements DailyQuestCubit {}
+
+class _FakeDataSource implements DailyReviewLocalDataSource {
+  final Map<String, String> storage = {};
+
+  @override
+  Future<String?> readString(String key) async => storage[key];
+
+  @override
+  Future<void> writeString(String key, String value) async {
+    storage[key] = value;
+  }
+
+  @override
+  Future<void> remove(String key) async {
+    storage.remove(key);
+  }
+}
+
+void main() {
+  const userKey = 'device';
+  const alarmChannel = MethodChannel('com.example.test_abc/alarm');
+
+  late AppDatabase db;
+  late VocabularyRepository vocabulary;
+  late LearningHistoryRepository history;
+  late DailyReviewRepository reviews;
+  late XpCubit xpCubit;
+  late _MockDailyQuestCubit quest;
+
+  DailyReviewCubit newCubit() {
+    final cubit = DailyReviewCubit(reviews, vocabulary, history, xpCubit, quest,
+        random: Random(3));
+    addTearDown(cubit.close);
+    return cubit;
+  }
+
+  Future<VocabularyEntry> word(int id) =>
+      (db.select(db.vocabularyEntries)..where((t) => t.id.equals(id)))
+          .getSingle();
+
+  Future<UsersEntrieData> user() => db.select(db.usersEntrie).getSingle();
+
+  /// Answers every remaining question; the first [correct] ones right.
+  Future<({List<int> right, List<int> wrong})> answerAll(
+    DailyReviewCubit cubit, {
+    required int correct,
+  }) async {
+    final right = <int>[];
+    final wrong = <int>[];
+    var i = 0;
+    while (cubit.state.phase == DailyReviewPhase.testing) {
+      final q = cubit.state.currentQuestion;
+      if (q == null) break;
+      final isRight = i < correct;
+      (isRight ? right : wrong).add(q.word.id);
+      await cubit.selectAnswer(
+          isRight ? q.correctIndex : (q.correctIndex + 1) % q.choices.length);
+      await cubit.next();
+      i++;
+    }
+    return (right: right, wrong: wrong);
+  }
+
+  setUpAll(() async {
+    await S.load(const Locale('en'));
+  });
+
+  setUp(() async {
+    db = await openDbWithUser(userKey);
+    addTearDown(db.close);
+    vocabulary = VocabularyRepository(db);
+    history = LearningHistoryRepository(db);
+    reviews = DailyReviewRepository(_FakeDataSource(), vocabulary, history,
+        random: Random(5));
+    addTearDown(reviews.close);
+    xpCubit = XpCubit(UserRepository(db));
+    addTearDown(xpCubit.close);
+    quest = _MockDailyQuestCubit();
+    when(() => quest.onProgressByType(QuestType.completeQuiz))
+        .thenAnswer((_) async {});
+
+    UserSession.instance.syncFromUser(await user());
+    addTearDown(UserSession.instance.clear);
+
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(alarmChannel, (_) async => true);
+    addTearDown(() => messenger.setMockMethodCallHandler(alarmChannel, null));
+
+    // Four learned words at level 2, due for a long time.
+    for (final (w, m) in [('猫', 'cat'), ('犬', 'dog'), ('鳥', 'bird'), ('魚', 'fish')]) {
+      final id = await vocabulary.insertWord(word: w, meaning: m);
+      await (db.update(db.vocabularyEntries)..where((t) => t.id.equals(id)))
+          .write(VocabularyEntriesCompanion(
+        level: const Value(2),
+        lastReviewed:
+            Value(DateTime.now().subtract(const Duration(days: 30))),
+      ));
+    }
+  });
+
+  test('no learned word shows the empty screen', () async {
+    await db.update(db.vocabularyEntries).write(
+        const VocabularyEntriesCompanion(lastReviewed: Value(null)));
+    final cubit = newCubit();
+
+    await cubit.load();
+
+    expect(cubit.state.phase, DailyReviewPhase.empty);
+    expect(cubit.state.session, isNull);
+  });
+
+  test('a right answer raises the level, a wrong one lowers it, both logged',
+      () async {
+    final cubit = newCubit();
+    await cubit.load();
+    expect(cubit.state.phase, DailyReviewPhase.intro);
+    expect(cubit.state.session?.total, 4);
+
+    await cubit.start();
+    final answered = await answerAll(cubit, correct: 2);
+
+    expect(cubit.state.phase, DailyReviewPhase.result);
+    for (final id in answered.right) {
+      expect((await word(id)).level, 3);
+      expect((await word(id)).correctCount, 1);
+    }
+    for (final id in answered.wrong) {
+      expect((await word(id)).level, 1);
+      expect((await word(id)).wrongCount, 1);
+    }
+    final logs = await db.select(db.learningHistoryLogs).get();
+    expect(logs, hasLength(4));
+    expect(logs.map((l) => l.sessionType).toSet(), {SessionType.dailyReview});
+    expect(logs.map((l) => l.wordLevelSnapshot).toSet(), {2});
+    expect(cubit.state.leveledUp.map((c) => c.wordId),
+        unorderedEquals(answered.right));
+    expect(cubit.state.leveledDown.map((c) => c.wordId),
+        unorderedEquals(answered.wrong));
+  });
+
+  test('the reward is paid once, with the quest progress', () async {
+    final cubit = newCubit();
+    await cubit.load();
+    await cubit.start();
+    await answerAll(cubit, correct: 2);
+
+    // 2 × level 3 (15 XP, 35 gems) + completion (30, 20). 2/4 < 0.8.
+    expect((await user()).experience, 60);
+    expect((await user()).gems, 90);
+    expect(cubit.state.reward.totalXp, 60);
+    verify(() => quest.onProgressByType(QuestType.completeQuiz)).called(1);
+
+    final reopened = newCubit();
+    await reopened.load();
+
+    expect(reopened.state.session?.isCompleted, isTrue);
+    expect((await user()).experience, 60);
+    expect((await user()).gems, 90);
+    verifyNever(() => quest.onProgressByType(QuestType.completeQuiz));
+  });
+
+  test('80% correct or more pays the accuracy bonus', () async {
+    final cubit = newCubit();
+    await cubit.load();
+    await cubit.start();
+    await answerAll(cubit, correct: 4);
+
+    // 4 × 15 + 30 + 20 XP, 4 × 35 + 20 + 10 gems.
+    expect((await user()).experience, 110);
+    expect((await user()).gems, 170);
+  });
+
+  test('practice writes nothing and pays nothing', () async {
+    final cubit = newCubit();
+    await cubit.load();
+    await cubit.start();
+    await answerAll(cubit, correct: 4);
+    clearInteractions(quest);
+    final levels = {
+      for (final id in cubit.state.session?.wordIds ?? <int>[])
+        id: (await word(id)).level,
+    };
+    final logCount = (await db.select(db.learningHistoryLogs).get()).length;
+    final xp = (await user()).experience;
+
+    await cubit.practice();
+    expect(cubit.state.mode, DailyReviewMode.practice);
+    await answerAll(cubit, correct: 0);
+
+    expect(cubit.state.phase, DailyReviewPhase.result);
+    expect(cubit.state.resultCorrect, 0);
+    expect(cubit.state.resultTotal, 4);
+    for (final entry in levels.entries) {
+      expect((await word(entry.key)).level, entry.value);
+    }
+    expect((await db.select(db.learningHistoryLogs).get()).length, logCount);
+    expect((await user()).experience, xp);
+    verifyNever(() => quest.onProgressByType(QuestType.completeQuiz));
+  });
+
+  test('leaving mid-way resumes at the first open question', () async {
+    final cubit = newCubit();
+    await cubit.load();
+    await cubit.start();
+    final q = cubit.state.currentQuestion;
+    await cubit.selectAnswer(q?.correctIndex ?? 0);
+    await cubit.close();
+
+    final resumed = newCubit();
+    await resumed.load();
+    expect(resumed.state.session?.answeredCount, 1);
+
+    await resumed.start();
+    expect(resumed.state.currentIndex, 1);
+    expect(resumed.state.questions, hasLength(4));
+  });
+
+  test('changing the preset keeps today\'s review as it is', () async {
+    final cubit = newCubit();
+    await cubit.load();
+
+    await cubit.changePreset(10);
+
+    expect(cubit.state.preset, 10);
+    expect(await reviews.readPreset(userKey), 10);
+    expect(cubit.state.session?.target, 20);
+  });
+}
