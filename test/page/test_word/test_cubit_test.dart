@@ -210,6 +210,52 @@ void main() {
       expect(cubit.state.phase, TestPhase.testing);
     });
 
+    test('a failed retry goes back to the setup screen with the error',
+        () async {
+      await (db.update(db.vocabularyEntries))
+          .write(const VocabularyEntriesCompanion(level: Value(5)));
+      final cubit = await cubitWith();
+      cubit.setWordFilter(WordFilter.learned);
+      await cubit.startTest();
+      expect(cubit.state.phase, TestPhase.testing);
+      for (var i = 0; i < cubit.state.questions.length; i++) {
+        cubit.submitAnswer(wrongAnswerFor(cubit.state.questions[i]));
+        cubit.nextQuestion();
+      }
+      for (var i = 0; i < 200 && cubit.state.phase != TestPhase.result; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+      expect(cubit.state.phase, TestPhase.result);
+
+      await cubit.retryTest();
+
+      expect(cubit.state.phase, TestPhase.config);
+      expect(cubit.state.loadStatus, LOADSTATUS.FAILED);
+      expect(cubit.state.errorMessage, isNotEmpty);
+    });
+
+    test('closing the test while it is graded does not cut grading short',
+        () async {
+      final cubit = await cubitWith();
+      await cubit.startTest();
+      final total = cubit.state.questions.length;
+      for (var i = 0; i < total; i++) {
+        cubit.submitAnswer(correctAnswerFor(cubit.state.questions[i]));
+        cubit.nextQuestion();
+      }
+      expect(cubit.state.isLevelingUp, isTrue);
+
+      cubit.goToConfig();
+      for (var i = 0; i < 200 && cubit.state.phase != TestPhase.result; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+
+      expect(cubit.state.phase, TestPhase.result);
+      expect(await db.select(db.learningHistoryLogs).get(), hasLength(total));
+      final words = await db.select(db.vocabularyEntries).get();
+      expect(words.map((w) => w.level), everyElement(1));
+    });
+
     test('a second answer to the same question is ignored', () async {
       final cubit = await cubitWith();
       await cubit.startTest();

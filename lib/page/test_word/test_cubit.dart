@@ -234,10 +234,7 @@ class TestCubit extends Cubit<TestState> {
       if (isClosed) return;
 
       if (plan.questions.isEmpty) {
-        emit(state.copyWith(
-          loadStatus: LOADSTATUS.FAILED,
-          errorMessage: S.current.test_not_enough_words,
-        ));
+        _failBuild(S.current.test_not_enough_words);
         return;
       }
 
@@ -274,11 +271,18 @@ class TestCubit extends Cubit<TestState> {
       if (cfg.enableTimer) _startTimer();
     } catch (e) {
       if (isClosed) return;
-      emit(state.copyWith(
-        loadStatus: LOADSTATUS.FAILED,
-        errorMessage: S.current.error_load_data(e.toString()),
-      ));
+      _failBuild(S.current.error_load_data(e.toString()));
     }
+  }
+
+  /// A test could not be built. From the result screen (retry) nothing would
+  /// show the error, so go back to the config screen, which has the banner.
+  void _failBuild(String message) {
+    if (state.phase != TestPhase.config) {
+      _resetToConfig(loadStatus: LOADSTATUS.FAILED, errorMessage: message);
+      return;
+    }
+    emit(state.copyWith(loadStatus: LOADSTATUS.FAILED, errorMessage: message));
   }
 
   int _secondsFor(TestQuestion question, TestConfig cfg) =>
@@ -378,6 +382,11 @@ class TestCubit extends Cubit<TestState> {
       return;
     }
 
+    // Closing the screen cannot happen while grading (see goToConfig), but
+    // work on copies so nothing read after an await can change underneath.
+    final questions = List<TestQuestion>.of(state.questions);
+    final statuses = Map<int, AnswerStatus>.of(state.answerStatuses);
+
     final now = _now();
     final leveledToday = await _levelStore.leveledToday(userKey, now);
     final leveledUp = <WordLevelChange>[];
@@ -385,8 +394,8 @@ class TestCubit extends Cubit<TestState> {
     var notDueCount = 0;
     var cappedCount = 0;
 
-    for (final entry in state.answerStatuses.entries) {
-      final wordId = state.questions[entry.key].entry.id;
+    for (final entry in statuses.entries) {
+      final wordId = questions[entry.key].entry.id;
       final action = TestGrader.actionFor(
         isCorrect: entry.value == AnswerStatus.correct,
         leveledToday: leveledToday.contains(wordId),
@@ -417,8 +426,8 @@ class TestCubit extends Cubit<TestState> {
     await AlarmService.syncReviewReminder(_repo);
 
     try {
-      for (final entry in state.answerStatuses.entries) {
-        final vocabEntry = state.questions[entry.key].entry;
+      for (final entry in statuses.entries) {
+        final vocabEntry = questions[entry.key].entry;
         // Also bumps the word's correct/wrong counter.
         await _repoHistory.recordAnswer(
           userKey: userKey,
@@ -498,6 +507,15 @@ class TestCubit extends Cubit<TestState> {
   // ─── RESET / RETRY ─────────────────────────────────────────────────────────
 
   void goToConfig() {
+    // Grading must run to the end; the result screen takes over after it.
+    if (state.isLevelingUp) return;
+    _resetToConfig();
+  }
+
+  void _resetToConfig({
+    LOADSTATUS loadStatus = LOADSTATUS.INITAL,
+    String? errorMessage,
+  }) {
     _stopTimers();
     emit(state.copyWith(
       phase: TestPhase.config,
@@ -518,8 +536,8 @@ class TestCubit extends Cubit<TestState> {
       gemsEarned: 0,
       isLevelingUp: false,
       remainingSeconds: state.config.timeLimitSeconds,
-      loadStatus: LOADSTATUS.INITAL,
-      errorMessage: null,
+      loadStatus: loadStatus,
+      errorMessage: errorMessage,
     ));
   }
 
