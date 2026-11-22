@@ -45,13 +45,12 @@ class TestingScreen extends StatelessWidget {
               builder: (context, s) {
                 final q = s.currentQuestion;
                 if (q == null) return const SizedBox();
+                // A new question gets fresh widgets (text field, audio) and
+                // a scroll view back at the top.
                 return SingleChildScrollView(
+                  key: ValueKey(s.currentIndex),
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                  child: KeyedSubtree(
-                    // A new question gets fresh widgets (text field, audio).
-                    key: ValueKey(s.currentIndex),
-                    child: _buildQuestion(context, s, q),
-                  ),
+                  child: _buildQuestion(context, s, q),
                 );
               },
             ),
@@ -64,7 +63,20 @@ class TestingScreen extends StatelessWidget {
                 p.isLevelingUp != c.isLevelingUp ||
                 p.eliminatedIndexes != c.eliminatedIndexes ||
                 p.revealedChars != c.revealedChars,
-            builder: _buildBottom,
+            builder: (context, s) => AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, animation) => SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              ),
+              child: KeyedSubtree(
+                key: ValueKey('${s.currentIndex}-${s.hasAnsweredCurrent}'),
+                child: _buildBottom(context, s),
+              ),
+            ),
           ),
         ],
       ),
@@ -163,7 +175,6 @@ class TestingScreen extends StatelessWidget {
         onNext: cubit.nextQuestion,
       );
     }
-    if (q is TrueFalseQuestion) return const SizedBox();
     return Container(
       color: AppColors.white,
       padding: EdgeInsets.fromLTRB(

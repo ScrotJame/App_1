@@ -37,7 +37,9 @@ class _ListeningQuestionViewState extends State<ListeningQuestionView> {
   void initState() {
     super.initState();
     _tts = context.read<TtsService>();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _play());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _play();
+    });
   }
 
   @override
@@ -56,7 +58,11 @@ class _ListeningQuestionViewState extends State<ListeningQuestionView> {
     } catch (_) {
       result = TtsSpeakResult.languageUnavailable;
     }
-    if (!mounted) return;
+    if (!mounted) {
+      // The view went away while the platform was preparing the sound.
+      _tts.stop();
+      return;
+    }
     if (result != TtsSpeakResult.ok) setState(() => _audioFailed = true);
   }
 
