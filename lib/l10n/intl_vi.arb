@@ -594,5 +594,6 @@
   "test_level_down_explained": "Trả lời sai sẽ hạ 1 level của từ.",
   "test_retry": "Làm lại",
   "test_change_setup": "Đổi cấu hình",
-  "test_done": "Hoàn thành"
+  "test_done": "Hoàn thành",
+  "scan_no_text_found": "Không tìm thấy chữ nào trong ảnh. Hãy thử ảnh khác."
 }

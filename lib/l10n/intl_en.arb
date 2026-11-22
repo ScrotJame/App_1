@@ -593,5 +593,6 @@
   "test_level_down_explained": "A wrong answer lowers the word by 1 level.",
   "test_retry": "Retry",
   "test_change_setup": "Change setup",
-  "test_done": "Done"
+  "test_done": "Done",
+  "scan_no_text_found": "No text found in this image. Try another photo."
 }

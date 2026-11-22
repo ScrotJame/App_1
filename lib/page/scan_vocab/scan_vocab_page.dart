@@ -1,10 +1,13 @@
 import 'dart:io';
 
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../commons/app_colors.dart';
 import '../../commons/enums.dart';
+import '../../generated/l10n.dart';
 import '../../models/model_local/support_language_local.dart';
 import '../batch_add_word/batch_add_word_page.dart';
 import 'scan_vocab_cubit.dart';
@@ -138,11 +141,7 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
                       GestureDetector(
                         onTap: () {
                           Navigator.pop(context);
-                          context.read<ScanVocabCubit>().emit(
-                            context.read<ScanVocabCubit>().state.copyWith(
-                              isLanguageManuallySet: false,
-                            ),
-                          );
+                          context.read<ScanVocabCubit>().useAutoLanguage();
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -378,25 +377,23 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
           displayRect = _getDisplayRect(widgetSize, state.imageSize!);
         }
 
+        final cubit = context.read<ScanVocabCubit>();
         return GestureDetector(
-          onPanStart: (d) {
-            context.read<ScanVocabCubit>().updateDragRect(
-              Rect.fromLTWH(d.localPosition.dx, d.localPosition.dy, 0, 0),
-            );
+          // Gốc vùng kéo là điểm chạm xuống, không phải điểm đã vượt ngưỡng kéo.
+          dragStartBehavior: DragStartBehavior.down,
+          onTapUp: (d) {
+            if (displayRect != null) cubit.tapAt(d.localPosition, displayRect);
           },
-          onPanUpdate: (d) {
-            final cur = context.read<ScanVocabCubit>().state.dragRect;
-            if (cur == null) return;
-            context.read<ScanVocabCubit>().updateDragRect(
-              Rect.fromPoints(cur.topLeft, d.localPosition),
-            );
-          },
+          onPanStart: (d) => cubit.startDrag(d.localPosition),
+          onPanUpdate: (d) => cubit.updateDrag(d.localPosition),
           onPanEnd: (_) {
-            final cur = context.read<ScanVocabCubit>().state.dragRect;
-            if (cur != null && displayRect != null) {
-              context.read<ScanVocabCubit>().commitDragSelection(cur, widgetSize, displayRect);
+            if (displayRect != null) {
+              cubit.endDrag(widgetSize, displayRect);
+            } else {
+              cubit.cancelDrag();
             }
           },
+          onPanCancel: cubit.cancelDrag,
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -418,6 +415,10 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
                     ]),
                   ),
                 ),
+              if (state.status == SCANSTATUS.error)
+                _buildScanNotice(Icons.error_outline_rounded, AppColors.kRed, state.errorText),
+              if (state.hasNoText)
+                _buildScanNotice(Icons.search_off_rounded, AppColors.kAmber, S.of(context).scan_no_text_found),
               if (state.status == SCANSTATUS.scanned && displayRect != null)
                 CustomPaint(
                   painter: _BlockOverlayPainter(
@@ -477,6 +478,34 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
           ),
         );
       },
+    );
+  }
+
+  // ── Thông báo trên ảnh: lỗi OCR / không tìm thấy chữ ──────────────────────
+  Widget _buildScanNotice(IconData icon, Color iconColor, String message) {
+    return IgnorePointer(
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.black54,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: iconColor, size: 32),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
