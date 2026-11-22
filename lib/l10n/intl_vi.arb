@@ -442,7 +442,7 @@
   "not_enough_words_to_learn": "Không đủ số lượng từ để học. Cần ít nhất {required} từ (hiện có {available} từ).",
   "quiz_needs_two_words": "Cần ít nhất 2 từ vựng để tạo quiz",
   "product_out_of_stock": "Sản phẩm đã hết hàng",
-  "test_not_enough_words": "Không đủ từ vựng (cần ít nhất 4 từ) với bộ lọc đã chọn.",
+  "test_not_enough_words": "Không tạo được câu hỏi nào từ các từ khớp bộ lọc.",
   "test_question_word_to_meaning": "Nghĩa của từ trên là gì?",
   "test_question_meaning_to_word": "Từ nào có nghĩa trên?",
   "review_reminder_message": "Đã đến lúc ôn lại từ vựng.",
@@ -511,5 +511,16 @@
   "daily_review_save_failed": "Không lưu được câu trả lời: {error}",
   "daily_review_banner_new": "Kiểm tra lại các từ đã học",
   "daily_review_banner_progress": "Đã làm {done}/{total}",
-  "daily_review_banner_done": "Hôm nay đã xong"
+  "daily_review_banner_done": "Hôm nay đã xong",
+  "test_kind_choice": "Trắc nghiệm",
+  "test_kind_typing": "Gõ từ",
+  "test_kind_listening": "Nghe",
+  "test_kind_true_false": "Đúng / Sai",
+  "test_kind_choice_desc": "Chọn 1 trong 4 đáp án",
+  "test_kind_typing_desc": "Nhìn nghĩa, gõ từ",
+  "test_kind_listening_desc": "Nghe từ, chọn nghĩa",
+  "test_kind_true_false_desc": "Nghĩa có khớp không?",
+  "test_kind_keep_one": "Chọn ít nhất 1 kiểu câu hỏi",
+  "test_warning_kind_dropped": "Không tạo được câu \"{kind}\" từ các từ này nên đã bỏ kiểu đó.",
+  "test_warning_no_voice": "Máy chưa có giọng đọc cho {languages} nên đã bỏ câu Nghe."
 }

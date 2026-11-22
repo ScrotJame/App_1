@@ -30,6 +30,18 @@ class TtsService {
     return TtsSpeakResult.ok;
   }
 
+  /// Whether the device has a voice for [languageCode]. An engine error
+  /// counts as no voice.
+  Future<bool> isLanguageAvailable(String? languageCode) async {
+    try {
+      final available = await _flutterTts
+          .isLanguageAvailable(_localeFromLanguageCode(languageCode));
+      return available == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Mở thẳng màn hình "Install voice data" của Google TTS (chỉ Android).
   Future<void> openVoiceDataInstaller() async {
     if (defaultTargetPlatform != TargetPlatform.android) return;

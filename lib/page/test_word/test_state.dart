@@ -1,84 +1,37 @@
 part of 'test_cubit.dart';
 
-// ═════════════════════════════════════════════════════════════════════════════
-// TEST QUESTION
-// ═════════════════════════════════════════════════════════════════════════════
-
-class TestQuestion extends Equatable {
-  const TestQuestion({
-    required this.word,
-    required this.questionType, // loại thực tế (wordToMeaning hoặc meaningToWord)
-    required this.choices,      // 4 đáp án đã shuffle
-    required this.correctIndex,
-  });
-
-  final VocabularyWithTags word;
-  final QuestionType questionType;
-  final List<String> choices;
-  final int correctIndex;
-
-  /// Nội dung hiển thị trên thẻ câu hỏi
-  String get questionDisplay => questionType == QuestionType.wordToMeaning
-      ? word.word.word
-      : word.word.meaning;
-
-  /// Câu hỏi hướng dẫn phía dưới thẻ
-  String get questionLabel => questionType == QuestionType.wordToMeaning
-      ? S.current.test_question_word_to_meaning
-      : S.current.test_question_meaning_to_word;
-
-  /// Label nhỏ trên thẻ
-  String get cardLabel =>
-      questionType == QuestionType.wordToMeaning
-          ? S.current.fieldVocabulary
-          : S.current.fieldMeaning;
-
-  /// Phiên âm — chỉ hiện khi hỏi từ → nghĩa
-  String? get pronunciationDisplay =>
-      questionType == QuestionType.wordToMeaning
-          ? word.word.pronunciation
-          : null;
-
-  @override
-  List<Object?> get props => [word, questionType, choices, correctIndex];
-}
-
-
 class TestState extends Equatable {
   const TestState({
     this.phase = TestPhase.config,
     this.config = const TestConfig(),
 
-    // Dữ liệu cho màn config
+    // Config screen data.
+    this.allWords = const [],
     this.allTags = const [],
     this.availableLanguages = const [],
+    this.voiceLanguages = const {},
 
-    // Câu hỏi
+    // Questions and answers.
     this.questions = const [],
     this.currentIndex = 0,
-    this.selectedAnswerIndex,
+    this.answers = const {},
     this.answerStatuses = const {},
     this.score = 0,
-
-    // Timer
     this.remainingSeconds = 0,
 
-    // Hint
+    // Hints.
     this.eliminatedIndexes = const {},
+    this.revealedChars = const {},
     this.hintsUsed = 0,
     this.maxHints = 3,
 
-    // Level up — danh sách VocabularyEntry SAU KHI đã được tăng level
-    // Chỉ chứa các từ trả lời đúng và đã đến hạn ôn
+    // Result. leveledUpWords holds each word as stored after it levelled up.
     this.leveledUpWords = const [],
     this.notDueCount = 0,
     this.isLevelingUp = false,
-
-    // Rewards — tính khi chuyển sang phase result
     this.xpEarned = 0,
     this.gemsEarned = 0,
 
-    // Loading
     this.loadStatus = LOADSTATUS.INITAL,
     this.errorMessage,
   });
@@ -86,45 +39,71 @@ class TestState extends Equatable {
   final TestPhase phase;
   final TestConfig config;
 
+  /// Every word of the user, for the "N words match" counter.
+  final List<VocabularyWithTags> allWords;
   final List<Tag> allTags;
   final List<String> availableLanguages;
 
+  /// Languages the device has a TTS voice for.
+  final Set<String> voiceLanguages;
+
   final List<TestQuestion> questions;
   final int currentIndex;
-  final int? selectedAnswerIndex;
+
+  /// Answers by question index.
+  final Map<int, TestAnswer> answers;
   final Map<int, AnswerStatus> answerStatuses;
   final int score;
-
   final int remainingSeconds;
 
+  /// Choices removed by hints, by question index.
   final Map<int, List<int>> eliminatedIndexes;
+
+  /// Characters shown by hints on typing questions, by question index.
+  final Map<int, int> revealedChars;
   final int hintsUsed;
   final int maxHints;
 
   final List<VocabularyEntry> leveledUpWords;
 
-  /// Số câu trả lời đúng nhưng từ chưa đến hạn ôn nên không tăng level.
+  /// Correct answers on words that were not due, so the level stayed.
   final int notDueCount;
   final bool isLevelingUp;
-
   final int xpEarned;
   final int gemsEarned;
 
   final LOADSTATUS loadStatus;
   final String? errorMessage;
 
-  // ─── Computed ────────────────────────────────────────────────────────────────
+  // ─── Computed ──────────────────────────────────────────────────────────────
 
   int get totalQuestions => questions.length;
   bool get isLastQuestion => currentIndex == totalQuestions - 1;
-  bool get hasAnsweredCurrent => selectedAnswerIndex != null;
-  int get hintsRemaining => maxHints - hintsUsed;
 
   TestQuestion? get currentQuestion =>
       questions.isEmpty ? null : questions[currentIndex];
 
+  TestAnswer? get currentAnswer => answers[currentIndex];
+  bool get hasAnsweredCurrent => answers.containsKey(currentIndex);
+  bool get isCurrentCorrect =>
+      answerStatuses[currentIndex] == AnswerStatus.correct;
+
+  int get hintsRemaining => maxHints - hintsUsed;
   List<int> get currentEliminatedIndexes =>
-      eliminatedIndexes[currentIndex] ?? [];
+      eliminatedIndexes[currentIndex] ?? const [];
+  int get currentRevealedChars => revealedChars[currentIndex] ?? 0;
+
+  /// Whether the hint button does something on the current question.
+  bool get canUseHint {
+    if (hintsRemaining <= 0 || hasAnsweredCurrent) return false;
+    return switch (currentQuestion) {
+      final MultipleChoiceQuestion q =>
+        q.choices.length - 1 - currentEliminatedIndexes.length > 0,
+      final TypingQuestion q => currentRevealedChars < q.hintLength,
+      TrueFalseQuestion() => false,
+      null => false,
+    };
+  }
 
   int get correctCount =>
       answerStatuses.values.where((s) => s == AnswerStatus.correct).length;
@@ -134,6 +113,29 @@ class TestState extends Equatable {
 
   double get progressPercent =>
       totalQuestions == 0 ? 0 : (currentIndex + 1) / totalQuestions;
+
+  int get matchingWordCount => config.filterWords(allWords).length;
+
+  /// Questions the start button announces. The test can have fewer when
+  /// some words cannot be used for the selected kinds.
+  int get plannedQuestionCount => min(config.questionCount, matchingWordCount);
+
+  /// Whether a word in the current scope can be read aloud.
+  bool get hasVoiceForScope => config
+      .filterWords(allWords)
+      .any((w) => voiceLanguages.contains(w.word.language));
+
+  /// Correct and total answers by kind, for the kinds in this test.
+  Map<TestKind, ({int correct, int total})> get kindStats {
+    final stats = <TestKind, ({int correct, int total})>{};
+    for (var i = 0; i < questions.length; i++) {
+      final kind = questions[i].kind;
+      final before = stats[kind] ?? (correct: 0, total: 0);
+      final right = answerStatuses[i] == AnswerStatus.correct ? 1 : 0;
+      stats[kind] = (correct: before.correct + right, total: before.total + 1);
+    }
+    return stats;
+  }
 
   /// Gems paid for a word that reached [level] in this test.
   static int gemsForLevel(int level) {
@@ -171,20 +173,23 @@ class TestState extends Equatable {
 
   int get leveledUpCount => leveledUpWords.length;
 
-  // ─── CopyWith ─────────────────────────────────────────────────────────────────
+  // ─── CopyWith ──────────────────────────────────────────────────────────────
 
   TestState copyWith({
     TestPhase? phase,
     TestConfig? config,
+    List<VocabularyWithTags>? allWords,
     List<Tag>? allTags,
     List<String>? availableLanguages,
+    Set<String>? voiceLanguages,
     List<TestQuestion>? questions,
     int? currentIndex,
-    Object? selectedAnswerIndex = _sentinel,
+    Map<int, TestAnswer>? answers,
     Map<int, AnswerStatus>? answerStatuses,
     int? score,
     int? remainingSeconds,
     Map<int, List<int>>? eliminatedIndexes,
+    Map<int, int>? revealedChars,
     int? hintsUsed,
     int? maxHints,
     List<VocabularyEntry>? leveledUpWords,
@@ -198,17 +203,18 @@ class TestState extends Equatable {
     return TestState(
       phase: phase ?? this.phase,
       config: config ?? this.config,
+      allWords: allWords ?? this.allWords,
       allTags: allTags ?? this.allTags,
       availableLanguages: availableLanguages ?? this.availableLanguages,
+      voiceLanguages: voiceLanguages ?? this.voiceLanguages,
       questions: questions ?? this.questions,
       currentIndex: currentIndex ?? this.currentIndex,
-      selectedAnswerIndex: selectedAnswerIndex == _sentinel
-          ? this.selectedAnswerIndex
-          : selectedAnswerIndex as int?,
+      answers: answers ?? this.answers,
       answerStatuses: answerStatuses ?? this.answerStatuses,
       score: score ?? this.score,
       remainingSeconds: remainingSeconds ?? this.remainingSeconds,
       eliminatedIndexes: eliminatedIndexes ?? this.eliminatedIndexes,
+      revealedChars: revealedChars ?? this.revealedChars,
       hintsUsed: hintsUsed ?? this.hintsUsed,
       maxHints: maxHints ?? this.maxHints,
       leveledUpWords: leveledUpWords ?? this.leveledUpWords,
@@ -225,12 +231,12 @@ class TestState extends Equatable {
 
   @override
   List<Object?> get props => [
-    phase, config, allTags, availableLanguages,
-    questions, currentIndex, selectedAnswerIndex, answerStatuses,
-    score, remainingSeconds, eliminatedIndexes, hintsUsed, maxHints,
-    leveledUpWords, notDueCount, isLevelingUp, loadStatus, errorMessage,
-    xpEarned, gemsEarned,
-  ];
+        phase, config, allWords, allTags, availableLanguages, voiceLanguages,
+        questions, currentIndex, answers, answerStatuses, score,
+        remainingSeconds, eliminatedIndexes, revealedChars, hintsUsed,
+        maxHints, leveledUpWords, notDueCount, isLevelingUp, xpEarned,
+        gemsEarned, loadStatus, errorMessage,
+      ];
 }
 
 const _sentinel = Object();

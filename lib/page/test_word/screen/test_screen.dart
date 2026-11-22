@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../commons/app_colors.dart';
+import '../../../generated/l10n.dart';
 import '../test_cubit.dart';
 
 enum _ChoiceState { idle, selected, correct, wrong, eliminated }
@@ -171,7 +172,7 @@ class _TestingScreenState extends State<TestingScreen> {
 
   // ── Word card ───────────────────────────────────────────────────────────────
 
-  Widget _buildWordCard(TestQuestion q) {
+  Widget _buildWordCard(ChoiceQuestion q) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
@@ -182,7 +183,8 @@ class _TestingScreenState extends State<TestingScreen> {
       child: Column(
         children: [
           Text(
-            q.cardLabel.toUpperCase(),
+            (q.asksMeaning ? S.of(context).fieldVocabulary : S.of(context).fieldMeaning)
+                .toUpperCase(),
             style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -194,7 +196,7 @@ class _TestingScreenState extends State<TestingScreen> {
 
           // HIỂN THỊ TỪ VỰNG / NGHĨA CHÍNH TẠI ĐÂY[cite: 2]
           Text(
-            q.questionDisplay,
+            q.prompt,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 28,
@@ -203,10 +205,9 @@ class _TestingScreenState extends State<TestingScreen> {
             ),
           ),
 
-          if (q.pronunciationDisplay != null &&
-              (q.pronunciationDisplay ?? '').isNotEmpty) ...[
+          if (q.pronunciation.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(q.pronunciationDisplay ?? '',
+            Text(q.pronunciation,
                 style: const TextStyle(fontSize: 16, color: Colors.grey)),
           ],
           const SizedBox(height: 22),
@@ -312,12 +313,14 @@ class _TestingScreenState extends State<TestingScreen> {
 
   Widget _buildChoiceList(BuildContext ctx, TestState s) {
     final q = s.currentQuestion;
-    if (q == null) return const SizedBox();
+    if (q is! MultipleChoiceQuestion) return const SizedBox();
+    final answer = s.currentAnswer;
+    final picked = answer is ChoiceAnswer ? answer.index : null;
 
     return Column(
       children: List.generate(q.choices.length, (i) {
         final isElim = s.currentEliminatedIndexes.contains(i);
-        final isSel = s.selectedAnswerIndex == i;
+        final isSel = picked == i;
         final answered = s.hasAnsweredCurrent;
 
         final cs = isElim
@@ -337,7 +340,7 @@ class _TestingScreenState extends State<TestingScreen> {
             text: q.choices[i],
             state: cs,
             onTap: (!answered && !isElim)
-                ? () => ctx.read<TestCubit>().selectAnswer(i)
+                ? () => ctx.read<TestCubit>().submitAnswer(ChoiceAnswer(i))
                 : null,
           ),
         );
@@ -500,6 +503,7 @@ class _TestingScreenState extends State<TestingScreen> {
               builder: (ctx, s) {
                 final q = s.currentQuestion;
                 if (q == null) return const SizedBox();
+                if (q is! ChoiceQuestion) return const SizedBox();
                 return SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                   child: Column(

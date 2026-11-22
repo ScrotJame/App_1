@@ -22,6 +22,7 @@ import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/service/tts_service.dart';
 
 import '../../repository/backup_test_support.dart';
+import '../test_word/test_word_support.dart';
 
 /// Every learning mode has to leave a trace of each answer: the word's
 /// correct/wrong counter and a row in the learning history.
@@ -334,7 +335,7 @@ void main() {
           .instance.defaultBinaryMessenger
           .setMockMethodCallHandler(alarmChannel, null));
 
-      cubit = TestCubit(vocabulary, history);
+      cubit = newTestCubit(vocabulary, history);
       addTearDown(cubit.close);
       cubit.toggleTimer(false);
       await cubit.startTest();
@@ -345,10 +346,9 @@ void main() {
       final total = cubit.state.questions.length;
       for (var i = 0; i < total; i++) {
         final question = cubit.state.questions[i];
-        final choice = i < correctAnswers
-            ? question.correctIndex
-            : (question.correctIndex + 1) % question.choices.length;
-        cubit.selectAnswer(choice);
+        cubit.submitAnswer(i < correctAnswers
+            ? correctAnswerFor(question)
+            : wrongAnswerFor(question));
         cubit.nextQuestion();
       }
       for (var i = 0; i < 200; i++) {

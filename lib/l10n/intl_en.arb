@@ -441,7 +441,7 @@
   "not_enough_words_to_learn": "Not enough words to learn. At least {required} needed (you have {available}).",
   "quiz_needs_two_words": "At least 2 words are needed to build a quiz",
   "product_out_of_stock": "This item is out of stock",
-  "test_not_enough_words": "Not enough words (at least 4 needed) with the selected filters.",
+  "test_not_enough_words": "No question can be made from the words that match these filters.",
   "test_question_word_to_meaning": "What does the word above mean?",
   "test_question_meaning_to_word": "Which word has the meaning above?",
   "review_reminder_message": "Some of your words are ready for review.",
@@ -510,5 +510,16 @@
   "daily_review_save_failed": "Could not save the answer: {error}",
   "daily_review_banner_new": "Check the words you have learned",
   "daily_review_banner_progress": "{done}/{total} done",
-  "daily_review_banner_done": "Done for today"
+  "daily_review_banner_done": "Done for today",
+  "test_kind_choice": "Multiple choice",
+  "test_kind_typing": "Type the word",
+  "test_kind_listening": "Listening",
+  "test_kind_true_false": "True / False",
+  "test_kind_choice_desc": "Pick 1 of 4 answers",
+  "test_kind_typing_desc": "See the meaning, type the word",
+  "test_kind_listening_desc": "Hear the word, pick its meaning",
+  "test_kind_true_false_desc": "Does the meaning match?",
+  "test_kind_keep_one": "Pick at least 1 kind of question",
+  "test_warning_kind_dropped": "No \"{kind}\" question can be made from these words, so it was left out.",
+  "test_warning_no_voice": "This device has no voice for {languages}, so listening questions were left out."
 }

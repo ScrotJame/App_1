@@ -1,7 +1,10 @@
+import 'package:flutter_test/flutter_test.dart';
 import 'package:test_abc/database/app_db.dart';
 import 'package:test_abc/models/tag_vocab.dart';
-import 'package:test_abc/page/test_word/logic/test_answer.dart';
-import 'package:test_abc/page/test_word/logic/test_kind_question.dart';
+import 'package:test_abc/page/test_word/test_cubit.dart';
+import 'package:test_abc/repository/learning_history_repository.dart';
+import 'package:test_abc/repository/vocabulary_repository.dart';
+import 'package:test_abc/service/tts_service.dart';
 
 /// A word built in memory, for tests that do not need the database.
 VocabularyWithTags entry(
@@ -51,3 +54,29 @@ TestAnswer wrongAnswerFor(TestQuestion question) => switch (question) {
       final TrueFalseQuestion q => BoolAnswer(!q.isMatch),
       TypingQuestion() => const TextAnswer('###'),
     };
+
+/// A TTS engine with a voice for [voices] only. Never speaks.
+class FakeTtsService extends Fake implements TtsService {
+  FakeTtsService({this.voices = const {}});
+
+  final Set<String> voices;
+
+  @override
+  Future<bool> isLanguageAvailable(String? languageCode) async =>
+      voices.contains(languageCode);
+}
+
+/// A cubit that never moves on by itself, unless [autoAdvanceDelay] is set.
+TestCubit newTestCubit(
+  VocabularyRepository vocabulary,
+  LearningHistoryRepository history, {
+  Set<String> voices = const {},
+  Duration? autoAdvanceDelay,
+}) {
+  return TestCubit(
+    vocabulary,
+    history,
+    tts: FakeTtsService(voices: voices),
+    autoAdvanceDelay: autoAdvanceDelay,
+  );
+}

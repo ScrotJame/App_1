@@ -12,6 +12,7 @@ import 'package:test_abc/repository/learning_history_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
 
 import '../../repository/backup_test_support.dart';
+import 'test_word_support.dart';
 
 /// What a finished test pays, and that it can only be finished once.
 void main() {
@@ -38,9 +39,9 @@ void main() {
     final total = cubit.state.questions.length;
     for (var i = 0; i < total; i++) {
       final question = cubit.state.questions[i];
-      cubit.selectAnswer(i < correctAnswers
-          ? question.correctIndex
-          : (question.correctIndex + 1) % question.choices.length);
+      cubit.submitAnswer(i < correctAnswers
+          ? correctAnswerFor(question)
+          : wrongAnswerFor(question));
       cubit.nextQuestion();
     }
     await waitForResult();
@@ -72,7 +73,7 @@ void main() {
       await vocabulary.insertWord(word: '魚', meaning: 'fish'),
     ];
 
-    cubit = TestCubit(vocabulary, history);
+    cubit = newTestCubit(vocabulary, history);
     addTearDown(cubit.close);
     cubit.toggleTimer(false);
   });
@@ -164,10 +165,10 @@ void main() {
       await cubit.startTest();
       final total = cubit.state.questions.length;
       for (var i = 0; i < total - 1; i++) {
-        cubit.selectAnswer(cubit.state.questions[i].correctIndex);
+        cubit.submitAnswer(correctAnswerFor(cubit.state.questions[i]));
         cubit.nextQuestion();
       }
-      cubit.selectAnswer(cubit.state.questions[total - 1].correctIndex);
+      cubit.submitAnswer(correctAnswerFor(cubit.state.questions[total - 1]));
 
       // The timer running out and the tap on "next" arriving together.
       cubit.nextQuestion();
@@ -187,12 +188,12 @@ void main() {
       await cubit.startTest();
       final total = cubit.state.questions.length;
       for (var i = 0; i < total; i++) {
-        cubit.selectAnswer(cubit.state.questions[i].correctIndex);
+        cubit.submitAnswer(correctAnswerFor(cubit.state.questions[i]));
         cubit.nextQuestion();
       }
       final scoreAtEnd = cubit.state.score;
 
-      cubit.selectAnswer(0);
+      cubit.submitAnswer(const ChoiceAnswer(0));
       await waitForResult();
 
       expect(cubit.state.score, scoreAtEnd);
@@ -204,7 +205,7 @@ void main() {
       UserSession.instance.clear();
       final total = cubit.state.questions.length;
       for (var i = 0; i < total; i++) {
-        cubit.selectAnswer(cubit.state.questions[i].correctIndex);
+        cubit.submitAnswer(correctAnswerFor(cubit.state.questions[i]));
         cubit.nextQuestion();
       }
       await waitForResult();

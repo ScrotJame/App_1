@@ -23,6 +23,7 @@ import 'package:test_abc/service/alarm_service.dart';
 import 'package:test_abc/service/tts_service.dart';
 
 import '../../repository/backup_test_support.dart';
+import '../test_word/test_word_support.dart';
 
 /// The screens that move a word's progress, driven end to end: they all go
 /// through the word's level, and there is one review reminder for the app.
@@ -96,7 +97,7 @@ void main() {
     late TestCubit cubit;
 
     setUp(() {
-      cubit = TestCubit(vocabulary, history);
+      cubit = newTestCubit(vocabulary, history);
       addTearDown(cubit.close);
       cubit.toggleTimer(false);
     });
@@ -109,9 +110,9 @@ void main() {
       for (var i = 0; i < total; i++) {
         final question = cubit.state.questions[i];
         final correct = isCorrect?.call(question.word.word.id) ?? true;
-        cubit.selectAnswer(correct
-            ? question.correctIndex
-            : (question.correctIndex + 1) % question.choices.length);
+        cubit.submitAnswer(correct
+            ? correctAnswerFor(question)
+            : wrongAnswerFor(question));
         cubit.nextQuestion();
       }
       for (var i = 0; i < 200; i++) {
