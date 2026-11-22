@@ -188,7 +188,21 @@ class TestCubit extends Cubit<TestState> {
 
   // ─── START TEST ────────────────────────────────────────────────────────────
 
+  /// True while a test is being built, so a second tap on Start (the data
+  /// may still be loading) cannot build a second one.
+  bool _starting = false;
+
   Future<void> startTest() async {
+    if (_starting) return;
+    _starting = true;
+    try {
+      await _buildTest();
+    } finally {
+      _starting = false;
+    }
+  }
+
+  Future<void> _buildTest() async {
     await ready;
     if (isClosed) return;
     _stopTimers();

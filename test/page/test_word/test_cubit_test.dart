@@ -182,6 +182,33 @@ void main() {
           everyElement((correct: 1, total: 1)));
     });
 
+    test('two quick taps on Start build one test', () async {
+      final cubit = newTestCubit(vocabulary, history);
+      addTearDown(cubit.close);
+      cubit.toggleTimer(false);
+      var testingEmissions = 0;
+      final sub = cubit.stream
+          .where((s) => s.phase == TestPhase.testing)
+          .listen((_) => testingEmissions++);
+      addTearDown(sub.cancel);
+
+      await Future.wait([cubit.startTest(), cubit.startTest()]);
+      await pumpEventQueue();
+
+      expect(testingEmissions, 1);
+      expect(cubit.state.phase, TestPhase.testing);
+    });
+
+    test('retry builds a new test after one was started', () async {
+      final cubit = await cubitWith();
+      await cubit.startTest();
+      cubit.goToConfig();
+
+      await cubit.retryTest();
+
+      expect(cubit.state.phase, TestPhase.testing);
+    });
+
     test('a second answer to the same question is ignored', () async {
       final cubit = await cubitWith();
       await cubit.startTest();
