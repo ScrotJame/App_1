@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:test_abc/commons/enums.dart';
@@ -308,6 +309,159 @@ void main() {
       await cubit.startTest();
 
       expect(cubit.state.remainingSeconds, 20);
+    });
+  });
+
+  group('grading', () {
+    DateTime? clock;
+    late TestCubit cubit;
+
+    Future<List<VocabularyEntry>> allWords() =>
+        db.select(db.vocabularyEntries).get();
+
+    Future<VocabularyEntry> wordNamed(String word) =>
+        (db.select(db.vocabularyEntries)..where((t) => t.word.equals(word)))
+            .getSingle();
+
+    Future<void> setLevel(String word, int level) async {
+      await (db.update(db.vocabularyEntries)
+            ..where((t) => t.word.equals(word)))
+          .write(VocabularyEntriesCompanion(
+        level: Value(level),
+        lastReviewed:
+            Value((clock ?? DateTime.now()).subtract(const Duration(days: 30))),
+      ));
+    }
+
+    /// Makes every word look like its last review was long ago.
+    Future<void> restAll() async {
+      for (final w in await allWords()) {
+        await (db.update(db.vocabularyEntries)..where((t) => t.id.equals(w.id)))
+            .write(VocabularyEntriesCompanion(
+          lastReviewed: Value(
+              (clock ?? DateTime.now()).subtract(const Duration(days: 30))),
+        ));
+      }
+    }
+
+    Future<void> waitForResult() async {
+      for (var i = 0; i < 200; i++) {
+        if (cubit.state.phase == TestPhase.result) return;
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+      fail('The test never reached the result screen.');
+    }
+
+    /// [isCorrect] decides the answer by word; every answer is right if null.
+    Future<void> takeTest({bool Function(String word)? isCorrect}) async {
+      await cubit.startTest();
+      for (var i = 0; i < cubit.state.questions.length; i++) {
+        final question = cubit.state.questions[i];
+        final right = isCorrect?.call(question.entry.word) ?? true;
+        cubit.submitAnswer(
+            right ? correctAnswerFor(question) : wrongAnswerFor(question));
+        cubit.nextQuestion();
+      }
+      await waitForResult();
+    }
+
+    setUp(() {
+      clock = DateTime(2026, 11, 22, 10);
+      cubit = newTestCubit(vocabulary, history, now: () => clock ?? DateTime.now());
+      addTearDown(cubit.close);
+      cubit.toggleTimer(false);
+    });
+
+    test('a word levels up at most once a day through Test', () async {
+      await takeTest();
+      await restAll();
+
+      await takeTest();
+
+      expect((await allWords()).map((w) => w.level), everyElement(1));
+      expect(cubit.state.leveledUpWords, isEmpty);
+      expect(cubit.state.cappedCount, 4);
+      expect(cubit.state.notDueCount, 0);
+      expect(cubit.state.xpEarned, 0);
+    });
+
+    test('the next day the word can level up again', () async {
+      await takeTest();
+      clock = DateTime(2026, 11, 23, 10);
+
+      await takeTest();
+
+      expect((await allWords()).map((w) => w.level), everyElement(2));
+      expect(cubit.state.leveledUpWords, hasLength(4));
+    });
+
+    test('a wrong answer lowers the level by one', () async {
+      await setLevel('猫', 3);
+
+      await takeTest(isCorrect: (w) => w != '猫');
+
+      expect((await wordNamed('猫')).level, 2);
+      final down = cubit.state.leveledDownWords.single;
+      expect(down.previousLevel, 3);
+      expect(down.word.level, 2);
+    });
+
+    test('a word lowered before it levelled up keeps its chance today',
+        () async {
+      await setLevel('猫', 2);
+      await takeTest(isCorrect: (w) => w != '猫');
+      await restAll();
+
+      await takeTest();
+
+      expect((await wordNamed('猫')).level, 2);
+      expect(cubit.state.leveledUpWords.map((c) => c.word.word),
+          contains('猫'));
+    });
+
+    test('a word that levelled up today cannot climb back after a miss',
+        () async {
+      await takeTest();
+      await takeTest(isCorrect: (w) => w != '猫');
+      await restAll();
+
+      await takeTest();
+
+      expect((await wordNamed('猫')).level, 0);
+      expect(cubit.state.cappedCount, 4);
+    });
+
+    test('the level-down note shows the first time only', () async {
+      await setLevel('猫', 3);
+      await takeTest(isCorrect: (w) => w != '猫');
+      expect(cubit.state.showLevelDownExplanation, isTrue);
+
+      await setLevel('猫', 3);
+      await takeTest(isCorrect: (w) => w != '猫');
+      expect(cubit.state.showLevelDownExplanation, isFalse);
+    });
+
+    test('the daily marks survive a new cubit', () async {
+      await takeTest();
+      cubit = newTestCubit(vocabulary, history, now: () => clock ?? DateTime.now());
+      addTearDown(cubit.close);
+      cubit.toggleTimer(false);
+      await restAll();
+
+      await takeTest();
+
+      expect(cubit.state.cappedCount, 4);
+    });
+
+    test('a capped answer is still recorded in the history', () async {
+      await takeTest();
+      await restAll();
+
+      await takeTest();
+
+      final logs = await db.select(db.learningHistoryLogs).get();
+      expect(logs, hasLength(8));
+      expect((await allWords()).map((w) => w.correctCount), everyElement(2));
     });
   });
 }

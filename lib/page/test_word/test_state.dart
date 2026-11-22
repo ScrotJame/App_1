@@ -25,9 +25,12 @@ class TestState extends Equatable {
     this.hintsUsed = 0,
     this.maxHints = 3,
 
-    // Result. leveledUpWords holds each word as stored after it levelled up.
+    // Result. Each change holds the word as stored after it.
     this.leveledUpWords = const [],
+    this.leveledDownWords = const [],
     this.notDueCount = 0,
+    this.cappedCount = 0,
+    this.showLevelDownExplanation = false,
     this.isLevelingUp = false,
     this.xpEarned = 0,
     this.gemsEarned = 0,
@@ -64,10 +67,17 @@ class TestState extends Equatable {
   final int hintsUsed;
   final int maxHints;
 
-  final List<VocabularyEntry> leveledUpWords;
+  final List<WordLevelChange> leveledUpWords;
+  final List<WordLevelChange> leveledDownWords;
 
   /// Correct answers on words that were not due, so the level stayed.
   final int notDueCount;
+
+  /// Correct answers on words that already levelled up through Test today.
+  final int cappedCount;
+
+  /// True the first time a test lowers a level, to explain the rule.
+  final bool showLevelDownExplanation;
   final bool isLevelingUp;
   final int xpEarned;
   final int gemsEarned;
@@ -192,8 +202,11 @@ class TestState extends Equatable {
     Map<int, int>? revealedChars,
     int? hintsUsed,
     int? maxHints,
-    List<VocabularyEntry>? leveledUpWords,
+    List<WordLevelChange>? leveledUpWords,
+    List<WordLevelChange>? leveledDownWords,
     int? notDueCount,
+    int? cappedCount,
+    bool? showLevelDownExplanation,
     bool? isLevelingUp,
     int? xpEarned,
     int? gemsEarned,
@@ -218,7 +231,11 @@ class TestState extends Equatable {
       hintsUsed: hintsUsed ?? this.hintsUsed,
       maxHints: maxHints ?? this.maxHints,
       leveledUpWords: leveledUpWords ?? this.leveledUpWords,
+      leveledDownWords: leveledDownWords ?? this.leveledDownWords,
       notDueCount: notDueCount ?? this.notDueCount,
+      cappedCount: cappedCount ?? this.cappedCount,
+      showLevelDownExplanation:
+          showLevelDownExplanation ?? this.showLevelDownExplanation,
       isLevelingUp: isLevelingUp ?? this.isLevelingUp,
       xpEarned: xpEarned ?? this.xpEarned,
       gemsEarned: gemsEarned ?? this.gemsEarned,
@@ -234,8 +251,8 @@ class TestState extends Equatable {
         phase, config, allWords, allTags, availableLanguages, voiceLanguages,
         questions, currentIndex, answers, answerStatuses, score,
         remainingSeconds, eliminatedIndexes, revealedChars, hintsUsed,
-        maxHints, leveledUpWords, notDueCount, isLevelingUp, xpEarned,
-        gemsEarned, loadStatus, errorMessage,
+        maxHints, leveledUpWords, leveledDownWords, notDueCount, cappedCount,
+        showLevelDownExplanation, isLevelingUp, xpEarned, gemsEarned, loadStatus, errorMessage,
       ];
 }
 

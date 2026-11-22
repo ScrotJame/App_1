@@ -67,16 +67,19 @@ class FakeTtsService extends Fake implements TtsService {
 }
 
 /// A cubit that never moves on by itself, unless [autoAdvanceDelay] is set.
+/// [now] drives every date the test writes (levels, history, daily marks).
 TestCubit newTestCubit(
   VocabularyRepository vocabulary,
   LearningHistoryRepository history, {
   Set<String> voices = const {},
   Duration? autoAdvanceDelay,
+  DateTime Function()? now,
 }) {
   return TestCubit(
     vocabulary,
     history,
     tts: FakeTtsService(voices: voices),
     autoAdvanceDelay: autoAdvanceDelay,
+    now: now,
   );
 }

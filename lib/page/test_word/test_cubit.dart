@@ -16,9 +16,11 @@ import '../../repository/vocabulary_repository.dart';
 import '../../service/alarm_service.dart';
 import '../../service/tts_service.dart';
 import 'data/test_config_store.dart';
+import 'data/test_daily_level_store.dart';
 import 'logic/test_answer.dart';
 import 'logic/test_config.dart';
 import 'logic/test_kind_question.dart';
+import 'logic/test_grader.dart';
 import 'logic/test_planner.dart';
 import 'test_kind_text.dart';
 
@@ -34,11 +36,15 @@ class TestCubit extends Cubit<TestState> {
     this._repoHistory, {
     required TtsService tts,
     TestConfigStore? configStore,
+    TestDailyLevelStore? levelStore,
     Random? random,
+    DateTime Function()? now,
     Duration? autoAdvanceDelay = const Duration(seconds: 1),
   })  : _tts = tts,
         _configStore = configStore ?? TestConfigStore(),
+        _levelStore = levelStore ?? TestDailyLevelStore(),
         _rng = random ?? Random(),
+        _now = now ?? DateTime.now,
         _autoAdvanceDelay = autoAdvanceDelay,
         super(const TestState()) {
     ready = _loadConfigData();
@@ -48,7 +54,9 @@ class TestCubit extends Cubit<TestState> {
   final LearningHistoryRepository _repoHistory;
   final TtsService _tts;
   final TestConfigStore _configStore;
+  final TestDailyLevelStore _levelStore;
   final Random _rng;
+  final DateTime Function() _now;
 
   /// Wait after a correct answer before moving on. Null: wait for "next".
   final Duration? _autoAdvanceDelay;
@@ -248,7 +256,10 @@ class TestCubit extends Cubit<TestState> {
         eliminatedIndexes: const {},
         revealedChars: const {},
         leveledUpWords: const [],
+        leveledDownWords: const [],
         notDueCount: 0,
+        cappedCount: 0,
+        showLevelDownExplanation: false,
         xpEarned: 0,
         gemsEarned: 0,
         isLevelingUp: false,
@@ -336,9 +347,9 @@ class TestCubit extends Cubit<TestState> {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // FINISH → LEVEL UP
-  // Một câu đúng chỉ +1 level khi từ đã đến hạn ôn; câu sai tính lại thời
-  // gian chờ. Level, status và totalLearned đều do repository ghi.
+  // FINISH
+  // Đúng: +1 level khi từ đến hạn, tối đa 1 lần/ngày/từ qua Test. Đúng khi
+  // từ đã lên hôm nay: chỉ ghi history. Sai hoặc hết giờ: hạ 1 level.
   // Phần thưởng chỉ tính trên các từ vừa lên level.
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -356,7 +367,10 @@ class TestCubit extends Cubit<TestState> {
       emit(state.copyWith(
         phase: TestPhase.result,
         leveledUpWords: const [],
+        leveledDownWords: const [],
         notDueCount: 0,
+        cappedCount: 0,
+        showLevelDownExplanation: false,
         xpEarned: 0,
         gemsEarned: 0,
         isLevelingUp: false,
@@ -364,23 +378,36 @@ class TestCubit extends Cubit<TestState> {
       return;
     }
 
-    final leveledUpWords = <VocabularyEntry>[];
-    int notDueCount = 0;
+    final now = _now();
+    final leveledToday = await _levelStore.leveledToday(userKey, now);
+    final leveledUp = <WordLevelChange>[];
+    final leveledDown = <WordLevelChange>[];
+    var notDueCount = 0;
+    var cappedCount = 0;
 
     for (final entry in state.answerStatuses.entries) {
-      final vocabEntry = state.questions[entry.key].entry;
+      final wordId = state.questions[entry.key].entry.id;
+      final action = TestGrader.actionFor(
+        isCorrect: entry.value == AnswerStatus.correct,
+        leveledToday: leveledToday.contains(wordId),
+      );
 
       try {
-        if (entry.value == AnswerStatus.correct) {
-          final change = await _repo.levelUpIfDue(vocabEntry.id, userKey);
+        if (action == GradeAction.levelUp) {
+          final change = await _repo.levelUpIfDue(wordId, userKey, now: now);
           if (change == null) continue;
           if (change.leveledUp) {
-            leveledUpWords.add(change.word);
+            leveledUp.add(change);
+            leveledToday.add(wordId);
+            await _levelStore.markLeveled(userKey, wordId, now);
           } else {
             notDueCount++;
           }
+        } else if (action == GradeAction.recordOnly) {
+          cappedCount++;
         } else {
-          await _repo.restartReviewWait(vocabEntry.id, userKey);
+          final change = await _repo.levelDown(wordId, userKey, now: now);
+          if (change != null && change.leveledDown) leveledDown.add(change);
         }
       } catch (_) {
         // Một từ lỗi không được chặn các từ còn lại.
@@ -399,24 +426,34 @@ class TestCubit extends Cubit<TestState> {
           wordLevelSnapshot: vocabEntry.level,
           sessionType: SessionType.test,
           isCorrect: entry.value == AnswerStatus.correct,
+          now: now,
         );
       }
     } catch (_) {
       // Không block flow chính nếu log history thất bại
     }
 
+    var explainLevelDown = false;
+    if (leveledDown.isNotEmpty && !await _configStore.isLevelDownExplained()) {
+      explainLevelDown = true;
+      await _configStore.markLevelDownExplained();
+    }
+
     if (isClosed) return;
 
-    // Each entry holds the level the word has just reached.
-    final xpEarned = leveledUpWords.fold<int>(
-        0, (sum, word) => sum + TestState.xpForLevel(word.level));
-    final gemsEarned = leveledUpWords.fold<int>(
-        0, (sum, word) => sum + TestState.gemsForLevel(word.level));
+    // Each change holds the level the word has just reached.
+    final xpEarned = leveledUp.fold<int>(
+        0, (sum, change) => sum + TestState.xpForLevel(change.word.level));
+    final gemsEarned = leveledUp.fold<int>(
+        0, (sum, change) => sum + TestState.gemsForLevel(change.word.level));
 
     emit(state.copyWith(
       phase: TestPhase.result,
-      leveledUpWords: leveledUpWords,
+      leveledUpWords: leveledUp,
+      leveledDownWords: leveledDown,
       notDueCount: notDueCount,
+      cappedCount: cappedCount,
+      showLevelDownExplanation: explainLevelDown,
       xpEarned: xpEarned,
       gemsEarned: gemsEarned,
       isLevelingUp: false,
@@ -473,7 +510,10 @@ class TestCubit extends Cubit<TestState> {
       revealedChars: const {},
       hintsUsed: 0,
       leveledUpWords: const [],
+      leveledDownWords: const [],
       notDueCount: 0,
+      cappedCount: 0,
+      showLevelDownExplanation: false,
       xpEarned: 0,
       gemsEarned: 0,
       isLevelingUp: false,

@@ -95,9 +95,12 @@ void main() {
 
   group('Test', () {
     late TestCubit cubit;
+    DateTime? clock;
 
     setUp(() {
-      cubit = newTestCubit(vocabulary, history);
+      clock = null;
+      cubit = newTestCubit(vocabulary, history,
+          now: () => clock ?? DateTime.now());
       addTearDown(cubit.close);
       cubit.toggleTimer(false);
     });
@@ -140,18 +143,30 @@ void main() {
       await takeTest();
 
       expect(cubit.state.leveledUpWords, isEmpty);
-      expect(cubit.state.notDueCount, 4);
+      expect(cubit.state.notDueCount, 0);
+      expect(cubit.state.cappedCount, 4);
       expect(cubit.state.correctCount, 4);
     });
 
-    test('the same test counts again after the words have rested', () async {
+    test('resting is not enough to count again on the same day', () async {
       await takeTest();
       await rest(const Duration(minutes: 15));
 
       await takeTest();
 
+      expect(await levels(), [1, 1, 1, 1]);
+      expect(cubit.state.cappedCount, 4);
+    });
+
+    test('the same test counts again the next day', () async {
+      await takeTest();
+      clock = DateTime.now().add(const Duration(days: 1));
+
+      await takeTest();
+
       expect(await levels(), [2, 2, 2, 2]);
-      expect(cubit.state.leveledUpWords.map((w) => w.level), everyElement(2));
+      expect(cubit.state.leveledUpWords.map((c) => c.word.level),
+          everyElement(2));
       expect(cubit.state.notDueCount, 0);
     });
 
@@ -163,7 +178,9 @@ void main() {
       await takeTest();
 
       expect((await word(missed)).level, 0);
-      expect(cubit.state.notDueCount, 4);
+      // The missed word was not levelled up today, but it is not due yet.
+      expect(cubit.state.notDueCount, 1);
+      expect(cubit.state.cappedCount, 3);
     });
 
     test('mastering a word in a test counts it once', () async {

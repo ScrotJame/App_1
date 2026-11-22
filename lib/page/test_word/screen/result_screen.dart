@@ -356,7 +356,8 @@ class ResultScreenState extends State<ResultScreen> {
                 const SizedBox(height: 20),
 
                 if (s.leveledUpWords.isNotEmpty) ...[
-                  _buildLevelUpSection(s.leveledUpWords),
+                  _buildLevelUpSection(
+                      s.leveledUpWords.map((c) => c.word).toList()),
                   const SizedBox(height: 20),
                 ],
 

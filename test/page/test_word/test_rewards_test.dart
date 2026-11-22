@@ -144,7 +144,8 @@ void main() {
       await takeTest(correctAnswers: 4);
 
       expect(cubit.state.leveledUpWords, isEmpty);
-      expect(cubit.state.notDueCount, 4);
+      expect(cubit.state.notDueCount, 0);
+      expect(cubit.state.cappedCount, 4);
       expect(cubit.state.xpEarned, 0);
       expect(cubit.state.gemsEarned, 0);
     });
