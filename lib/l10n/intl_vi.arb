@@ -424,6 +424,8 @@
   "unknown_error": "Lỗi không xác định",
   "user_not_found": "Không tìm thấy user",
   "batch_missing_fields": "{count} từ đang thiếu Từ vựng hoặc Nghĩa",
+  "batch_saved_count": "Đã lưu {count} từ",
+  "batch_saved_with_skipped": "Đã lưu {saved} từ · bỏ qua {skipped} từ trùng",
   "backup_key_missing_retry": "Chưa có backup key. Vui lòng thử lại sau.",
   "backup_key_missing_login_or_enter": "Không lấy được backup key. Vui lòng đăng nhập hoặc nhập key.",
   "backup_key_missing_login": "Không lấy được backup key. Vui lòng đăng nhập.",

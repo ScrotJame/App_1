@@ -7,8 +7,13 @@ class BatchAddWordState extends Equatable {
   /// key = index của item, value = list tagId được chọn
   final Map<int, List<int>> selectedTagIds;
   final LOADSTATUS status;
-  final String? errorMessage;
+
+  /// Words stored by the last successful save.
   final int savedCount;
+
+  /// Items the last successful save left out because the word was already
+  /// stored (same word, meaning and unit) or repeated in the list.
+  final int skippedCount;
   final String? detectedLanguage;
 
   const BatchAddWordState({
@@ -16,8 +21,8 @@ class BatchAddWordState extends Equatable {
     this.tags,
     this.selectedTagIds = const {},
     this.status = LOADSTATUS.INITAL,
-    this.errorMessage,
     this.savedCount = 0,
+    this.skippedCount = 0,
     this.detectedLanguage,
   });
 
@@ -31,8 +36,8 @@ class BatchAddWordState extends Equatable {
     List<Tag>? tags,
     Map<int, List<int>>? selectedTagIds,
     LOADSTATUS? status,
-    String? errorMessage,
     int? savedCount,
+    int? skippedCount,
     String? detectedLanguage,
   }) {
     return BatchAddWordState(
@@ -40,12 +45,12 @@ class BatchAddWordState extends Equatable {
       tags: tags ?? this.tags,
       selectedTagIds: selectedTagIds ?? this.selectedTagIds,
       status: status ?? this.status,
-      errorMessage: errorMessage ?? this.errorMessage,
       savedCount: savedCount ?? this.savedCount,
+      skippedCount: skippedCount ?? this.skippedCount,
       detectedLanguage: detectedLanguage ?? this.detectedLanguage, // 👈 thêm
     );
   }
 
   @override
-  List<Object?> get props => [items, tags, selectedTagIds, status, errorMessage, savedCount, detectedLanguage];
+  List<Object?> get props => [items, tags, selectedTagIds, status, savedCount, skippedCount, detectedLanguage];
 }
