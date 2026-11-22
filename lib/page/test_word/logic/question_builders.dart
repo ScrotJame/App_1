@@ -11,30 +11,30 @@ class QuestionContext {
   QuestionContext({
     required this.allWords,
     required this.voiceLanguages,
-  })  : _meanings = {
-          for (final w in allWords)
-            if (w.word.meaning.trim().isNotEmpty) w.word.meaning.trim(),
-        };
+  });
 
   final List<VocabularyWithTags> allWords;
   final Set<String> voiceLanguages;
-  final Set<String> _meanings;
-
-  /// Distinct meanings that are not [word]'s own.
-  int otherMeaningCount(VocabularyEntry word) =>
-      _meanings.length - (_meanings.contains(word.meaning.trim()) ? 1 : 0);
 
   /// Other words that may be offered as wrong choices for [word]: a different
   /// entry with a different word and a different meaning, so the right answer
   /// stays unique in either direction.
-  List<VocabularyEntry> rivalsOf(VocabularyEntry word) {
+  ///
+  /// With [byReading], an entry that is read the same way is left out too:
+  /// the listening question plays the word, so it would sound identical.
+  List<VocabularyEntry> rivalsOf(VocabularyEntry word,
+      {bool byReading = false}) {
     final text = word.word.trim();
     final meaning = word.meaning.trim();
+    final reading = word.pronunciation?.trim() ?? '';
     return [
       for (final w in allWords)
         if (w.word.id != word.id &&
             w.word.word.trim() != text &&
-            w.word.meaning.trim() != meaning)
+            w.word.meaning.trim() != meaning &&
+            !(byReading &&
+                reading.isNotEmpty &&
+                (w.word.pronunciation?.trim() ?? '') == reading))
           w.word,
     ];
   }
@@ -43,9 +43,13 @@ class QuestionContext {
   int otherWordCount(VocabularyEntry word) =>
       rivalsOf(word).map((w) => w.word.trim()).toSet().length;
 
-  /// Distinct meanings among [rivalsOf].
-  int rivalMeaningCount(VocabularyEntry word) =>
-      rivalsOf(word).map((w) => w.meaning.trim()).toSet().length;
+  /// Distinct non-empty meanings among [rivalsOf].
+  int rivalMeaningCount(VocabularyEntry word, {bool byReading = false}) =>
+      rivalsOf(word, byReading: byReading)
+          .map((w) => w.meaning.trim())
+          .where((m) => m.isNotEmpty)
+          .toSet()
+          .length;
 }
 
 /// Up to [count] distinct, non-empty [candidates] that are not [correct].
@@ -140,7 +144,7 @@ class ListeningQuestionBuilder extends QuestionBuilder {
     return language.isNotEmpty &&
         context.voiceLanguages.contains(language) &&
         word.word.word.trim().isNotEmpty &&
-        context.otherMeaningCount(word.word) >= 3;
+        context.rivalMeaningCount(word.word, byReading: true) >= 3;
   }
 
   @override
@@ -152,9 +156,9 @@ class ListeningQuestionBuilder extends QuestionBuilder {
     final correct = word.word.meaning.trim();
     final distractors = pickDistractors(
       correct: correct,
-      candidates: context.allWords
-          .where((w) => w.word.id != word.word.id)
-          .map((w) => w.word.meaning),
+      candidates: context
+          .rivalsOf(word.word, byReading: true)
+          .map((w) => w.meaning),
       count: 3,
       random: random,
     );
@@ -175,7 +179,7 @@ class TrueFalseQuestionBuilder extends QuestionBuilder {
 
   @override
   bool canBuild(VocabularyWithTags word, QuestionContext context) =>
-      context.otherMeaningCount(word.word) >= 1;
+      context.rivalMeaningCount(word.word) >= 1;
 
   @override
   TestQuestion build(
@@ -190,9 +194,7 @@ class TrueFalseQuestionBuilder extends QuestionBuilder {
     }
     final others = pickDistractors(
       correct: meaning,
-      candidates: context.allWords
-          .where((w) => w.word.id != word.word.id)
-          .map((w) => w.word.meaning),
+      candidates: context.rivalsOf(word.word).map((w) => w.meaning),
       count: 1,
       random: random,
     );

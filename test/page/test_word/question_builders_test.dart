@@ -111,6 +111,26 @@ void main() {
       expect(q.grade(ChoiceAnswer(q.correctIndex)), isTrue);
     });
 
+    test('never offers another entry of the same word as a wrong meaning',
+        () {
+      final pool = [
+        ...words.take(4),
+        entry(8, '猫', 'kitty', pronunciation: 'ねこ', language: 'ja'),
+        entry(9, '蛙', 'frog', language: 'ja'),
+      ];
+      for (var seed = 0; seed < 30; seed++) {
+        final q = builder.build(cat, contextOf(pool), Random(seed))
+            as ListeningQuestion;
+        expect(q.choices, isNot(contains('kitty')));
+      }
+      // Without the twin only dog, bird and fish remain, still enough.
+      expect(builder.canBuild(cat, contextOf(pool)), isTrue);
+      expect(
+        builder.canBuild(cat, contextOf([...words.take(3), pool[4]])),
+        isFalse,
+      );
+    });
+
     test('needs a language with a voice', () {
       expect(builder.canBuild(cat, contextOf(words)), isTrue);
       expect(builder.canBuild(cat, contextOf(words, voices: {})), isFalse);
@@ -141,6 +161,23 @@ void main() {
         expect(q.grade(BoolAnswer(!q.isMatch)), isFalse);
       }
       expect(matches, {true, false});
+    });
+
+    test('never shows another entry of the same word as a mismatch', () {
+      final pool = [
+        cat,
+        entry(8, '猫', 'kitty', language: 'ja'),
+        words[1],
+      ];
+      for (var seed = 0; seed < 40; seed++) {
+        final q = builder.build(cat, contextOf(pool), Random(seed))
+            as TrueFalseQuestion;
+        expect(q.shownMeaning, isNot('kitty'));
+      }
+      expect(
+        builder.canBuild(cat, contextOf([cat, pool[1]])),
+        isFalse,
+      );
     });
 
     test('needs at least one other meaning', () {
