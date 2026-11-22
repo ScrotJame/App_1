@@ -57,15 +57,43 @@ void main() {
       expect(builder.canBuild(cat, contextOf(words.take(3).toList())), isFalse);
     });
 
-    test('a word sharing the meaning is never a second right answer', () {
+    test('a synonym is never a second right answer, in either direction', () {
       final pool = [...words, entry(6, 'ネコ', 'cat')];
-      for (var seed = 0; seed < 30; seed++) {
+      final directions = <QuestionType>{};
+      for (var seed = 0; seed < 60; seed++) {
         final q =
             builder.build(cat, contextOf(pool), Random(seed)) as ChoiceQuestion;
+        directions.add(q.direction);
         if (q.asksMeaning) {
           expect(q.choices.where((c) => c == 'cat'), hasLength(1));
+        } else {
+          expect(q.choices, isNot(contains('ネコ')));
+          expect(q.choices.where((c) => c == '猫'), hasLength(1));
         }
       }
+      expect(directions, {QuestionType.wordToMeaning, QuestionType.meaningToWord});
+    });
+
+    test('needs 3 rivals with different meanings, not only 3 other words', () {
+      final synonymPool = [
+        cat,
+        entry(2, '犬', 'dog'),
+        entry(3, '鳥', 'bird'),
+        entry(6, 'ネコ', 'cat'),
+      ];
+      expect(builder.canBuild(cat, contextOf(synonymPool)), isFalse);
+      expect(
+        builder.canBuild(cat, contextOf([...synonymPool, entry(4, '魚', 'fish')])),
+        isTrue,
+      );
+
+      final sharedMeaningPool = [
+        cat,
+        entry(2, '犬', 'dog'),
+        entry(7, 'ワン', 'dog'),
+        entry(3, '鳥', 'bird'),
+      ];
+      expect(builder.canBuild(cat, contextOf(sharedMeaningPool)), isFalse);
     });
   });
 

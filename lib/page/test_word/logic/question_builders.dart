@@ -14,24 +14,38 @@ class QuestionContext {
   })  : _meanings = {
           for (final w in allWords)
             if (w.word.meaning.trim().isNotEmpty) w.word.meaning.trim(),
-        },
-        _words = {
-          for (final w in allWords)
-            if (w.word.word.trim().isNotEmpty) w.word.word.trim(),
         };
 
   final List<VocabularyWithTags> allWords;
   final Set<String> voiceLanguages;
   final Set<String> _meanings;
-  final Set<String> _words;
 
   /// Distinct meanings that are not [word]'s own.
   int otherMeaningCount(VocabularyEntry word) =>
       _meanings.length - (_meanings.contains(word.meaning.trim()) ? 1 : 0);
 
-  /// Distinct words that are not [word] itself.
+  /// Other words that may be offered as wrong choices for [word]: a different
+  /// entry with a different word and a different meaning, so the right answer
+  /// stays unique in either direction.
+  List<VocabularyEntry> rivalsOf(VocabularyEntry word) {
+    final text = word.word.trim();
+    final meaning = word.meaning.trim();
+    return [
+      for (final w in allWords)
+        if (w.word.id != word.id &&
+            w.word.word.trim() != text &&
+            w.word.meaning.trim() != meaning)
+          w.word,
+    ];
+  }
+
+  /// Distinct word texts among [rivalsOf].
   int otherWordCount(VocabularyEntry word) =>
-      _words.length - (_words.contains(word.word.trim()) ? 1 : 0);
+      rivalsOf(word).map((w) => w.word.trim()).toSet().length;
+
+  /// Distinct meanings among [rivalsOf].
+  int rivalMeaningCount(VocabularyEntry word) =>
+      rivalsOf(word).map((w) => w.meaning.trim()).toSet().length;
 }
 
 /// Up to [count] distinct, non-empty [candidates] that are not [correct].
@@ -82,8 +96,8 @@ class ChoiceQuestionBuilder extends QuestionBuilder {
 
   @override
   bool canBuild(VocabularyWithTags word, QuestionContext context) =>
-      context.otherMeaningCount(word.word) >= 3 &&
-      context.otherWordCount(word.word) >= 3;
+      context.otherWordCount(word.word) >= 3 &&
+      context.rivalMeaningCount(word.word) >= 3;
 
   @override
   TestQuestion build(
@@ -100,9 +114,7 @@ class ChoiceQuestionBuilder extends QuestionBuilder {
     final correct = answerOf(word.word).trim();
     final distractors = pickDistractors(
       correct: correct,
-      candidates: context.allWords
-          .where((w) => w.word.id != word.word.id)
-          .map((w) => answerOf(w.word)),
+      candidates: context.rivalsOf(word.word).map(answerOf),
       count: 3,
       random: random,
     );
