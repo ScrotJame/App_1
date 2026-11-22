@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../commons/app_colors.dart';
 import '../../../commons/enums.dart';
 import '../../../generated/l10n.dart';
-import '../../../helper/language_helper.dart';
 import '../../../service/tts_service.dart';
 import '../../daily_review/widgets/daily_review_banner.dart';
 import '../test_cubit.dart';
@@ -222,7 +221,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                 ),
                 for (final language in state.availableLanguages)
                   ConfigChip(
-                    label: LanguageHelper.getDetectedLanguageLabel(language),
+                    label: _languageLabel(language),
                     selected: cfg.selectedLanguage == language,
                     onTap: () => _cubit.setLanguageFilter(language),
                   ),
@@ -238,6 +237,15 @@ class _ConfigScreenState extends State<ConfigScreen>
         WordFilter.all => S.of(context).test_filter_all,
         WordFilter.learned => S.of(context).test_filter_learned,
         WordFilter.notLearned => S.of(context).test_filter_not_learned,
+      };
+
+  String _languageLabel(String code) => switch (code) {
+        'ja' => S.of(context).test_language_ja,
+        'en' => S.of(context).test_language_en,
+        'zh' => S.of(context).test_language_zh,
+        'ko' => S.of(context).test_language_ko,
+        'vi' => S.of(context).test_language_vi,
+        _ => code.toUpperCase(),
       };
 
   // ─── Count ─────────────────────────────────────────────────────────────────

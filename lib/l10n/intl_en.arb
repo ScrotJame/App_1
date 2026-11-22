@@ -547,5 +547,10 @@
   "test_typing_double_time": "Typing questions get twice the time.",
   "test_install_voice": "Install voices",
   "test_no_voice_for_scope": "No voice for these words",
-  "test_start_summary": "Start · {count} questions · {kinds} kinds"
+  "test_start_summary": "Start · {count} questions · {kinds} kinds",
+  "test_language_ja": "🇯🇵 Japanese",
+  "test_language_en": "🇬🇧 English",
+  "test_language_zh": "🇨🇳 Chinese",
+  "test_language_ko": "🇰🇷 Korean",
+  "test_language_vi": "🇻🇳 Vietnamese"
 }

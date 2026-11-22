@@ -548,5 +548,10 @@
   "test_typing_double_time": "Câu gõ từ được gấp đôi thời gian.",
   "test_install_voice": "Cài giọng đọc",
   "test_no_voice_for_scope": "Chưa có giọng đọc cho các từ này",
-  "test_start_summary": "Bắt đầu · {count} câu · {kinds} kiểu"
+  "test_start_summary": "Bắt đầu · {count} câu · {kinds} kiểu",
+  "test_language_ja": "🇯🇵 Tiếng Nhật",
+  "test_language_en": "🇬🇧 Tiếng Anh",
+  "test_language_zh": "🇨🇳 Tiếng Trung",
+  "test_language_ko": "🇰🇷 Tiếng Hàn",
+  "test_language_vi": "🇻🇳 Tiếng Việt"
 }
