@@ -1,415 +1,364 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../commons/app_colors.dart';
 import '../../../commons/enums.dart';
-import '../../../database/app_db.dart';
+import '../../../generated/l10n.dart';
+import '../../../helper/language_helper.dart';
+import '../../../service/tts_service.dart';
 import '../../daily_review/widgets/daily_review_banner.dart';
-import '../test_cubit.dart' hide TimerMode, WordFilter, QuestionType;
+import '../test_cubit.dart';
 import '../widgets/app_bar_widget.dart';
-import '../widgets/button_widget.dart';
-import '../widgets/card_widget.dart';
+import '../widgets/config/config_chip.dart';
+import '../widgets/config/config_section.dart';
+import '../widgets/config/start_bar.dart';
+import '../widgets/config/test_kind_card.dart';
 
 class ConfigScreen extends StatefulWidget {
   const ConfigScreen({super.key});
 
   @override
-  State<ConfigScreen> createState() => ConfigScreenState();
+  State<ConfigScreen> createState() => _ConfigScreenState();
 }
 
-class ConfigScreenState extends State<ConfigScreen> {
-  static const _questionCounts = [5, 10, 15, 20, 30];
+class _ConfigScreenState extends State<ConfigScreen>
+    with WidgetsBindingObserver {
+  static const _muted = TextStyle(fontSize: 12, color: AppColors.kTextMuted);
 
-  static const _totalTimes = [
-    (label: '5 phút',  s: 300),
-    (label: '10 phút', s: 600),
-    (label: '15 phút', s: 900),
-    (label: '20 phút', s: 1200),
-    (label: '30 phút', s: 1800),
-  ];
+  TestCubit get _cubit => context.read<TestCubit>();
 
-  static const _perWordTimes = [
-    (label: '10 giây', s: 10),
-    (label: '15 giây', s: 15),
-    (label: '30 giây', s: 30),
-    (label: '45 giây', s: 45),
-    (label: '60 giây', s: 60),
-  ];
-
-  Widget _buildTypeCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.kBlueBg : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? AppColors.kBlue : AppColors.kBorder,
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 20, color: selected ? AppColors.kBlue : Colors.grey),
-            const SizedBox(height: 6),
-            Text(title,
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: selected ? AppColors.kBlue : Colors.black87)),
-            const SizedBox(height: 2),
-            Text(subtitle,
-                style: TextStyle(
-                    fontSize: 10,
-                    color: selected ? const Color(0xFF3B82F6) : Colors.grey)),
-          ],
-        ),
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
   }
 
-  Widget _buildQuestionTypeSelector({
-    required QuestionType type,
-  }) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildTypeCard(
-            icon: Icons.shuffle_rounded,
-            title: 'Hỗn hợp',
-            subtitle: 'Xáo trộn ngẫu nhiên',
-            selected: type == QuestionType.random,
-            onTap: () {  },
-          ),
-        ),
-      ],
-    );
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
-  Widget _buildWordFilterSelector({
-    required WordFilter filter,
-    required ValueChanged<WordFilter> onChanged,
-  }) {
-    return Row(
-      children: WordFilter.values.map((f) {
-        final label = switch (f) {
-          WordFilter.all        => 'Tất cả',
-          WordFilter.learned    => '⭐ Đã thuộc',
-          WordFilter.notLearned => '📖 Chưa thuộc',
-        };
-        return Padding(
-          padding: const EdgeInsets.only(right: 10),
-          child: _buildChip(
-            label: label,
-            selected: filter == f,
-            onTap: () => onChanged(f),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildTagFilterSelector({
-    required List<Tag> allTags,
-    required List<int> selectedTagIds,
-    required ValueChanged<int> onToggle,
-  }) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: allTags.map((tag) {
-        final sel = selectedTagIds.contains(tag.id);
-        return _buildChip(
-          label: tag.tagName,
-          selected: sel,
-          onTap: () => onToggle(tag.id),
-        );
-      }).toList(),
-    );
-  }
-
-  String _langLabel(String lang) => switch (lang) {
-    'ja' => '🇯🇵 Tiếng Nhật',
-    'en' => '🇬🇧 Tiếng Anh',
-    'zh' => '🇨🇳 Tiếng Trung',
-    'ko' => '🇰🇷 Tiếng Hàn',
-    _    => lang.toUpperCase(),
-  };
-
-  Widget _buildLanguageSelector({
-    required List<String> languages,
-    required String? selected,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        _buildChip(
-          label: 'Tất cả',
-          selected: selected == null,
-          onTap: () => onChanged(null),
-        ),
-        ...languages.map((l) => _buildChip(
-          label: _langLabel(l),
-          selected: selected == l,
-          onTap: () => onChanged(l),
-        )),
-      ],
-    );
-  }
-
-  Widget _buildTimerToggle({
-    required bool enabled,
-    required ValueChanged<bool> onToggle,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.kBorder)),
-      child: Row(
-        children: [
-          Icon(enabled ? Icons.timer_rounded : Icons.timer_off_outlined,
-              color: enabled ? AppColors.kBlue : Colors.grey, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              enabled ? 'Đang bật giới hạn giờ' : 'Không giới hạn thời gian',
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-            ),
-          ),
-          Switch.adaptive(
-              value: enabled, activeColor: AppColors.kBlue, onChanged: onToggle),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimerModeRow({
-    required TimerMode mode,
-    required ValueChanged<TimerMode> onChanged,
-  }) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildTypeCard(
-            icon: Icons.access_time_rounded,
-            title: 'Thời gian tổng',
-            subtitle: 'Một mốc cho cả bài',
-            selected: mode == TimerMode.total,
-            onTap: () => onChanged(TimerMode.total),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _buildTypeCard(
-            icon: Icons.replay_circle_filled_rounded,
-            title: 'Mỗi từ',
-            subtitle: 'Reset sau mỗi câu',
-            selected: mode == TimerMode.perWord,
-            onTap: () => onChanged(TimerMode.perWord),
-          ),
-        ),
-      ],
-    );
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Back from the voice installer: a new voice may be there.
+    if (state == AppLifecycleState.resumed) _cubit.refreshVoices();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.kSurface,
-      appBar: SimpleAppBar('Kiểm tra từ vựng'),
+      appBar: SimpleAppBar(S.of(context).test_config_title),
       body: BlocBuilder<TestCubit, TestState>(
-        builder: (ctx, s) {
-          final c = ctx.read<TestCubit>();
-          final cfg = s.config;
-          final timeOpts =
-          cfg.timerMode == TimerMode.total ? _totalTimes : _perWordTimes;
+        buildWhen: (p, c) =>
+            p.config != c.config ||
+            p.allWords != c.allWords ||
+            p.voiceLanguages != c.voiceLanguages ||
+            p.loadStatus != c.loadStatus ||
+            p.errorMessage != c.errorMessage,
+        builder: (context, state) => Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const DailyReviewBanner(),
+                    const SizedBox(height: 20),
+                    _buildKinds(state),
+                    const SizedBox(height: 24),
+                    _buildScope(state),
+                    const SizedBox(height: 24),
+                    _buildCount(state),
+                    const SizedBox(height: 24),
+                    _buildTime(state),
+                    if (state.loadStatus == LOADSTATUS.FAILED &&
+                        (state.errorMessage ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      _buildError(state.errorMessage ?? ''),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            StartBar(
+              label: _startLabel(state),
+              enabled: state.matchingWordCount > 0,
+              loading: state.loadStatus == LOADSTATUS.LOADING,
+              onTap: () {
+                FocusScope.of(context).unfocus();
+                _cubit.startTest();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  // ─── Kinds ─────────────────────────────────────────────────────────────────
+
+  Widget _buildKinds(TestState state) {
+    final kinds = state.config.kinds;
+    final noVoice = !state.hasVoiceForScope;
+    Widget card(TestKind kind) {
+      final dimmed = kind == TestKind.listening && noVoice;
+      return TestKindCard(
+        kind: kind,
+        selected: kinds.contains(kind),
+        dimmed: dimmed,
+        footer: dimmed ? _buildInstallVoice : null,
+        onTap: () {
+          if (kinds.length == 1 && kinds.contains(kind)) {
+            HapticFeedback.lightImpact();
+          }
+          _cubit.toggleKind(kind);
+        },
+      );
+    }
+
+    Widget row(TestKind left, TestKind right) => IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: card(left)),
+              const SizedBox(width: 10),
+              Expanded(child: card(right)),
+            ],
+          ),
+        );
+
+    return ConfigSection(
+      title: S.of(context).test_section_kinds,
+      icon: Icons.category_outlined,
+      trailing: Text(S.of(context).test_section_kinds_hint, style: _muted),
+      child: Column(
+        children: [
+          row(TestKind.choice, TestKind.typing),
+          const SizedBox(height: 10),
+          row(TestKind.listening, TestKind.trueFalse),
+        ],
+      ),
+    );
+  }
+
+  Widget get _buildInstallVoice => GestureDetector(
+        onTap: () => context.read<TtsService>().openVoiceDataInstaller(),
+        child: Text(
+          S.of(context).test_install_voice,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: AppColors.kBlue,
+            decoration: TextDecoration.underline,
+          ),
+        ),
+      );
+
+  // ─── Scope ─────────────────────────────────────────────────────────────────
+
+  Widget _buildScope(TestState state) {
+    final cfg = state.config;
+    final count = state.matchingWordCount;
+    final short = count < cfg.questionCount;
+    return ConfigSection(
+      title: S.of(context).test_section_scope,
+      icon: Icons.filter_list_rounded,
+      trailing: Text(
+        S.of(context).test_matching_words(count),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: short ? AppColors.kAmber : AppColors.kGreen,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final filter in WordFilter.values)
+                ConfigChip(
+                  label: _filterLabel(filter),
+                  selected: cfg.wordFilter == filter,
+                  onTap: () => _cubit.setWordFilter(filter),
+                ),
+            ],
+          ),
+          if (state.allTags.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(S.of(context).test_section_tags, style: _muted),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
-                const DailyReviewBanner(),
-                const SizedBox(height: 16),
-
-                // Header
-                GradientCard(
-                  child: Row(children: [
-                    const Icon(Icons.school_rounded,
-                        color: Colors.white, size: 34),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Tuỳ chỉnh bài kiểm tra',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700)),
-                          SizedBox(height: 3),
-                          Text('Chọn từ vựng, loại câu hỏi và thời gian',
-                              style: TextStyle(
-                                  color: Colors.white70, fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                  ]),
-                ),
-                const SizedBox(height: 24),
-
-                _sectionTitle('Bộ lọc từ vựng', Icons.filter_list_rounded),
-                const SizedBox(height: 10),
-                _buildWordFilterSelector(
-                  filter: cfg.wordFilter,
-                  onChanged: c.setWordFilter,
-                ),
-                const SizedBox(height: 16),
-
-                if (s.allTags.isNotEmpty) ...[
-                  _sectionTitle('Lọc theo đơn vị / tag', Icons.label_outline),
-                  const SizedBox(height: 10),
-                  _buildTagFilterSelector(
-                    allTags: s.allTags,
-                    selectedTagIds: cfg.selectedTagIds,
-                    onToggle: c.toggleTagFilter,
+                for (final tag in state.allTags)
+                  ConfigChip(
+                    label: tag.tagName,
+                    selected: cfg.selectedTagIds.contains(tag.id),
+                    onTap: () => _cubit.toggleTagFilter(tag.id),
                   ),
-                  const SizedBox(height: 16),
-                ],
-
-                if (s.availableLanguages.isNotEmpty) ...[
-                  _sectionTitle('Ngôn ngữ', Icons.language_rounded),
-                  const SizedBox(height: 10),
-                  _buildLanguageSelector(
-                    languages: s.availableLanguages,
-                    selected: cfg.selectedLanguage,
-                    onChanged: c.setLanguageFilter,
-                  ),
-                  const SizedBox(height: 22),
-                ],
-
-                _sectionTitle('Số câu hỏi', Icons.format_list_numbered_rounded),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: _questionCounts
-                      .map((n) => _buildChip(
-                    label: '$n câu',
-                    selected: cfg.questionCount == n,
-                    onTap: () => c.setQuestionCount(n),
-                  ))
-                      .toList(),
-                ),
-                const SizedBox(height: 22),
-
-                _sectionTitle('Giới hạn thời gian', Icons.timer_outlined),
-                const SizedBox(height: 10),
-                _buildTimerToggle(
-                    enabled: cfg.enableTimer, onToggle: c.toggleTimer),
-
-                if (cfg.enableTimer) ...[
-                  const SizedBox(height: 16),
-                  _sectionTitle('Chế độ đếm giờ', Icons.tune_outlined),
-                  const SizedBox(height: 10),
-                  _buildTimerModeRow(
-                      mode: cfg.timerMode, onChanged: c.setTimerMode),
-                  const SizedBox(height: 16),
-                  _sectionTitle(
-                    cfg.timerMode == TimerMode.total
-                        ? 'Tổng thời gian'
-                        : 'Thời gian mỗi từ',
-                    Icons.hourglass_empty_rounded,
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: timeOpts
-                        .map((o) => _buildChip(
-                      label: o.label,
-                      selected: cfg.timeLimitSeconds == o.s,
-                      onTap: () => c.setTimeLimit(o.s),
-                    ))
-                        .toList(),
-                  ),
-                ],
-                const SizedBox(height: 32),
-
-                if (s.loadStatus == LOADSTATUS.FAILED && s.errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildErrorBanner(s.errorMessage ?? ''),
-                  ),
-                buildPrimaryButton(
-                  label: 'Bắt đầu kiểm tra',
-                  icon: Icons.arrow_forward_rounded,
-                  loading: s.loadStatus == LOADSTATUS.LOADING,
-                  onTap: () => ctx.read<TestCubit>().startTest(),
-                ),
               ],
             ),
-          );
-        },
+          ],
+          if (state.availableLanguages.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(S.of(context).test_section_language, style: _muted),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ConfigChip(
+                  label: S.of(context).test_language_all,
+                  selected: cfg.selectedLanguage == null,
+                  onTap: () => _cubit.setLanguageFilter(null),
+                ),
+                for (final language in state.availableLanguages)
+                  ConfigChip(
+                    label: LanguageHelper.getDetectedLanguageLabel(language),
+                    selected: cfg.selectedLanguage == language,
+                    onTap: () => _cubit.setLanguageFilter(language),
+                  ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
 
-  Widget _buildChip({
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.kBlue : Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-              color: selected ? AppColors.kBlue : AppColors.kBorder,
-              width: selected ? 1.5 : 1),
-          boxShadow: selected
-              ? [
-            BoxShadow(
-                color: AppColors.kBlue.withValues(alpha: 0.2),
-                blurRadius: 6,
-                offset: const Offset(0, 2))
-          ]
-              : [],
-        ),
-        child: Text(label,
-            style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : Colors.black54)),
+  String _filterLabel(WordFilter filter) => switch (filter) {
+        WordFilter.all => S.of(context).test_filter_all,
+        WordFilter.learned => S.of(context).test_filter_learned,
+        WordFilter.notLearned => S.of(context).test_filter_not_learned,
+      };
+
+  // ─── Count ─────────────────────────────────────────────────────────────────
+
+  Widget _buildCount(TestState state) {
+    return ConfigSection(
+      title: S.of(context).test_section_count,
+      icon: Icons.format_list_numbered_rounded,
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final n in TestConfig.questionCountOptions)
+            ConfigChip(
+              label: S.of(context).test_question_count(n),
+              selected: state.config.questionCount == n,
+              onTap: () => _cubit.setQuestionCount(n),
+            ),
+        ],
       ),
     );
   }
 
+  // ─── Time ──────────────────────────────────────────────────────────────────
 
-  Widget _buildErrorBanner(String message) {
+  Widget _buildTime(TestState state) {
+    final cfg = state.config;
+    final perQuestion = cfg.timerMode == TimerMode.perWord;
+    final options = perQuestion
+        ? TestConfig.perQuestionTimeOptions
+        : TestConfig.totalTimeOptions;
+    return ConfigSection(
+      title: S.of(context).test_section_time,
+      icon: Icons.timer_outlined,
+      trailing: Switch.adaptive(
+        value: cfg.enableTimer,
+        activeColor: AppColors.kBlue,
+        onChanged: _cubit.toggleTimer,
+      ),
+      child: !cfg.enableTimer
+          ? Text(S.of(context).test_timer_off, style: _muted)
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    ConfigChip(
+                      label: S.of(context).test_timer_total,
+                      selected: !perQuestion,
+                      onTap: () => _cubit.setTimerMode(TimerMode.total),
+                    ),
+                    ConfigChip(
+                      label: S.of(context).test_timer_per_question,
+                      selected: perQuestion,
+                      onTap: () => _cubit.setTimerMode(TimerMode.perWord),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  perQuestion
+                      ? S.of(context).test_timer_per_question_desc
+                      : S.of(context).test_timer_total_desc,
+                  style: _muted,
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final seconds in options)
+                      ConfigChip(
+                        label: perQuestion
+                            ? S.of(context).test_seconds(seconds)
+                            : S.of(context).test_minutes(seconds ~/ 60),
+                        selected: cfg.timeLimitSeconds == seconds,
+                        onTap: () => _cubit.setTimeLimit(seconds),
+                      ),
+                  ],
+                ),
+                if (perQuestion && cfg.kinds.contains(TestKind.typing)) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded,
+                          size: 14, color: AppColors.kTextMuted),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(S.of(context).test_typing_double_time,
+                            style: _muted),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+    );
+  }
+
+  // ─── Start / error ─────────────────────────────────────────────────────────
+
+  String _startLabel(TestState state) {
+    final cfg = state.config;
+    final base = S
+        .of(context)
+        .test_start_summary(state.plannedQuestionCount, cfg.kinds.length);
+    if (!cfg.enableTimer) return base;
+    final time = cfg.timerMode == TimerMode.total
+        ? S.of(context).test_minutes(cfg.timeLimitSeconds ~/ 60)
+        : S.of(context).test_time_per_question(cfg.timeLimitSeconds);
+    return '$base · $time';
+  }
+
+  Widget _buildError(String message) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF5F5),
+        color: AppColors.kRedBg,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFFECACA)),
+        border: Border.all(color: AppColors.kRed.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -422,20 +371,6 @@ class ConfigScreenState extends State<ConfigScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _sectionTitle(String title, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: AppColors.kBlue),
-        const SizedBox(width: 7),
-        Text(title,
-            style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Colors.black87)),
-      ],
     );
   }
 }

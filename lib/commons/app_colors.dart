@@ -16,6 +16,13 @@ class AppColors {
   static const kSurface = Color(0xFFF5F7FF);
   static const kBorder = Color(0xFFE2E8F0);
   static const textBlack =Color(0xFF000000);
+  static const kGreenBg = Color(0xFFF0FDF4);
+  static const kRedBg = Color(0xFFFFF5F5);
+  static const kAmberBg = Color(0xFFFFFBEB);
+  static const kAmberBorder = Color(0xFFFCD34D);
+  static const kAmberText = Color(0xFF92400E);
+  static const kTextMuted = Color(0xFF64748B);
+  static const kDisabledBg = Color(0xFFF1F5F9);
 
   ///Gradient
   static const LinearGradient mainGradient = LinearGradient(
