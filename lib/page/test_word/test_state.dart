@@ -1,66 +1,6 @@
 part of 'test_cubit.dart';
 
 // ═════════════════════════════════════════════════════════════════════════════
-// ENUMS
-// ═════════════════════════════════════════════════════════════════════════════
-
-// ═════════════════════════════════════════════════════════════════════════════
-// TEST CONFIG
-// ═════════════════════════════════════════════════════════════════════════════
-
-class TestConfig extends Equatable {
-  const TestConfig({
-    this.questionCount = 10,
-    this.timerMode = TimerMode.total,
-    this.timeLimitSeconds = 600,
-    this.enableTimer = true,
-    this.wordFilter = WordFilter.all,
-    this.selectedTagIds = const [],   // rỗng = tất cả tag
-    this.selectedLanguage,            // null = tất cả ngôn ngữ
-  });
-
-  final int questionCount;
-  final TimerMode timerMode;
-  final int timeLimitSeconds;
-  final bool enableTimer;
-  final WordFilter wordFilter;
-
-  /// Lọc theo tag id (unit). Rỗng = không lọc tag
-  final List<int> selectedTagIds;
-
-  /// Lọc theo ngôn ngữ của từ (vd: 'ja', 'en'). null = không lọc
-  final String? selectedLanguage;
-
-  TestConfig copyWith({
-    int? questionCount,
-    TimerMode? timerMode,
-    int? timeLimitSeconds,
-    bool? enableTimer,
-    WordFilter? wordFilter,
-    List<int>? selectedTagIds,
-    Object? selectedLanguage = _sentinel,
-  }) {
-    return TestConfig(
-      questionCount: questionCount ?? this.questionCount,
-      timerMode: timerMode ?? this.timerMode,
-      timeLimitSeconds: timeLimitSeconds ?? this.timeLimitSeconds,
-      enableTimer: enableTimer ?? this.enableTimer,
-      wordFilter: wordFilter ?? this.wordFilter,
-      selectedTagIds: selectedTagIds ?? this.selectedTagIds,
-      selectedLanguage: selectedLanguage == _sentinel
-          ? this.selectedLanguage
-          : selectedLanguage as String?,
-    );
-  }
-
-  @override
-  List<Object?> get props => [
-    questionCount, timerMode, timeLimitSeconds, enableTimer,
-    wordFilter, selectedTagIds, selectedLanguage,
-  ];
-}
-
-// ═════════════════════════════════════════════════════════════════════════════
 // TEST QUESTION
 // ═════════════════════════════════════════════════════════════════════════════
 

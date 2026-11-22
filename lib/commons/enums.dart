@@ -72,6 +72,9 @@ enum TimerMode { total, perWord }
 
 enum QuestionType { wordToMeaning, meaningToWord, random }
 
+/// Kinds of question a Test can mix. The order is the display order.
+enum TestKind { choice, typing, listening, trueFalse }
+
 enum WordFilter { all, learned, notLearned }
 
 enum AnswerStatus { unanswered, correct, incorrect }

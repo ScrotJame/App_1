@@ -14,6 +14,10 @@ import '../../repository/learning_history_repository.dart';
 import '../../service/alarm_service.dart';
 import 'package:test_abc/generated/l10n.dart';
 
+import 'logic/test_config.dart';
+
+export 'logic/test_config.dart';
+
 part 'test_state.dart';
 
 class TestCubit extends Cubit<TestState> {
@@ -107,7 +111,7 @@ class TestCubit extends Cubit<TestState> {
       final allWords = await _repo.watchAllWordsWithTags().first;
       final cfg = state.config;
 
-      var pool = _applyFilters(allWords, cfg);
+      final pool = cfg.filterWords(allWords);
 
       if (pool.length < 4) {
         emit(state.copyWith(
@@ -149,46 +153,6 @@ class TestCubit extends Cubit<TestState> {
         errorMessage: S.current.error_load_data(e.toString()),
       ));
     }
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // FILTER
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  List<VocabularyWithTags> _applyFilters(
-      List<VocabularyWithTags> words,
-      TestConfig cfg,
-      ) {
-    var result = words;
-
-    switch (cfg.wordFilter) {
-      case WordFilter.learned:
-        result = result
-            .where((w) => w.word.level >= WordStatus.masteredLevel)
-            .toList();
-        break;
-      case WordFilter.notLearned:
-        result = result
-            .where((w) => w.word.level < WordStatus.masteredLevel)
-            .toList();
-        break;
-      case WordFilter.all:
-        break;
-    }
-
-    if (cfg.selectedTagIds.isNotEmpty) {
-      result = result.where((w) {
-        return w.tags?.any((t) => cfg.selectedTagIds.contains(t.id) ) ?? false;
-      }).toList();
-    }
-
-    if (cfg.selectedLanguage != null && (cfg.selectedLanguage?.isNotEmpty ?? false)) {
-      result = result
-          .where((w) => w.word.language == cfg.selectedLanguage)
-          .toList();
-    }
-
-    return result;
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
