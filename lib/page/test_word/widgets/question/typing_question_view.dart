@@ -55,6 +55,13 @@ class _TypingQuestionViewState extends State<TypingQuestionView> {
     super.dispose();
   }
 
+  /// Done on the keyboard and the Check button: an empty field is not an
+  /// answer (only "don't know" sends one).
+  void _submitTyped(String text) {
+    if (text.trim().isEmpty) return;
+    _submit(text);
+  }
+
   void _submit(String text) {
     FocusScope.of(context).unfocus();
     widget.onSubmit(text);
@@ -103,7 +110,7 @@ class _TypingQuestionViewState extends State<TypingQuestionView> {
           enableSuggestions: false,
           textAlign: TextAlign.center,
           textInputAction: TextInputAction.done,
-          onSubmitted: answered ? null : _submit,
+          onSubmitted: answered ? null : _submitTyped,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
           decoration: InputDecoration(
             hintText: s.test_typing_hint_text,
@@ -136,7 +143,7 @@ class _TypingQuestionViewState extends State<TypingQuestionView> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => _submit(_controller.text),
+                  onPressed: () => _submitTyped(_controller.text),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.kBlue,
                     elevation: 0,

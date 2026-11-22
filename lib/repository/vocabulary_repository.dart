@@ -61,12 +61,12 @@ abstract class IVocabularyRepository {
   Future<WordLevelChange?> levelUpIfDue(int wordId, String userId,
       {DateTime? now});
 
-  /// A wrong Test answer: the level stays, the wait before the next level-up
-  /// starts over.
+  /// Keeps the level and starts the wait before the next level-up over. No
+  /// longer used by Test (a wrong answer there calls [levelDown]).
   Future<WordLevelChange?> restartReviewWait(int wordId, String userId,
       {DateTime? now});
 
-  /// A wrong answer in the daily review: the level drops by one (never below
+  /// A wrong answer in the daily review or in Test: the level drops by one (never below
   /// 0) and the wait before the next level-up starts over, even at level 0.
   Future<WordLevelChange?> levelDown(int wordId, String userId,
       {DateTime? now});
