@@ -1,5 +1,7 @@
 import 'package:test_abc/database/app_db.dart';
 import 'package:test_abc/models/tag_vocab.dart';
+import 'package:test_abc/page/test_word/logic/test_answer.dart';
+import 'package:test_abc/page/test_word/logic/test_kind_question.dart';
 
 /// A word built in memory, for tests that do not need the database.
 VocabularyWithTags entry(
@@ -34,3 +36,18 @@ VocabularyWithTags entry(
     ],
   );
 }
+
+/// The right answer to [question].
+TestAnswer correctAnswerFor(TestQuestion question) => switch (question) {
+      final MultipleChoiceQuestion q => ChoiceAnswer(q.correctIndex),
+      final TrueFalseQuestion q => BoolAnswer(q.isMatch),
+      final TypingQuestion q => TextAnswer(q.accepted.first),
+    };
+
+/// A wrong answer to [question].
+TestAnswer wrongAnswerFor(TestQuestion question) => switch (question) {
+      final MultipleChoiceQuestion q =>
+        ChoiceAnswer((q.correctIndex + 1) % q.choices.length),
+      final TrueFalseQuestion q => BoolAnswer(!q.isMatch),
+      TypingQuestion() => const TextAnswer('###'),
+    };
