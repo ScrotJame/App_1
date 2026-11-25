@@ -56,15 +56,21 @@ class ScanDraftCubit extends Cubit<ScanDraftState> {
     try {
       final tags = await _tags.getAllTags();
       final units = await _units.getAllUnits();
-      final duplicates = await _findDuplicates(state.draft);
-      if (isClosed || seq != _checkSeq) return;
+      if (isClosed) return;
       emit(state.copyWith(
         tags: tags,
         units: units,
-        duplicates: duplicates,
         loadStatus: LOADSTATUS.SUCCESS,
-        isCheckingDuplicates: false,
       ));
+      final duplicates = await _findDuplicates(state.draft);
+      if (isClosed) return;
+      // Một _apply mới hơn đang giữ cờ kiểm tra trùng và kết quả của nó.
+      if (seq == _checkSeq) {
+        emit(state.copyWith(
+          duplicates: duplicates,
+          isCheckingDuplicates: false,
+        ));
+      }
     } catch (e) {
       if (isClosed) return;
       emit(state.copyWith(loadStatus: LOADSTATUS.FAILED));

@@ -237,4 +237,24 @@ void main() {
     expect(messages, hasLength(1));
     expect(messages.single, contains('disk full'));
   });
+
+  test('đổi thẻ khi đang tải thì màn duyệt vẫn tải xong', () async {
+    final cubit = ScanDraftCubit(
+      VocabularyRepository(db),
+      TagRepository(db),
+      UnitRepository(db),
+      _FakePronunciation(),
+    );
+    addTearDown(cubit.close);
+    cubit.addCard(item('猫', 'cat'));
+
+    final loading = cubit.load();
+    await cubit.setUnit(1, unitId);
+    await loading;
+
+    expect(cubit.state.loadStatus, LOADSTATUS.SUCCESS);
+    expect(cubit.state.units.map((u) => u.id), [unitId]);
+    expect(cubit.state.tags, isNotEmpty);
+    expect(cubit.state.draft.cards.single.pronunciation, 'ねこ');
+  });
 }
