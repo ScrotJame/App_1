@@ -99,6 +99,10 @@ abstract class IVocabularyRepository {
   /// reminder, or null when there is none.
   Future<DateTime?> nextReviewReminderTime({DateTime? now});
 
+  /// When each reviewed word should be reminded, one entry per word with a
+  /// `lastReviewed`, words that are due already included.
+  Future<List<DateTime>> reviewReminderTimes();
+
   Future<void> getLanguageTags();
   Future<List<VocabularyEntry>> getWordsByLanguageTags(String? tags);
 }
@@ -395,6 +399,18 @@ class VocabularyRepository implements IVocabularyRepository {
       if (earliest == null || time.isBefore(earliest)) earliest = time;
     }
     return earliest;
+  }
+
+  @override
+  Future<List<DateTime>> reviewReminderTimes() async {
+    final reviewed = await (_db.select(_db.vocabularyEntries)
+          ..where((t) => t.lastReviewed.isNotNull()))
+        .get();
+    return [
+      for (final word in reviewed)
+        if (word.lastReviewed case final lastReviewed?)
+          SetTimeHelper.reminderTime(word.level, lastReviewed),
+    ];
   }
 
   @override

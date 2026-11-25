@@ -344,4 +344,32 @@ void main() {
       expect(await repo.nextReviewReminderTime(now: t0), isNull);
     });
   });
+
+  group('reviewReminderTimes', () {
+    test('is empty while no word has been reviewed', () async {
+      expect(await repo.reviewReminderTimes(), isEmpty);
+    });
+
+    test('has one time per reviewed word, due ones included', () async {
+      final other = await repo.insertWord(word: '犬', meaning: 'dog');
+      await repo.levelUpIfDue(wordId, userKey, now: t0); // level 1: +15 min
+      await repo.restartReviewWait(other, userKey, now: t0); // level 0: +5 min
+
+      expect(
+        await repo.reviewReminderTimes(),
+        unorderedEquals([
+          t0.add(const Duration(minutes: 15)),
+          t0.add(const Duration(minutes: 5)),
+        ]),
+      );
+    });
+
+    test('forgets a word once it is deleted', () async {
+      await repo.levelUpIfDue(wordId, userKey, now: t0);
+
+      await repo.deleteWord(wordId);
+
+      expect(await repo.reviewReminderTimes(), isEmpty);
+    });
+  });
 }
