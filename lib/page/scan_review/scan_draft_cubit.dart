@@ -51,39 +51,20 @@ class ScanDraftCubit extends Cubit<ScanDraftState> {
 
   /// Gọi mỗi lần mở màn duyệt.
   Future<void> load() async {
-    final seq = ++_checkSeq;
     emit(state.copyWith(loadStatus: LOADSTATUS.LOADING));
-    var published = false;
     try {
       final tags = await _tags.getAllTags();
       final units = await _units.getAllUnits();
       if (isClosed) return;
-      // Giữ thẻ bị chặn tới khi có cảnh báo trùng.
       emit(state.copyWith(
         tags: tags,
         units: units,
         loadStatus: LOADSTATUS.SUCCESS,
-        isCheckingDuplicates: true,
       ));
-      published = true;
-      final duplicates = await _findDuplicates(state.draft);
-      if (isClosed) return;
-      // Một _apply mới hơn đang giữ cờ kiểm tra trùng và kết quả của nó.
-      if (seq == _checkSeq) {
-        emit(state.copyWith(
-          duplicates: duplicates,
-          isCheckingDuplicates: false,
-        ));
-      }
+      await _refreshDuplicates();
     } catch (e) {
       if (isClosed) return;
-      final stale = seq != _checkSeq;
-      // Lỗi của một lần tải cũ không được ghi đè kết quả của _apply mới hơn.
-      if (published && stale) return;
-      emit(state.copyWith(
-        loadStatus: LOADSTATUS.FAILED,
-        isCheckingDuplicates: stale ? state.isCheckingDuplicates : false,
-      ));
+      emit(state.copyWith(loadStatus: LOADSTATUS.FAILED));
       messageController.add(S.current.error_generic(e.toString()));
       return;
     }
@@ -178,10 +159,17 @@ class ScanDraftCubit extends Cubit<ScanDraftState> {
 
   Future<void> _apply(ScanDraft draft) async {
     if (isClosed || draft == state.draft) return;
+    emit(state.copyWith(draft: draft));
+    await _refreshDuplicates();
+  }
+
+  /// Tính lại cảnh báo trùng cho bản nháp hiện tại. Lấy [_checkSeq] và bật cờ
+  /// trong cùng một bước đồng bộ, nên lần kiểm tra mới hơn luôn là người xoá cờ.
+  Future<void> _refreshDuplicates() async {
     final seq = ++_checkSeq;
-    emit(state.copyWith(draft: draft, isCheckingDuplicates: true));
+    emit(state.copyWith(isCheckingDuplicates: true));
     try {
-      final duplicates = await _findDuplicates(draft);
+      final duplicates = await _findDuplicates(state.draft);
       if (isClosed || seq != _checkSeq) return;
       emit(state.copyWith(
           duplicates: duplicates, isCheckingDuplicates: false));

@@ -275,6 +275,8 @@ void main() {
     expect(cubit.state.units.map((u) => u.id), [unitId]);
     expect(cubit.state.tags, isNotEmpty);
     expect(cubit.state.draft.cards.single.pronunciation, 'ねこ');
+    expect(cubit.state.isCheckingDuplicates, isFalse);
+    expect(cubit.state.canKeep, isTrue);
   });
 
   test('chưa kiểm tra trùng xong thì chưa được giữ thẻ', () async {
