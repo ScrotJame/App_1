@@ -10,6 +10,7 @@ class Routes {
   static const String test = '/test';
   static const String shop = '/shop';
   static const String scanVocab = '/scan_vocab';
+  static const String scanReview = '/scan_review';
   static const String streak = '/streak';
   static const String companion = '/companion/:userKey';
   static const String inventory = '/inventory';

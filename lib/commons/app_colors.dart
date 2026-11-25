@@ -82,6 +82,16 @@ class AppColors {
   static const Color gachaFlameRed = Color(0xFFFF4500);
   static const Color gachaFlameOrange = Color(0xFFFF8C00);
   static const Color gachaMagenta = Color(0xFFFF2A85);
+
+  /// Thẻ từ vựng: thêm từ, quét và duyệt thẻ.
+  static const Color vocabPageBg = Color(0xFFF2F4F8);
+  static const Color vocabPurple = Color(0xFF7B6FD4);
+  static const Color vocabBlue = Color(0xFF5B8DEF);
+  static const Color vocabIndigo = Color(0xFF6B7FD4);
+  static const Color vocabOrange = Color(0xFFF4A261);
+
+  /// Nền phía sau ảnh đang quét.
+  static const Color vocabImageBg = Color(0xFF14121C);
 }
 
 class AppCommonColors {

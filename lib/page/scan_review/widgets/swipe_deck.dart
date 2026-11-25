@@ -38,10 +38,9 @@ class _SwipeDeckState extends State<SwipeDeck>
   static const double _thresholdFraction = 0.3;
   static const double _flingVelocity = 700;
 
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 220),
-  )..addListener(_onTick);
+  // Tạo trong initState: nếu để `late final` lười thì lần đầu chạm vào có thể
+  // là trong dispose (thẻ bị thay mà chưa gạt), lúc đó không tạo ticker được.
+  late final AnimationController _controller;
 
   Animation<double>? _animation;
   double _dx = 0;
@@ -87,6 +86,15 @@ class _SwipeDeckState extends State<SwipeDeck>
       _dx = 0;
       _leaving = false;
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    )..addListener(_onTick);
   }
 
   @override
