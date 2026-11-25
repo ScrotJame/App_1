@@ -301,50 +301,6 @@ void main() {
     await check();
   });
 
-  group('nextReviewReminderTime', () {
-    test('is null while no word has been reviewed', () async {
-      expect(await repo.nextReviewReminderTime(now: t0), isNull);
-    });
-
-    test('is the moment the earliest reviewed word becomes due', () async {
-      final other = await repo.insertWord(word: '犬', meaning: 'dog');
-      await repo.levelUpIfDue(wordId, userKey, now: t0); // level 1: +15 min
-      await repo.restartReviewWait(other, userKey, now: t0); // level 0: +5 min
-
-      expect(
-        await repo.nextReviewReminderTime(now: t0),
-        t0.add(const Duration(minutes: 5)),
-      );
-    });
-
-    test('skips words that are due already', () async {
-      final other = await repo.insertWord(word: '犬', meaning: 'dog');
-      await repo.levelUpIfDue(wordId, userKey, now: t0); // due 09:15
-      await repo.restartReviewWait(other, userKey, now: t0); // due 09:05
-
-      expect(
-        await repo.nextReviewReminderTime(
-          now: t0.add(const Duration(minutes: 10)),
-        ),
-        t0.add(const Duration(minutes: 15)),
-      );
-      expect(
-        await repo.nextReviewReminderTime(
-          now: t0.add(const Duration(minutes: 20)),
-        ),
-        isNull,
-      );
-    });
-
-    test('forgets a word once it is deleted', () async {
-      await repo.levelUpIfDue(wordId, userKey, now: t0);
-
-      await repo.deleteWord(wordId);
-
-      expect(await repo.nextReviewReminderTime(now: t0), isNull);
-    });
-  });
-
   group('reviewReminderTimes', () {
     test('is empty while no word has been reviewed', () async {
       expect(await repo.reviewReminderTimes(), isEmpty);

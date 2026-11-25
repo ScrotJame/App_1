@@ -95,10 +95,6 @@ abstract class IVocabularyRepository {
 
   Future<bool> isWordAlreadyMastered(int wordId, String userId);
 
-  /// The earliest moment after [now] at which a reviewed word is worth a
-  /// reminder, or null when there is none.
-  Future<DateTime?> nextReviewReminderTime({DateTime? now});
-
   /// When each reviewed word should be reminded, one entry per word with a
   /// `lastReviewed`, words that are due already included.
   Future<List<DateTime>> reviewReminderTimes();
@@ -381,24 +377,6 @@ class VocabularyRepository implements IVocabularyRepository {
         .getSingleOrNull();
 
     return row?.status == WordStatus.mastered;
-  }
-
-  @override
-  Future<DateTime?> nextReviewReminderTime({DateTime? now}) async {
-    final at = now ?? DateTime.now();
-    final reviewed = await (_db.select(_db.vocabularyEntries)
-          ..where((t) => t.lastReviewed.isNotNull()))
-        .get();
-
-    DateTime? earliest;
-    for (final word in reviewed) {
-      final lastReviewed = word.lastReviewed;
-      if (lastReviewed == null) continue;
-      final time = SetTimeHelper.reminderTime(word.level, lastReviewed);
-      if (!time.isAfter(at)) continue;
-      if (earliest == null || time.isBefore(earliest)) earliest = time;
-    }
-    return earliest;
   }
 
   @override
