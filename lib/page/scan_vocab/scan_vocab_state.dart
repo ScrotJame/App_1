@@ -9,24 +9,29 @@ class OcrBlock extends Equatable {
   final TokenRole role;
   final bool isSelected;
 
+  /// Được chọn bằng vai trò "Từ": app còn tự chia nó thành Từ / Âm.
+  final bool autoRole;
+
   const OcrBlock({
     required this.text,
     required this.boundingBox,
     this.role = TokenRole.none,
     this.isSelected = false,
+    this.autoRole = false,
   });
 
-  OcrBlock copyWith({TokenRole? role, bool? isSelected}) {
+  OcrBlock copyWith({TokenRole? role, bool? isSelected, bool? autoRole}) {
     return OcrBlock(
       text: text,
       boundingBox: boundingBox,
       role: role ?? this.role,
       isSelected: isSelected ?? this.isSelected,
+      autoRole: autoRole ?? this.autoRole,
     );
   }
 
   @override
-  List<Object?> get props => [text, boundingBox, role, isSelected];
+  List<Object?> get props => [text, boundingBox, role, isSelected, autoRole];
 }
 
 class ScannedVocabItem extends Equatable {
@@ -77,6 +82,9 @@ class ScanVocabState extends Equatable {
   /// true khi user đã chọn ngôn ngữ thủ công → auto-detect sẽ không ghi đè
   final bool isLanguageManuallySet;
 
+  /// Chữ người dùng sửa tay, ghi đè chữ lấy từ ảnh của vai trò đó.
+  final Map<TokenRole, String> edits;
+
   const ScanVocabState({
     this.imageSize,
     this.blocks = const [],
@@ -88,23 +96,34 @@ class ScanVocabState extends Equatable {
     this.dragOrigin,
     this.detectedLanguage,
     this.isLanguageManuallySet = false,
+    this.edits = const {},
   });
 
   // ─── Preview từ đang được chọn ────────────────────────────────────────────
-  /// Chữ của các mảnh mang [role], nối theo thứ tự OCR (xem [joinOcrTokens]).
-  String textForRole(TokenRole role) =>
+  static String textOfRole(List<OcrBlock> blocks, TokenRole role) =>
       joinOcrTokens(blocks.where((b) => b.role == role).map((b) => b.text));
 
+  /// Chữ của các mảnh mang [role], nối theo thứ tự OCR (xem [joinOcrTokens]).
+  String textForRole(TokenRole role) => textOfRole(blocks, role);
+
   ScannedVocabItem get currentPreview {
+    final rawWord = textForRole(TokenRole.word);
+    final rawReading =
+        stripBrackets(textForRole(TokenRole.pronunciation));
+    // `X（かな）` chỉ tách khi ảnh chưa cho cách đọc riêng.
+    final split = rawReading.isEmpty ? splitBracketReading(rawWord) : null;
     return ScannedVocabItem(
-      word: textForRole(TokenRole.word),
-      pronunciation: textForRole(TokenRole.pronunciation),
-      meaning: textForRole(TokenRole.meaning),
+      word: edits[TokenRole.word] ?? split?.word ?? rawWord,
+      pronunciation: edits[TokenRole.pronunciation] ??
+          split?.reading ??
+          rawReading,
+      meaning: edits[TokenRole.meaning] ?? textForRole(TokenRole.meaning),
       language: textForRole(TokenRole.language),
     );
   }
 
-  bool get hasAnySelection => blocks.any((b) => b.isSelected);
+  bool get hasAnySelection =>
+      edits.isNotEmpty || blocks.any((b) => b.isSelected);
 
   /// Quét xong nhưng không tìm thấy chữ nào.
   bool get hasNoText => status == SCANSTATUS.scanned && blocks.isEmpty;
@@ -133,6 +152,7 @@ class ScanVocabState extends Equatable {
     String? detectedLanguage,
     bool clearLanguage = false,
     bool? isLanguageManuallySet,
+    Map<TokenRole, String>? edits,
   }) {
     return ScanVocabState(
       imageSize: imageSize ?? this.imageSize,
@@ -145,6 +165,7 @@ class ScanVocabState extends Equatable {
       dragOrigin: clearDragRect ? null : (dragOrigin ?? this.dragOrigin),
       detectedLanguage: clearLanguage ? null : (detectedLanguage ?? this.detectedLanguage),
       isLanguageManuallySet: clearLanguage ? false : (isLanguageManuallySet ?? this.isLanguageManuallySet),
+      edits: edits ?? this.edits,
     );
   }
 
@@ -152,6 +173,6 @@ class ScanVocabState extends Equatable {
   List<Object?> get props => [
     imageSize, blocks, activeRole, vocabItems,
     status, errorMessage, dragRect, dragOrigin,
-    detectedLanguage, isLanguageManuallySet,
+    detectedLanguage, isLanguageManuallySet, edits,
   ];
 }

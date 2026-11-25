@@ -11,6 +11,8 @@ import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 
 import '../../commons/enums.dart';
 import '../../models/model_local/support_language_local.dart';
+import 'logic/japanese_text.dart';
+import 'logic/kanji_role_assigner.dart';
 import 'ocr_text_join.dart';
 import 'package:test_abc/generated/l10n.dart';
 
@@ -53,6 +55,7 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
     emit(state.copyWith(
       status: SCANSTATUS.scanning,
       blocks: [],
+      edits: const {},
       clearError: true,
       clearDragRect: true,
     ));
@@ -119,14 +122,15 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
     );
 
     final updated = state.blocks.map((block) {
-      final overlaps = selInImage.overlaps(block.boundingBox);
-      if (overlaps) {
-        return block.copyWith(isSelected: true, role: state.activeRole);
-      }
-      return block;
+      if (!selInImage.overlaps(block.boundingBox)) return block;
+      return block.copyWith(
+        isSelected: true,
+        role: state.activeRole,
+        autoRole: state.activeRole == TokenRole.word,
+      );
     }).toList();
 
-    emit(state.copyWith(blocks: updated, clearDragRect: true));
+    _applyBlocks(_assignAutoRoles(updated), clearDragRect: true);
     _detectLanguageFromWordBlocks();
   }
 
@@ -184,38 +188,93 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
   void tapBlock(int index) {
     if (index < 0 || index >= state.blocks.length) return;
     final block = state.blocks[index];
-    final updated = List<OcrBlock>.from(state.blocks);
-    if (block.isSelected && block.role == state.activeRole) {
-      updated[index] = block.copyWith(isSelected: false, role: TokenRole.none);
-    } else {
-      updated[index] = block.copyWith(isSelected: true, role: state.activeRole);
-    }
-    emit(state.copyWith(blocks: updated));
+    final deselect = block.isSelected && block.role == state.activeRole;
+    final updated = List<OcrBlock>.of(state.blocks);
+    updated[index] = deselect
+        ? block.copyWith(
+            isSelected: false, role: TokenRole.none, autoRole: false)
+        : block.copyWith(
+            isSelected: true,
+            role: state.activeRole,
+            // Đổi vai trò của mảnh đã chọn là sửa tay: không chia lại nữa.
+            autoRole:
+                !block.isSelected && state.activeRole == TokenRole.word,
+          );
+    _applyBlocks(_assignAutoRoles(updated));
     _detectLanguageFromWordBlocks();
   }
 
-  // ─── Thêm từ hiện tại vào danh sách ─────────────────────────────────────
-  Future<bool> addCurrentItem() async {
-    var preview = state.currentPreview;
-    if (preview.word.trim().isEmpty && preview.meaning.trim().isEmpty) return false;
-
-    if (preview.language.trim().isEmpty) {
-      preview = preview.copyWith(language: state.detectedLanguage ?? '');
+  /// Chia lại Từ / Âm cho các mảnh được chọn bằng vai trò "Từ".
+  List<OcrBlock> _assignAutoRoles(List<OcrBlock> blocks) {
+    final indexes = [
+      for (var i = 0; i < blocks.length; i++)
+        if (blocks[i].isSelected && blocks[i].autoRole) i,
+    ];
+    if (indexes.isEmpty) return blocks;
+    final roles = assignKanjiRoles([
+      for (final i in indexes)
+        OcrFragment(blocks[i].text, blocks[i].boundingBox),
+    ]);
+    final result = List<OcrBlock>.of(blocks);
+    for (var k = 0; k < indexes.length; k++) {
+      result[indexes[k]] = result[indexes[k]].copyWith(role: roles[k]);
     }
+    return result;
+  }
 
-    final newItems = List<ScannedVocabItem>.from(state.vocabItems)..add(preview);
-    final cleared = state.blocks
-        .map((b) => b.copyWith(isSelected: false, role: TokenRole.none))
-        .toList();
+  /// Đổi lựa chọn; chữ sửa tay của vai trò có mảnh thay đổi bị bỏ.
+  void _applyBlocks(List<OcrBlock> blocks, {bool clearDragRect = false}) {
+    final edits = Map<TokenRole, String>.of(state.edits)
+      ..removeWhere((role, _) =>
+          state.textForRole(role) !=
+          ScanVocabState.textOfRole(blocks, role));
+    emit(state.copyWith(
+      blocks: blocks,
+      edits: edits,
+      clearDragRect: clearDragRect,
+    ));
+  }
+
+  // ─── Sửa tay một ô xem trước ────────────────────────────────────────────
+  void editField(TokenRole role, String value) {
+    emit(state.copyWith(edits: {...state.edits, role: value.trim()}));
+    if (role == TokenRole.word) _detectLanguageFromWordBlocks();
+  }
+
+  // ─── Lấy từ đang chọn ra và làm trống lựa chọn ──────────────────────────
+  /// null khi chưa có cả từ lẫn nghĩa.
+  ScannedVocabItem? takeCurrentItem() {
+    var preview = state.currentPreview;
+    if (preview.word.trim().isEmpty && preview.meaning.trim().isEmpty) {
+      return null;
+    }
+    if (preview.language.trim().isEmpty) {
+      final language = state.isLanguageManuallySet
+          ? state.detectedLanguage
+          : resolveLanguage(preview.word, state.detectedLanguage);
+      preview = preview.copyWith(language: language ?? '');
+    }
     // Ngôn ngữ chọn tay được giữ cho tới khi chọn "Tự động" hoặc đổi ảnh.
     emit(state.copyWith(
-      vocabItems: newItems,
-      blocks: cleared,
+      blocks: _unselected(state.blocks),
+      edits: const {},
       clearLanguage: !state.isLanguageManuallySet,
     ));
-    await _detectLanguageFromWordBlocks();
+    _detectLanguageFromWordBlocks();
+    return preview;
+  }
+
+  Future<bool> addCurrentItem() async {
+    final item = takeCurrentItem();
+    if (item == null) return false;
+    emit(state.copyWith(vocabItems: [...state.vocabItems, item]));
     return true;
   }
+
+  List<OcrBlock> _unselected(List<OcrBlock> blocks) => blocks
+      .map((b) => b.copyWith(
+          isSelected: false, role: TokenRole.none, autoRole: false))
+      .toList();
 
   void setLanguageManually(String langCode) {
     _languageSeq++;
@@ -234,46 +293,52 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
   Future<void> _detectLanguageFromWordBlocks() async {
     if (state.isLanguageManuallySet) return;
 
-    await _autoDetectLanguage(state.textForRole(TokenRole.word));
+    await _autoDetectLanguage(state.currentPreview.word);
   }
 
   Future<void> _autoDetectLanguage(String text) async {
     if (isClosed) return;
     final seq = ++_languageSeq;
-    if (text.trim().length < 2) {
-      emit(state.copyWith(clearLanguage: true));
+    final trimmed = text.trim();
+    if (trimmed.length < 2) {
+      final quick = resolveLanguage(trimmed, null);
+      emit(state.copyWith(
+          detectedLanguage: quick, clearLanguage: quick == null));
       return;
     }
+    String? detected;
     try {
-      final lang = await _languageDetector.identify(text.trim());
-      // Có lần nhận diện mới hơn, người dùng đã chọn tay, hoặc cubit đã đóng.
-      if (isClosed || seq != _languageSeq || state.isLanguageManuallySet) return;
-      emit(state.copyWith(
-        detectedLanguage: lang,
-        clearLanguage: lang == null,
-        isLanguageManuallySet: false,
-      ));
+      detected = await _languageDetector.identify(trimmed);
     } catch (_) {
-      if (isClosed || seq != _languageSeq || state.isLanguageManuallySet) return;
-      emit(state.copyWith(clearLanguage: true));
+      detected = null;
     }
+    // Có lần nhận diện mới hơn, người dùng đã chọn tay, hoặc cubit đã đóng.
+    if (isClosed || seq != _languageSeq || state.isLanguageManuallySet) return;
+    final language = resolveLanguage(trimmed, detected);
+    emit(state.copyWith(
+      detectedLanguage: language,
+      clearLanguage: language == null,
+      isLanguageManuallySet: false,
+    ));
   }
 
   Future<void> detectLanguage(String text) => _autoDetectLanguage(text);
 
   void clearRole(TokenRole role) {
     final cleared = state.blocks
-        .map((b) => b.role == role ? b.copyWith(isSelected: false, role: TokenRole.none) : b)
+        .map((b) => b.role == role
+            ? b.copyWith(
+                isSelected: false, role: TokenRole.none, autoRole: false)
+            : b)
         .toList();
-    emit(state.copyWith(blocks: cleared));
+    final edits = Map<TokenRole, String>.of(state.edits)..remove(role);
+    emit(state.copyWith(blocks: cleared, edits: edits));
     _detectLanguageFromWordBlocks();
   }
 
   void clearAllSelections() {
-    final cleared = state.blocks
-        .map((b) => b.copyWith(isSelected: false, role: TokenRole.none))
-        .toList();
-    emit(state.copyWith(blocks: cleared));
+    emit(state.copyWith(
+        blocks: _unselected(state.blocks), edits: const {}));
     _detectLanguageFromWordBlocks();
   }
 
@@ -283,6 +348,7 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
     _languageSeq++;
     emit(state.copyWith(
       blocks: [],
+      edits: const {},
       status: SCANSTATUS.idle,
       clearDragRect: true,
       clearError: true,

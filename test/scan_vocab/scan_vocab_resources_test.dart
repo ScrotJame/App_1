@@ -118,13 +118,13 @@ void main() {
       final cubit = ScanVocabCubit(
         recognizer: FakeTextRecognizer(result: OcrScanResult(
           imageSize: const Size(200, 100),
-          blocks: [block('食べ', 0, 0, 20, 20), block('hello', 100, 40, 140, 60)],
+          blocks: [block('cat', 0, 0, 20, 20), block('hello', 100, 40, 140, 60)],
         )),
         languageDetector: detector,
       );
       await cubit.runOcr(dummyFile);
 
-      cubit.tapAt(const Offset(15, 25), displayRect); // chọn 食べ → nhận diện #0
+      cubit.tapAt(const Offset(15, 25), displayRect); // chọn cat → nhận diện #0
       cubit.tapAt(const Offset(70, 45), displayRect); // thêm hello → nhận diện #1
       expect(detector.pending, hasLength(2));
 
