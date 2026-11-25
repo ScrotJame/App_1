@@ -57,4 +57,32 @@ class NotificationHelper(private val context: Context) {
 
         notificationManager.notify(message.hashCode(), notification)
     }
+
+    /** Review reminders share one id, so a new one replaces the last. */
+    fun showReview(title: String, body: String) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            REVIEW_NOTIFICATION_ID,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.ic_logo)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        notificationManager.notify(REVIEW_NOTIFICATION_ID, notification)
+    }
+
+    companion object {
+        private const val REVIEW_NOTIFICATION_ID = 4200
+    }
 }

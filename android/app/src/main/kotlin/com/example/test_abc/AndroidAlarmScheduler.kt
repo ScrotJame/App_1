@@ -10,59 +10,107 @@ import java.time.ZoneId
 class AndroidAlarmScheduler(private val context: Context) : AlarmScheduler {
 
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
+    private val store = ReviewPlanStore(context)
 
     override fun schedule(item: AlarmItem) {
-        // 1. Tạo Intent trỏ tới AlarmReceiver
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("Extra", item.message)
         }
-
-        // 2. Chuyển LocalDateTime sang Miliseconds (Đơn vị AlarmManager yêu cầu)
         val triggerTimeMilli = item.time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
-        // 3. Tạo PendingIntent (Tham số thứ 3 phải là intent)
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            item.hashCode(), // ID duy nhất để không bị đè thông báo khác
+            item.hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-
-        // 4. Đặt báo thức chính xác (Xuyên qua cả chế độ tiết kiệm pin Doze Mode)
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            triggerTimeMilli,
-            pendingIntent
-        )
+        setAlarm(triggerTimeMilli, pendingIntent)
     }
 
-    override fun scheduleReview(triggerAtMillis: Long, message: String) {
-        // Cùng request code nên lần đặt sau thay cho lần trước.
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            triggerAtMillis,
-            reviewPendingIntent(message)
-        )
+    override fun scheduleReviewPlan(reminders: List<ReviewReminder>) {
+        cancelReviewAlarms()
+        reminders.take(MAX_REVIEW_REMINDERS).forEachIndexed { index, reminder ->
+            setAlarm(reminder.atMillis, reviewPendingIntent(index, reminder))
+        }
+        store.save(reminders.take(MAX_REVIEW_REMINDERS))
     }
 
     override fun cancelReview() {
-        alarmManager.cancel(reviewPendingIntent(""))
+        cancelReviewAlarms()
+        store.clear()
     }
 
-    private fun reviewPendingIntent(message: String): PendingIntent {
-        val intent = Intent(context, AlarmReceiver::class.java).apply {
-            putExtra("Extra", message)
+    override fun rearmFromStore(nowMillis: Long) {
+        store.load().forEachIndexed { index, reminder ->
+            if (reminder.atMillis > nowMillis) {
+                setAlarm(reminder.atMillis, reviewPendingIntent(index, reminder))
+            }
         }
-        return PendingIntent.getBroadcast(
+    }
+
+    /**
+     * Exact when the user allows it; otherwise an inexact alarm, because
+     * setExactAndAllowWhileIdle throws on Android 12+ without the permission.
+     */
+    private fun setAlarm(atMillis: Long, pendingIntent: PendingIntent) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pendingIntent)
+        } else {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pendingIntent)
+        }
+    }
+
+    /**
+     * Cancels by request code, not by the stored plan, so a lost or broken
+     * store cannot leave alarms behind. Also drops the single alarm older
+     * versions set.
+     */
+    private fun cancelReviewAlarms() {
+        for (index in 0 until MAX_REVIEW_REMINDERS) {
+            existing(REVIEW_REQUEST_CODE_BASE + index, reviewIntent(null))?.let {
+                alarmManager.cancel(it)
+                it.cancel()
+            }
+        }
+        existing(LEGACY_REVIEW_REQUEST_CODE, Intent(context, AlarmReceiver::class.java))?.let {
+            alarmManager.cancel(it)
+            it.cancel()
+        }
+    }
+
+    private fun existing(requestCode: Int, intent: Intent): PendingIntent? =
+        PendingIntent.getBroadcast(
             context,
-            REVIEW_REQUEST_CODE,
+            requestCode,
             intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+
+    private fun reviewPendingIntent(index: Int, reminder: ReviewReminder): PendingIntent =
+        PendingIntent.getBroadcast(
+            context,
+            REVIEW_REQUEST_CODE_BASE + index,
+            reviewIntent(reminder),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-    }
+
+    /** Extras do not take part in matching, so cancel can pass null. */
+    private fun reviewIntent(reminder: ReviewReminder?): Intent =
+        Intent(context, AlarmReceiver::class.java).apply {
+            action = ACTION_REVIEW
+            if (reminder != null) {
+                putExtra(EXTRA_TITLE, reminder.title)
+                putExtra(EXTRA_BODY, reminder.body)
+            }
+        }
 
     companion object {
-        private const val REVIEW_REQUEST_CODE = 1001
-    }
+        const val ACTION_REVIEW = "com.example.test_abc.REVIEW_REMINDER"
+        const val EXTRA_TITLE = "title"
+        const val EXTRA_BODY = "body"
 
+        /** The planner makes at most 66; this leaves room. */
+        private const val MAX_REVIEW_REMINDERS = 100
+        private const val REVIEW_REQUEST_CODE_BASE = 2000
+        private const val LEGACY_REVIEW_REQUEST_CODE = 1001
+    }
 }
