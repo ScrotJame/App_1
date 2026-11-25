@@ -139,6 +139,7 @@ void main() {
     await cubit.editCard(1,
         word: '犬',
         pronunciation: 'ねこ',
+        basePronunciation: 'ねこ',
         meaning: 'dog',
         language: 'ja',
         tagIds: {});
@@ -160,6 +161,7 @@ void main() {
     await cubit.editCard(1,
         word: ' 猫 ',
         pronunciation: 'ねこ',
+        basePronunciation: 'ねこ',
         meaning: ' cat ',
         language: 'ja',
         tagIds: {tagId});

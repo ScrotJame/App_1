@@ -60,6 +60,7 @@ class _ScanReviewPageState extends State<ScanReviewPage> {
       card.id,
       word: edit.word,
       pronunciation: edit.pronunciation,
+      basePronunciation: card.pronunciation,
       meaning: edit.meaning,
       language: edit.language,
       tagIds: edit.tagIds,

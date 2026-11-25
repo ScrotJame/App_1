@@ -61,16 +61,20 @@ class ScanDraft extends Equatable {
     return _copy(cards: [...cards, card], nextId: nextId + 1);
   }
 
+  /// [basePronunciation] là cách đọc bảng sửa hiển thị lúc mở. Cách đọc chỉ
+  /// tính là người dùng đã sửa khi [pronunciation] khác nó; nếu không thì giữ
+  /// cách đọc hiện tại của thẻ (có thể vừa được sinh tự động trong lúc bảng mở).
   ScanDraft edit(
     int id, {
     required String word,
     required String pronunciation,
+    required String basePronunciation,
     required String meaning,
     required String language,
     required Set<int> tagIds,
   }) {
     return _update(id, (old) {
-      final pronEdited = pronunciation != old.pronunciation;
+      final pronEdited = pronunciation != basePronunciation;
       final sourceChanged =
           word.trim() != old.word.trim() || language != old.language;
       final regenerate = !pronEdited &&
@@ -81,7 +85,11 @@ class ScanDraft extends Equatable {
         meaning: meaning,
         language: language,
         tagIds: tagIds,
-        pronunciation: regenerate ? '' : pronunciation,
+        pronunciation: regenerate
+            ? ''
+            : pronEdited
+                ? pronunciation
+                : old.pronunciation,
         pronunciationAuto:
             pronEdited || regenerate ? false : old.pronunciationAuto,
         pronunciationChecked:

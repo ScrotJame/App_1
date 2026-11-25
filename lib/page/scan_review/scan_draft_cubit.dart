@@ -96,6 +96,7 @@ class ScanDraftCubit extends Cubit<ScanDraftState> {
     int id, {
     required String word,
     required String pronunciation,
+    required String basePronunciation,
     required String meaning,
     required String language,
     required Set<int> tagIds,
@@ -105,6 +106,7 @@ class ScanDraftCubit extends Cubit<ScanDraftState> {
       id,
       word: word,
       pronunciation: pronunciation,
+      basePronunciation: basePronunciation,
       meaning: meaning,
       language: language,
       tagIds: tagIds,

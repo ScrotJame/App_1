@@ -16,13 +16,16 @@ ScanDraft editWith(
   String? word,
   String? pronunciation,
   String? language,
+  String? meaning,
+  String? basePronunciation,
 }) {
   final card = draft.cards.firstWhere((c) => c.id == id);
   return draft.edit(
     id,
     word: word ?? card.word,
     pronunciation: pronunciation ?? card.pronunciation,
-    meaning: card.meaning,
+    basePronunciation: basePronunciation ?? card.pronunciation,
+    meaning: meaning ?? card.meaning,
     language: language ?? card.language,
     tagIds: card.tagIds,
   );
@@ -127,6 +130,28 @@ void main() {
       expect(draft.cards.single.pronunciation, '');
       expect(draft.cards.single.pronunciationAuto, isFalse);
       expect(draft.cards.single.pronunciationChecked, isFalse);
+    });
+
+    test('sheet mở trước khi cách đọc tự động tới thì không xoá nó', () {
+      final snapshot = draftOf(['猫']);
+      var draft = snapshot.applyPronunciation(snapshot.cards.single, 'ねこ');
+      draft = editWith(draft, 1,
+          pronunciation: '', basePronunciation: '', meaning: 'kitty');
+      final card = draft.cards.single;
+      expect(card.meaning, 'kitty');
+      expect(card.pronunciation, 'ねこ');
+      expect(card.pronunciationAuto, isTrue);
+      expect(card.pronunciationChecked, isTrue);
+    });
+
+    test('người dùng đổi cách đọc so với lúc mở sheet thì giữ giá trị đó', () {
+      final snapshot = draftOf(['猫']);
+      var draft = snapshot.applyPronunciation(snapshot.cards.single, 'ねこ');
+      draft = editWith(draft, 1, pronunciation: 'neko', basePronunciation: '');
+      final card = draft.cards.single;
+      expect(card.pronunciation, 'neko');
+      expect(card.pronunciationAuto, isFalse);
+      expect(card.pronunciationChecked, isTrue);
     });
 
     test('cách đọc người dùng nhập không bị xoá hay ghi đè', () {
