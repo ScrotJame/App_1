@@ -24,7 +24,7 @@ import 'widgets/role_selector.dart';
 import 'widgets/scan_role_style.dart';
 
 /// Chọn chữ trên ảnh để tạo thẻ. Trả `true` khi đã lưu ít nhất một từ, để
-/// màn gọi nạp lại; bỏ hết thẻ rồi thoát thì trả `false`.
+/// màn gọi nạp lại; thoát mà chưa lưu thì kết quả không phải `true`.
 class ScanVocabPage extends StatelessWidget {
   /// Unit mặc định của thẻ; null là không thuộc Unit nào.
   final int? unitId;
@@ -60,6 +60,7 @@ class _ScanVocabView extends StatefulWidget {
 
 class _ScanVocabViewState extends State<_ScanVocabView> {
   File? _imageFile;
+  bool _reviewOpen = false;
 
   late final ScanVocabCubit _scan = context.read<ScanVocabCubit>();
   late final ScanDraftCubit _draft = context.read<ScanDraftCubit>();
@@ -96,15 +97,21 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
     }
     _draft.addCard(item);
     _showSnack(
-        S.of(context).scan_card_added(_draft.state.draft.cards.length),
+        S.of(context).scan_card_added(_draft.state.draft.unsavedCount),
         AppColors.kGreen);
   }
 
   Future<void> _openReview() async {
-    final done =
-        await context.push<bool>(Routes.scanReview, extra: _draft);
-    // Luồng đã xong: báo cho màn gọi chỉ khi thật sự có từ được lưu.
-    if (done == true && mounted) _close(_draft.state.savedCount > 0);
+    if (_reviewOpen) return;
+    _reviewOpen = true;
+    try {
+      final done =
+          await context.push<bool>(Routes.scanReview, extra: _draft);
+      // Luồng đã xong: báo cho màn gọi chỉ khi thật sự có từ được lưu.
+      if (done == true && mounted) _close(_draft.state.savedCount > 0);
+    } finally {
+      _reviewOpen = false;
+    }
   }
 
   void _close(bool? result) {
@@ -172,6 +179,11 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ScanDraftCubit, ScanDraftState>(
+      // Chỉ dựng lại khi những gì trang này đọc đổi.
+      buildWhen: (a, b) =>
+          a.hasUnsaved != b.hasUnsaved ||
+          a.draft.cards.length != b.draft.cards.length ||
+          a.draft.unsavedCount != b.draft.unsavedCount,
       builder: (context, draftState) {
         return PopScope(
           canPop: !draftState.hasUnsaved,
@@ -200,7 +212,10 @@ class _ScanVocabViewState extends State<_ScanVocabView> {
   }
 
   Widget _buildBody(ScanDraftState draftState) {
-    final cardCount = draftState.draft.cards.length;
+    final draft = draftState.draft;
+    // Nút Duyệt còn hiện khi mọi thẻ đã bỏ, để mở lại và hoàn tác.
+    final cardCount =
+        draft.unsavedCount > 0 ? draft.unsavedCount : draft.cards.length;
     return BlocBuilder<ScanVocabCubit, ScanVocabState>(
       builder: (context, state) {
         final imageFile = _imageFile;
