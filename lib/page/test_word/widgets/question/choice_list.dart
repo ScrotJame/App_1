@@ -35,9 +35,8 @@ class ChoiceList extends StatelessWidget {
               label: i < _labels.length ? _labels[i] : '${i + 1}',
               text: question.choices[i],
               state: _stateOf(i, answered, picked),
-              onTap: answered || eliminated.contains(i)
-                  ? null
-                  : () => onSelect(i),
+              onTap:
+                  answered || eliminated.contains(i) ? null : () => onSelect(i),
             ),
           ),
       ],

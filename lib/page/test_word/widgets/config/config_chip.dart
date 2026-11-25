@@ -22,18 +22,26 @@ class ConfigChip extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AppColors.kBlue : AppColors.white,
-          borderRadius: BorderRadius.circular(10),
+          color: selected ? AppColors.xoayGold : AppColors.xoayGlass,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? AppColors.kBlue : AppColors.kBorder,
+            color: selected ? AppColors.xoayGold : AppColors.xoayGlassBorder,
           ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: AppColors.xoayGold.withValues(alpha: 0.35),
+                    blurRadius: 10,
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: selected ? AppColors.white : AppColors.kTextMuted,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+            color: selected ? AppColors.xoayInk : AppColors.xoayPaper,
           ),
         ),
       ),

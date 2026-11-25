@@ -5,20 +5,31 @@ import '../../../commons/app_colors.dart';
 import '../daily_review_cubit.dart';
 
 class LevelChangeTile extends StatelessWidget {
-  const LevelChangeTile({super.key, required this.change});
+  const LevelChangeTile({super.key, required this.change, this.dark = false});
 
   final DailyReviewWordChange change;
 
+  /// Drawn for the dark feed gradient (the Test result screen).
+  final bool dark;
+
   @override
   Widget build(BuildContext context) {
-    final color = change.isUp ? AppColors.kGreen : AppColors.kRed;
+    final color = switch ((change.isUp, dark)) {
+      (true, false) => AppColors.kGreen,
+      (false, false) => AppColors.kRed,
+      (true, true) => AppColors.xoayCyan,
+      (false, true) => AppColors.xoayMagenta,
+    };
+    final textColor = dark ? AppColors.xoayPaper : AppColors.textBlack;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.kBorder),
+        color: dark ? AppColors.xoayGlass : AppColors.white,
+        borderRadius: BorderRadius.circular(dark ? 16 : 12),
+        border: Border.all(
+          color: dark ? AppColors.xoayGlassBorder : AppColors.kBorder,
+        ),
       ),
       child: Row(
         children: [
@@ -28,17 +39,17 @@ class LevelChangeTile extends StatelessWidget {
               children: [
                 Text(
                   change.word,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textBlack,
+                    color: textColor,
                   ),
                 ),
                 Text(
                   change.meaning,
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textBlack.withValues(alpha: 0.55),
+                    color: textColor.withValues(alpha: dark ? 0.6 : 0.55),
                   ),
                 ),
               ],

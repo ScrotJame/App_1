@@ -27,21 +27,22 @@ class HintButton extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.kAmberBg,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.kAmberBorder),
+                color: AppColors.xoayGold.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                    color: AppColors.xoayGold.withValues(alpha: 0.5)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.lightbulb_outline_rounded,
-                      size: 18, color: AppColors.kAmberText),
+                  const Icon(Icons.lightbulb_rounded,
+                      size: 18, color: AppColors.xoayGold),
                   const SizedBox(width: 6),
                   Text(
                     S.of(context).test_hint,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.kAmberText,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.xoayGold,
                       fontSize: 13,
                     ),
                   ),
@@ -56,14 +57,14 @@ class HintButton extends StatelessWidget {
                   width: 19,
                   height: 19,
                   decoration: const BoxDecoration(
-                      color: AppColors.kBlue, shape: BoxShape.circle),
+                      color: AppColors.xoayMagenta, shape: BoxShape.circle),
                   alignment: Alignment.center,
                   child: Text(
                     '$remaining',
                     style: const TextStyle(
-                      color: AppColors.white,
+                      color: AppColors.xoayPaper,
                       fontSize: 10,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),

@@ -64,6 +64,13 @@ class AppColors {
   static const Color xoayPaper = Color(0xFFF5EFE3);
   static const Color xoayPaperDim = Color(0x94F5EFE3);
   static const Color xoayLine = Color(0x1AF5EFE3);
+  /// Dark text on gold buttons.
+  static const Color xoayInk = Color(0xFF0B0A14);
+  /// Translucent card on the feed gradient.
+  static const Color xoayGlass = Color(0x14FFFFFF);
+  static const Color xoayGlassBorder = Color(0x1FFFFFFF);
+  /// Bottom bars over the feed gradient.
+  static const Color xoayBar = Color(0xE6141120);
 
   /// Gacha & TikTok HUD Theme
   static const Color gachaDarkBg = Color(0xFF0D0B18);

@@ -4,6 +4,8 @@ import '../../../../commons/app_colors.dart';
 import '../../../../generated/l10n.dart';
 import '../../logic/test_answer.dart';
 import '../../logic/test_kind_question.dart';
+import '../ui_test_components.dart';
+import 'question_card.dart';
 import 'swipe_answer_area.dart';
 
 class TrueFalseQuestionView extends StatelessWidget {
@@ -21,30 +23,27 @@ class TrueFalseQuestionView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reading = question.entry.pronunciation ?? '';
-    final card = Container(
-      width: double.infinity,
+    final card = GlassPanel(
+      radius: 24,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-      decoration: BoxDecoration(
-        color: AppColors.kBlueBg,
-        borderRadius: BorderRadius.circular(18),
-      ),
       child: Column(
         children: [
           Text(
             question.entry.word,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textBlack,
+              fontSize: 30,
+              fontWeight: FontWeight.w900,
+              color: AppColors.xoayPaper,
             ),
           ),
           if (reading.isNotEmpty)
             Text(reading,
                 style:
-                    const TextStyle(fontSize: 15, color: AppColors.kTextMuted)),
+                    const TextStyle(fontSize: 15, color: AppColors.xoayCyan)),
           const SizedBox(height: 10),
-          const Icon(Icons.swap_vert_rounded, color: AppColors.kBlue, size: 22),
+          const Icon(Icons.swap_vert_rounded,
+              color: AppColors.xoayGold, size: 22),
           const SizedBox(height: 10),
           Text(
             question.shownMeaning,
@@ -52,7 +51,7 @@ class TrueFalseQuestionView extends StatelessWidget {
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: AppColors.textBlack,
+              color: AppColors.xoayPaper,
             ),
           ),
         ],
@@ -68,15 +67,7 @@ class TrueFalseQuestionView extends StatelessWidget {
           child: card,
         ),
         const SizedBox(height: 10),
-        Text(
-          S.of(context).test_true_false_prompt,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.kTextMuted,
-          ),
-        ),
+        QuestionPrompt(S.of(context).test_true_false_prompt, center: true),
         const SizedBox(height: 16),
         Row(
           children: [
@@ -94,9 +85,9 @@ class TrueFalseQuestionView extends StatelessWidget {
     final answered = current != null;
     final picked = current is BoolAnswer ? current.value : null;
     final isRight = value == question.isMatch;
-    final color = value ? AppColors.kGreen : AppColors.kRed;
+    final color = value ? AppColors.xoayCyan : AppColors.xoayMagenta;
     final filled = answered && isRight;
-    final fg = filled ? AppColors.white : color;
+    final fg = filled ? AppColors.xoayInk : color;
     return Opacity(
       opacity: answered && !isRight ? 0.4 : 1,
       child: GestureDetector(
@@ -104,14 +95,24 @@ class TrueFalseQuestionView extends StatelessWidget {
         child: Container(
           height: 64,
           decoration: BoxDecoration(
-            color: filled ? color : AppColors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color, width: picked == value ? 2.5 : 1.5),
+            color: filled ? color : color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(32),
+            border:
+                Border.all(color: color, width: picked == value ? 2.5 : 1.5),
+            boxShadow: filled
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.4),
+                      blurRadius: 16,
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(value ? Icons.check_rounded : Icons.close_rounded, color: fg),
+              Icon(value ? Icons.check_rounded : Icons.close_rounded,
+                  color: fg),
               const SizedBox(width: 6),
               Text(
                 value ? S.of(context).test_true : S.of(context).test_false,

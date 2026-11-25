@@ -4,6 +4,7 @@ import '../../../../commons/app_colors.dart';
 import '../../../../generated/l10n.dart';
 import '../../logic/test_answer.dart';
 import '../../logic/test_kind_question.dart';
+import '../ui_test_components.dart';
 
 /// Shown once a question is answered: right or wrong, the answer, "next".
 class AnswerFeedbackBar extends StatelessWidget {
@@ -27,14 +28,11 @@ class AnswerFeedbackBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
-    final color = isCorrect ? AppColors.kGreen : AppColors.kRed;
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-          20, 16, 20, MediaQuery.of(context).padding.bottom + 12),
-      decoration: BoxDecoration(
-        color: isCorrect ? AppColors.kGreenBg : AppColors.kRedBg,
-        border: Border(top: BorderSide(color: color.withValues(alpha: 0.4))),
+    final color = isCorrect ? AppColors.xoayCyan : AppColors.xoayMagenta;
+    return TestScreenBottomBar(
+      color: Color.alphaBlend(
+        color.withValues(alpha: 0.16),
+        AppColors.xoaySurface,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,65 +43,36 @@ class AnswerFeedbackBar extends StatelessWidget {
               Icon(
                 isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
                 color: color,
-                size: 22,
+                size: 24,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   _title(s),
                   style: TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w800, color: color),
+                      fontSize: 16, fontWeight: FontWeight.w900, color: color),
                 ),
               ),
             ],
           ),
           for (final line in _details(s))
             Padding(
-              padding: const EdgeInsets.only(top: 4, left: 30),
+              padding: const EdgeInsets.only(top: 4, left: 32),
               child: Text(
                 line,
                 style: TextStyle(
                   fontSize: 13,
-                  color: AppColors.textBlack.withValues(alpha: 0.7),
+                  color: AppColors.xoayPaper.withValues(alpha: 0.75),
                 ),
               ),
             ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
+          const SizedBox(height: 14),
+          TestScreenPrimaryButton(
+            label: isLast ? s.test_see_result : s.test_next,
+            icon: Icons.arrow_forward_rounded,
+            loading: loading,
             height: 50,
-            child: ElevatedButton(
-              onPressed: loading ? null : onNext,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.kBlue,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-              ),
-              child: loading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          color: AppColors.white, strokeWidth: 2.5),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          isLast ? s.test_see_result : s.test_next,
-                          style: const TextStyle(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Icon(Icons.arrow_forward_rounded,
-                            color: AppColors.white, size: 17),
-                      ],
-                    ),
-            ),
+            onTap: onNext,
           ),
         ],
       ),

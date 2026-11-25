@@ -12,98 +12,99 @@ import '../widgets/question/test_progress_header.dart';
 import '../widgets/question/timer_badge.dart';
 import '../widgets/question/true_false_question_view.dart';
 import '../widgets/question/typing_question_view.dart';
+import '../widgets/ui_test_components.dart';
 
 class TestingScreen extends StatelessWidget {
   const TestingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.kSurface,
-      appBar: _buildAppBar(context),
-      body: Column(
-        children: [
-          BlocBuilder<TestCubit, TestState>(
-            buildWhen: (p, c) =>
-                p.currentIndex != c.currentIndex ||
-                p.score != c.score ||
-                p.questions != c.questions,
-            builder: (_, s) => TestProgressHeader(
-              progress: s.progressPercent,
-              score: s.score,
-              kind: s.currentQuestion?.kind,
-            ),
-          ),
-          Expanded(
-            child: BlocBuilder<TestCubit, TestState>(
+    return TestScreenBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: _buildAppBar(context),
+        body: Column(
+          children: [
+            BlocBuilder<TestCubit, TestState>(
               buildWhen: (p, c) =>
-                  p.questions != c.questions ||
+                  p.currentIndex != c.currentIndex ||
+                  p.score != c.score ||
+                  p.questions != c.questions,
+              builder: (_, s) => TestProgressHeader(
+                progress: s.progressPercent,
+                score: s.score,
+                kind: s.currentQuestion?.kind,
+              ),
+            ),
+            Expanded(
+              child: BlocBuilder<TestCubit, TestState>(
+                buildWhen: (p, c) =>
+                    p.questions != c.questions ||
+                    p.currentIndex != c.currentIndex ||
+                    p.answers != c.answers ||
+                    p.eliminatedIndexes != c.eliminatedIndexes ||
+                    p.revealedChars != c.revealedChars,
+                builder: (context, s) {
+                  final q = s.currentQuestion;
+                  if (q == null) return const SizedBox();
+                  // A new question gets fresh widgets (text field, audio) and
+                  // a scroll view back at the top.
+                  return SingleChildScrollView(
+                    key: ValueKey(s.currentIndex),
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                    child: _buildQuestion(context, s, q),
+                  );
+                },
+              ),
+            ),
+            BlocBuilder<TestCubit, TestState>(
+              buildWhen: (p, c) =>
                   p.currentIndex != c.currentIndex ||
                   p.answers != c.answers ||
+                  p.hintsUsed != c.hintsUsed ||
+                  p.isLevelingUp != c.isLevelingUp ||
                   p.eliminatedIndexes != c.eliminatedIndexes ||
                   p.revealedChars != c.revealedChars,
-              builder: (context, s) {
-                final q = s.currentQuestion;
-                if (q == null) return const SizedBox();
-                // A new question gets fresh widgets (text field, audio) and
-                // a scroll view back at the top.
-                return SingleChildScrollView(
-                  key: ValueKey(s.currentIndex),
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                  child: _buildQuestion(context, s, q),
-                );
-              },
-            ),
-          ),
-          BlocBuilder<TestCubit, TestState>(
-            buildWhen: (p, c) =>
-                p.currentIndex != c.currentIndex ||
-                p.answers != c.answers ||
-                p.hintsUsed != c.hintsUsed ||
-                p.isLevelingUp != c.isLevelingUp ||
-                p.eliminatedIndexes != c.eliminatedIndexes ||
-                p.revealedChars != c.revealedChars,
-            builder: (context, s) => AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) => SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 1),
-                  end: Offset.zero,
-                ).animate(animation),
-                child: child,
-              ),
-              child: KeyedSubtree(
-                key: ValueKey('${s.currentIndex}-${s.hasAnsweredCurrent}'),
-                child: _buildBottom(context, s),
+              builder: (context, s) => AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                transitionBuilder: (child, animation) => SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 1),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+                child: KeyedSubtree(
+                  key: ValueKey('${s.currentIndex}-${s.hasAnsweredCurrent}'),
+                  child: _buildBottom(context, s),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      toolbarHeight: 56,
-      backgroundColor: AppColors.white,
-      elevation: 0,
+    return testScreenAppBar(
       leading: IconButton(
-        icon: const Icon(Icons.close, color: AppColors.textBlack),
+        icon: const Icon(Icons.close_rounded, color: AppColors.xoayPaper),
         onPressed: () => context.read<TestCubit>().goToConfig(),
       ),
-      centerTitle: true,
       title: BlocBuilder<TestCubit, TestState>(
         buildWhen: (p, c) =>
             p.currentIndex != c.currentIndex ||
             p.totalQuestions != c.totalQuestions,
         builder: (context, s) => Text(
-          S.of(context).test_question_progress(
-              s.currentIndex + 1, s.totalQuestions),
+          S
+              .of(context)
+              .test_question_progress(s.currentIndex + 1, s.totalQuestions),
           style: const TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textBlack,
+            fontWeight: FontWeight.w800,
+            color: AppColors.xoayPaper,
+            fontFeatures: [FontFeature.tabularFigures()],
           ),
         ),
       ),
@@ -175,10 +176,7 @@ class TestingScreen extends StatelessWidget {
         onNext: cubit.nextQuestion,
       );
     }
-    return Container(
-      color: AppColors.white,
-      padding: EdgeInsets.fromLTRB(
-          20, 12, 20, MediaQuery.of(context).padding.bottom + 12),
+    return TestScreenBottomBar(
       child: Row(
         children: [
           HintButton(

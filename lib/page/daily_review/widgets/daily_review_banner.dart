@@ -7,7 +7,8 @@ import '../../../router/router.dart';
 import '../data/daily_review_status.dart';
 import 'daily_review_status_builder.dart';
 
-/// "Today's review" banner at the top of the Test config screen.
+/// "Today's review" banner at the top of the Test config screen, drawn for
+/// the dark feed gradient.
 class DailyReviewBanner extends StatelessWidget {
   const DailyReviewBanner({super.key});
 
@@ -17,6 +18,7 @@ class DailyReviewBanner extends StatelessWidget {
       builder: (context, status) {
         final s = S.of(context);
         final completed = status.progress == DailyReviewProgress.completed;
+        final accent = completed ? AppColors.xoayCyan : AppColors.xoayGold;
         final subtitle = switch (status.progress) {
           DailyReviewProgress.notCreated => s.daily_review_banner_new,
           DailyReviewProgress.inProgress =>
@@ -28,21 +30,35 @@ class DailyReviewBanner extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(16),
+              color: accent.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: completed ? AppColors.kGreen : AppColors.kBlue,
-                width: 1.5,
+                color: accent.withValues(alpha: 0.55),
+                width: 1.2,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: accent.withValues(alpha: 0.18),
+                  blurRadius: 18,
+                ),
+              ],
             ),
             child: Row(
               children: [
-                Icon(
-                  completed
-                      ? Icons.check_circle_rounded
-                      : Icons.fact_check_rounded,
-                  color: completed ? AppColors.kGreen : AppColors.kBlue,
-                  size: 30,
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: accent.withValues(alpha: 0.16),
+                  ),
+                  child: Icon(
+                    completed
+                        ? Icons.check_circle_rounded
+                        : Icons.fact_check_rounded,
+                    color: accent,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -53,22 +69,22 @@ class DailyReviewBanner extends StatelessWidget {
                         s.daily_review_title,
                         style: const TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textBlack,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.xoayPaper,
                         ),
                       ),
                       const SizedBox(height: 3),
                       Text(
                         subtitle,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 12,
-                          color: AppColors.textBlack.withValues(alpha: 0.6),
+                          color: AppColors.xoayPaperDim,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: AppColors.kBlue),
+                Icon(Icons.chevron_right_rounded, color: accent),
               ],
             ),
           ),

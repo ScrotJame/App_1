@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../commons/app_colors.dart';
+import '../ui_test_components.dart';
 
-/// A titled block of the config screen.
+/// A titled block of the config screen, on a glass card.
 class ConfigSection extends StatelessWidget {
   const ConfigSection({
     super.key,
@@ -19,30 +20,32 @@ class ConfigSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 16, color: AppColors.kBlue),
-            const SizedBox(width: 7),
-            Expanded(
-              child: Text(
-                title.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                  color: AppColors.textBlack,
+    return GlassPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: AppColors.xoayCyan),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                    color: AppColors.xoayPaper,
+                  ),
                 ),
               ),
-            ),
-            if (trailing case final widget?) widget,
-          ],
-        ),
-        const SizedBox(height: 10),
-        child,
-      ],
+              if (trailing case final widget?) widget,
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
     );
   }
 }

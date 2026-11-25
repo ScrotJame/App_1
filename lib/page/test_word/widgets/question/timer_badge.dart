@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../commons/app_colors.dart';
+import '../ui_test_components.dart';
 
 class TimerBadge extends StatelessWidget {
   const TimerBadge({
@@ -16,34 +17,11 @@ class TimerBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = critical
-        ? AppColors.kRed
+    final color = critical
+        ? AppColors.xoayMagenta
         : warning
-            ? AppColors.kAmber
-            : AppColors.kBlue;
-    final bg = critical || warning
-        ? fg.withValues(alpha: 0.12)
-        : AppColors.kBlueBg;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.timer_rounded, size: 13, color: fg),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: fg,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-        ],
-      ),
-    );
+            ? AppColors.xoayGoldDeep
+            : AppColors.xoayPaper;
+    return TestScreenPill(icon: Icons.timer_rounded, text: text, color: color);
   }
 }

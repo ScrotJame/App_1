@@ -4,6 +4,7 @@ import '../../../../commons/app_colors.dart';
 import '../../../../generated/l10n.dart';
 import '../../logic/test_answer.dart';
 import '../../logic/test_kind_question.dart';
+import '../ui_test_components.dart';
 import 'question_card.dart';
 
 /// The field takes focus when the question appears and loses it once the
@@ -72,22 +73,15 @@ class _TypingQuestionViewState extends State<TypingQuestionView> {
     final s = S.of(context);
     final answered = widget.answer != null;
     final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: AppColors.kBorder),
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: AppColors.xoayGlassBorder),
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         QuestionCard(label: s.fieldMeaning, text: widget.question.prompt),
         const SizedBox(height: 10),
-        Text(
-          s.test_typing_prompt,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.kTextMuted,
-          ),
-        ),
+        QuestionPrompt(s.test_typing_prompt),
         const SizedBox(height: 14),
         if (widget.revealed > 0) ...[
           Text(
@@ -97,7 +91,7 @@ class _TypingQuestionViewState extends State<TypingQuestionView> {
               fontSize: 22,
               fontWeight: FontWeight.w700,
               letterSpacing: 2,
-              color: AppColors.kAmberText,
+              color: AppColors.xoayGold,
             ),
           ),
           const SizedBox(height: 12),
@@ -106,21 +100,33 @@ class _TypingQuestionViewState extends State<TypingQuestionView> {
           controller: _controller,
           focusNode: _focusNode,
           enabled: !answered,
+          // No enableSuggestions: false: on Android Flutter turns it into a
+          // visible-password field, and Gboard then blocks Japanese/Chinese
+          // input.
           autocorrect: false,
-          enableSuggestions: false,
           textAlign: TextAlign.center,
           textInputAction: TextInputAction.done,
           onSubmitted: answered ? null : _submitTyped,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+          cursorColor: AppColors.xoayGold,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.xoayPaper,
+          ),
           decoration: InputDecoration(
             hintText: s.test_typing_hint_text,
+            hintStyle: const TextStyle(
+              color: AppColors.xoayPaperDim,
+              fontWeight: FontWeight.w500,
+            ),
             filled: true,
-            fillColor: AppColors.white,
+            fillColor: AppColors.xoaySurface2.withValues(alpha: 0.7),
             border: border,
             enabledBorder: border,
             disabledBorder: border,
             focusedBorder: border.copyWith(
-              borderSide: const BorderSide(color: AppColors.kBlue, width: 1.5),
+              borderSide:
+                  const BorderSide(color: AppColors.xoayGold, width: 1.5),
             ),
           ),
         ),
@@ -135,29 +141,17 @@ class _TypingQuestionViewState extends State<TypingQuestionView> {
                     s.test_dont_know,
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.kTextMuted,
+                      color: AppColors.xoayPaperDim,
                     ),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: ElevatedButton(
-                  onPressed: () => _submitTyped(_controller.text),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.kBlue,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text(
-                    s.test_submit,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.white,
-                    ),
-                  ),
+                child: TestScreenPrimaryButton(
+                  label: s.test_submit,
+                  height: 48,
+                  onTap: () => _submitTyped(_controller.text),
                 ),
               ),
             ],

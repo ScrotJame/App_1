@@ -26,7 +26,7 @@ class TestKindCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.kBlue : AppColors.kTextMuted;
+    final color = selected ? AppColors.xoayGold : AppColors.xoayPaperDim;
     return Opacity(
       opacity: dimmed ? 0.55 : 1,
       child: GestureDetector(
@@ -35,10 +35,12 @@ class TestKindCard extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: selected ? AppColors.kBlueBg : AppColors.white,
-            borderRadius: BorderRadius.circular(14),
+            color: selected
+                ? AppColors.xoayGold.withValues(alpha: 0.14)
+                : AppColors.xoaySurface.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: selected ? AppColors.kBlue : AppColors.kBorder,
+              color: selected ? AppColors.xoayGold : AppColors.xoayGlassBorder,
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -51,8 +53,8 @@ class TestKindCard extends StatelessWidget {
                   const Spacer(),
                   Icon(
                     selected
-                        ? Icons.check_box_rounded
-                        : Icons.check_box_outline_blank_rounded,
+                        ? Icons.check_circle_rounded
+                        : Icons.radio_button_unchecked_rounded,
                     size: 20,
                     color: color,
                   ),
@@ -63,14 +65,17 @@ class TestKindCard extends StatelessWidget {
                 kind.title,
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: selected ? AppColors.kBlue : AppColors.textBlack,
+                  fontWeight: FontWeight.w800,
+                  color: selected ? AppColors.xoayGold : AppColors.xoayPaper,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
-                dimmed ? S.of(context).test_no_voice_for_scope : kind.description,
-                style: const TextStyle(fontSize: 11, color: AppColors.kTextMuted),
+                dimmed
+                    ? S.of(context).test_no_voice_for_scope
+                    : kind.description,
+                style: const TextStyle(
+                    fontSize: 11, color: AppColors.xoayPaperDim, height: 1.3),
               ),
               if (footer case final widget?) ...[
                 const SizedBox(height: 6),

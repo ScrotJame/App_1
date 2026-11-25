@@ -8,11 +8,11 @@ import '../../../generated/l10n.dart';
 import '../../../service/tts_service.dart';
 import '../../daily_review/widgets/daily_review_banner.dart';
 import '../test_cubit.dart';
-import '../widgets/app_bar_widget.dart';
 import '../widgets/config/config_chip.dart';
 import '../widgets/config/config_section.dart';
 import '../widgets/config/start_bar.dart';
 import '../widgets/config/test_kind_card.dart';
+import '../widgets/ui_test_components.dart';
 
 class ConfigScreen extends StatefulWidget {
   const ConfigScreen({super.key});
@@ -23,7 +23,7 @@ class ConfigScreen extends StatefulWidget {
 
 class _ConfigScreenState extends State<ConfigScreen>
     with WidgetsBindingObserver {
-  static const _muted = TextStyle(fontSize: 12, color: AppColors.kTextMuted);
+  static const _muted = TextStyle(fontSize: 12, color: AppColors.xoayPaperDim);
 
   TestCubit get _cubit => context.read<TestCubit>();
 
@@ -47,52 +47,54 @@ class _ConfigScreenState extends State<ConfigScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.kSurface,
-      appBar: SimpleAppBar(S.of(context).test_config_title),
-      body: BlocBuilder<TestCubit, TestState>(
-        buildWhen: (p, c) =>
-            p.config != c.config ||
-            p.allWords != c.allWords ||
-            p.voiceLanguages != c.voiceLanguages ||
-            p.loadStatus != c.loadStatus ||
-            p.errorMessage != c.errorMessage,
-        builder: (context, state) => Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const DailyReviewBanner(),
-                    const SizedBox(height: 20),
-                    _buildKinds(state),
-                    const SizedBox(height: 24),
-                    _buildScope(state),
-                    const SizedBox(height: 24),
-                    _buildCount(state),
-                    const SizedBox(height: 24),
-                    _buildTime(state),
-                    if (state.loadStatus == LOADSTATUS.FAILED &&
-                        (state.errorMessage ?? '').isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      _buildError(state.errorMessage ?? ''),
+    return TestScreenBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: testScreenAppBar(title: Text(S.of(context).test_config_title)),
+        body: BlocBuilder<TestCubit, TestState>(
+          buildWhen: (p, c) =>
+              p.config != c.config ||
+              p.allWords != c.allWords ||
+              p.voiceLanguages != c.voiceLanguages ||
+              p.loadStatus != c.loadStatus ||
+              p.errorMessage != c.errorMessage,
+          builder: (context, state) => Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const DailyReviewBanner(),
+                      const SizedBox(height: 20),
+                      _buildKinds(state),
+                      const SizedBox(height: 24),
+                      _buildScope(state),
+                      const SizedBox(height: 24),
+                      _buildCount(state),
+                      const SizedBox(height: 24),
+                      _buildTime(state),
+                      if (state.loadStatus == LOADSTATUS.FAILED &&
+                          (state.errorMessage ?? '').isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _buildError(state.errorMessage ?? ''),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
-            StartBar(
-              label: _startLabel(state),
-              enabled: state.matchingWordCount > 0,
-              loading: state.loadStatus == LOADSTATUS.LOADING,
-              onTap: () {
-                FocusScope.of(context).unfocus();
-                _cubit.startTest();
-              },
-            ),
-          ],
+              StartBar(
+                label: _startLabel(state),
+                enabled: state.matchingWordCount > 0,
+                loading: state.loadStatus == LOADSTATUS.LOADING,
+                onTap: () {
+                  FocusScope.of(context).unfocus();
+                  _cubit.startTest();
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -151,8 +153,9 @@ class _ConfigScreenState extends State<ConfigScreen>
           style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
-            color: AppColors.kBlue,
+            color: AppColors.xoayCyan,
             decoration: TextDecoration.underline,
+            decorationColor: AppColors.xoayCyan,
           ),
         ),
       );
@@ -171,7 +174,7 @@ class _ConfigScreenState extends State<ConfigScreen>
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w700,
-          color: short ? AppColors.kAmber : AppColors.kGreen,
+          color: short ? AppColors.xoayGold : AppColors.xoayCyan,
         ),
       ),
       child: Column(
@@ -282,7 +285,10 @@ class _ConfigScreenState extends State<ConfigScreen>
       icon: Icons.timer_outlined,
       trailing: Switch.adaptive(
         value: cfg.enableTimer,
-        activeColor: AppColors.kBlue,
+        activeColor: AppColors.xoayGold,
+        activeTrackColor: AppColors.xoayGold.withValues(alpha: 0.45),
+        inactiveThumbColor: AppColors.xoayPaper,
+        inactiveTrackColor: AppColors.xoayLine,
         onChanged: _cubit.toggleTimer,
       ),
       child: !cfg.enableTimer
@@ -332,7 +338,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                   Row(
                     children: [
                       const Icon(Icons.info_outline_rounded,
-                          size: 14, color: AppColors.kTextMuted),
+                          size: 14, color: AppColors.xoayPaperDim),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(S.of(context).test_typing_double_time,
@@ -361,24 +367,10 @@ class _ConfigScreenState extends State<ConfigScreen>
   }
 
   Widget _buildError(String message) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.kRedBg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.kRed.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline_rounded,
-              color: AppColors.kRed, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(message,
-                style: const TextStyle(fontSize: 13, color: AppColors.kRed)),
-          ),
-        ],
-      ),
+    return TestScreenNote(
+      icon: Icons.error_outline_rounded,
+      color: AppColors.xoayMagenta,
+      text: message,
     );
   }
 }

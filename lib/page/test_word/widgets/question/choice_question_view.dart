@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../commons/app_colors.dart';
 import '../../../../generated/l10n.dart';
 import '../../logic/test_answer.dart';
 import '../../logic/test_kind_question.dart';
@@ -33,15 +32,10 @@ class ChoiceQuestionView extends StatelessWidget {
           subtitle: question.pronunciation,
         ),
         const SizedBox(height: 10),
-        Text(
+        QuestionPrompt(
           question.asksMeaning
               ? s.test_question_word_to_meaning
               : s.test_question_meaning_to_word,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.kTextMuted,
-          ),
         ),
         const SizedBox(height: 14),
         ChoiceList(
