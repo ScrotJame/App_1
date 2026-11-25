@@ -53,15 +53,19 @@ class ScanDraftCubit extends Cubit<ScanDraftState> {
   Future<void> load() async {
     final seq = ++_checkSeq;
     emit(state.copyWith(loadStatus: LOADSTATUS.LOADING));
+    var published = false;
     try {
       final tags = await _tags.getAllTags();
       final units = await _units.getAllUnits();
       if (isClosed) return;
+      // Giữ thẻ bị chặn tới khi có cảnh báo trùng.
       emit(state.copyWith(
         tags: tags,
         units: units,
         loadStatus: LOADSTATUS.SUCCESS,
+        isCheckingDuplicates: true,
       ));
+      published = true;
       final duplicates = await _findDuplicates(state.draft);
       if (isClosed) return;
       // Một _apply mới hơn đang giữ cờ kiểm tra trùng và kết quả của nó.
@@ -73,7 +77,13 @@ class ScanDraftCubit extends Cubit<ScanDraftState> {
       }
     } catch (e) {
       if (isClosed) return;
-      emit(state.copyWith(loadStatus: LOADSTATUS.FAILED));
+      final stale = seq != _checkSeq;
+      // Lỗi của một lần tải cũ không được ghi đè kết quả của _apply mới hơn.
+      if (published && stale) return;
+      emit(state.copyWith(
+        loadStatus: LOADSTATUS.FAILED,
+        isCheckingDuplicates: stale ? state.isCheckingDuplicates : false,
+      ));
       messageController.add(S.current.error_generic(e.toString()));
       return;
     }

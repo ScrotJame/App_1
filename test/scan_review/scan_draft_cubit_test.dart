@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,6 +53,23 @@ class _FailingVocabularyRepository extends VocabularyRepository {
       pronunciation: pronunciation,
       language: language,
     );
+  }
+}
+
+/// Chặn kiểm tra trùng cho tới khi [gate] hoàn tất.
+class _GatedVocabularyRepository extends VocabularyRepository {
+  _GatedVocabularyRepository(super.db, {required this.gate});
+
+  final Future<void> gate;
+
+  @override
+  Future<bool> wordExists({
+    required String word,
+    required String meaning,
+    int? unitId,
+  }) async {
+    await gate;
+    return super.wordExists(word: word, meaning: meaning, unitId: unitId);
   }
 }
 
@@ -256,5 +275,26 @@ void main() {
     expect(cubit.state.units.map((u) => u.id), [unitId]);
     expect(cubit.state.tags, isNotEmpty);
     expect(cubit.state.draft.cards.single.pronunciation, 'ねこ');
+  });
+
+  test('chưa kiểm tra trùng xong thì chưa được giữ thẻ', () async {
+    final gate = Completer<void>();
+    final cubit = ScanDraftCubit(
+      _GatedVocabularyRepository(db, gate: gate.future),
+      TagRepository(db),
+      UnitRepository(db),
+      _FakePronunciation(),
+    );
+    addTearDown(cubit.close);
+    cubit.addCard(item('猫', 'cat'));
+
+    final loading = cubit.load();
+    await pumpEventQueue();
+    expect(cubit.state.loadStatus, LOADSTATUS.SUCCESS);
+    expect(cubit.state.canKeep, isFalse);
+
+    gate.complete();
+    await loading;
+    expect(cubit.state.canKeep, isTrue);
   });
 }
