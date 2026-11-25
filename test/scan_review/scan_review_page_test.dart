@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:test_abc/commons/enums.dart';
@@ -140,5 +141,83 @@ void main() {
 
     await tester.tap(find.text('Try again'));
     verify(() => cubit.load()).called(2);
+  });
+
+  group('đóng màn duyệt', () {
+    bool? result;
+    var returned = false;
+
+    /// Màn cha đẩy `/review` và ghi lại kết quả trả về.
+    Future<void> pumpRouter(WidgetTester tester, ScanDraftState initial,
+        {List<ScanDraftState> emits = const []}) async {
+      result = null;
+      returned = false;
+      whenListen(cubit, Stream<ScanDraftState>.fromIterable(emits),
+          initialState: initial);
+      final router = GoRouter(routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, _) => Scaffold(
+            body: TextButton(
+              onPressed: () async {
+                result = await context.push<bool>('/review');
+                returned = true;
+              },
+              child: const Text('open'),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/review',
+          builder: (context, _) => BlocProvider<ScanDraftCubit>.value(
+            value: cubit,
+            child: const ScanReviewPage(),
+          ),
+        ),
+      ]);
+      addTearDown(router.dispose);
+      await tester.pumpWidget(MaterialApp.router(
+        routerConfig: router,
+        locale: const Locale('en'),
+        localizationsDelegates: const [
+          S.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: S.delegate.supportedLocales,
+      ));
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('lưu xong thì đóng và trả true', (tester) async {
+      final reviewed = ScanDraftState(
+          draft: oneCard().keep(1), loadStatus: LOADSTATUS.SUCCESS);
+      await pumpRouter(tester, reviewed, emits: [
+        reviewed.copyWith(saveStatus: LOADSTATUS.SUCCESS, savedCount: 1),
+      ]);
+      await tester.pumpAndSettle();
+
+      expect(returned, isTrue);
+      expect(result, isTrue);
+      expect(find.byType(ScanReviewPage), findsNothing);
+      expect(find.text('Saved 1 words'), findsOneWidget);
+    });
+
+    testWidgets('Thoát khi đã bỏ hết thì đóng và trả true', (tester) async {
+      await pumpRouter(
+          tester,
+          ScanDraftState(
+              draft: oneCard().discard(1), loadStatus: LOADSTATUS.SUCCESS));
+      expect(returned, isFalse);
+
+      await tester.tap(find.text('Exit'));
+      await tester.pumpAndSettle();
+
+      expect(returned, isTrue);
+      expect(result, isTrue);
+      expect(find.byType(ScanReviewPage), findsNothing);
+    });
   });
 }
