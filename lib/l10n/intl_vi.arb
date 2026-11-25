@@ -595,5 +595,7 @@
   "test_retry": "Làm lại",
   "test_change_setup": "Đổi cấu hình",
   "test_done": "Hoàn thành",
-  "scan_no_text_found": "Không tìm thấy chữ nào trong ảnh. Hãy thử ảnh khác."
+  "scan_no_text_found": "Không tìm thấy chữ nào trong ảnh. Hãy thử ảnh khác.",
+  "scan_review_incomplete": "Cần có từ và nghĩa",
+  "scan_pronunciation_failed": "Không sinh được cách đọc: {error}"
 }

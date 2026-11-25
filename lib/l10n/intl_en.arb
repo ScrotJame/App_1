@@ -594,5 +594,7 @@
   "test_retry": "Retry",
   "test_change_setup": "Change setup",
   "test_done": "Done",
-  "scan_no_text_found": "No text found in this image. Try another photo."
+  "scan_no_text_found": "No text found in this image. Try another photo.",
+  "scan_review_incomplete": "A word and a meaning are required",
+  "scan_pronunciation_failed": "Could not generate readings: {error}"
 }
