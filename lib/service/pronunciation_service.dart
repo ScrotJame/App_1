@@ -5,6 +5,11 @@ import 'package:kana_kit/kana_kit.dart';
 /// Service xử lý sinh phiên âm tự động cho từ vựng.
 /// Chạy hoàn toàn offline — bundle dictionary data trong app.
 class PronunciationService {
+  /// [loader] thay phần nạp dictionary trong test.
+  PronunciationService({Future<void> Function()? loader}) : _loader = loader;
+
+  final Future<void> Function()? _loader;
+
   /// Kuromoji tokenizer — dùng dynamic vì Tokenizer class nằm trong src/
   dynamic _japaneseTokenizer;
   final _kanaKit = const KanaKit();
@@ -12,21 +17,25 @@ class PronunciationService {
   /// Các ngôn ngữ hỗ trợ auto-pronunciation
   static const _supportedLanguages = {'ja', 'zh', 'ko', 'ru', 'ar', 'he'};
 
-  bool _isInitializing = false;
-  bool _isInitialized = false;
+  Future<void>? _loading;
 
-  /// Khởi tạo dictionary (nặng, chạy ngầm hoặc on-demand).
-  /// Bao gồm: Japanese tokenizer (kuromoji), Chinese pinyin dict.
-  Future<void> ensureInitialized() async {
-    if (_isInitialized || _isInitializing) return;
-    _isInitializing = true;
+  /// Khởi tạo dictionary (nặng, chạy ngầm hoặc on-demand). Các lời gọi trong
+  /// lúc đang nạp cùng chờ một lần; nạp lỗi thì lời gọi sau thử lại.
+  Future<void> ensureInitialized() => _loading ??= _load();
+
+  Future<void> _load() async {
     try {
-      await TextRomanizer.ensureInitialized();
-      _japaneseTokenizer = await TokenizerBuilder().build();
-      _isInitialized = true;
-    } finally {
-      _isInitializing = false;
+      await Future<void>.sync(_loader ?? _loadDictionaries);
+    } catch (_) {
+      _loading = null;
+      rethrow;
     }
+  }
+
+  /// Japanese tokenizer (kuromoji), Chinese pinyin dict.
+  Future<void> _loadDictionaries() async {
+    await TextRomanizer.ensureInitialized();
+    _japaneseTokenizer = await TokenizerBuilder().build();
   }
 
   /// Kiểm tra ngôn ngữ có hỗ trợ auto-pronunciation không
