@@ -109,7 +109,10 @@ GoRouter createGoRouter() {
       // ── Scan Vocab ─────────────────────────────────────────
       GoRoute(
         path: Routes.scanVocab,
-        builder: (context, state) => const ScanVocabPage(),
+        builder: (context, state) {
+          final unitId = state.extra;
+          return ScanVocabPage(unitId: unitId is int ? unitId : null);
+        },
       ),
 
       // ── Scan Review ────────────────────────────────────────

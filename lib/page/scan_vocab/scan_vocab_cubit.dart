@@ -6,11 +6,9 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import 'package:test_abc/helper/language_helper.dart';
 import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 
 import '../../commons/enums.dart';
-import '../../models/model_local/support_language_local.dart';
 import 'logic/japanese_text.dart';
 import 'logic/kanji_role_assigner.dart';
 import 'ocr_text_join.dart';
@@ -244,16 +242,13 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
   // ─── Lấy từ đang chọn ra và làm trống lựa chọn ──────────────────────────
   /// null khi chưa có cả từ lẫn nghĩa.
   ScannedVocabItem? takeCurrentItem() {
-    var preview = state.currentPreview;
+    final preview = state.currentPreview;
     if (preview.word.trim().isEmpty && preview.meaning.trim().isEmpty) {
       return null;
     }
-    if (preview.language.trim().isEmpty) {
-      final language = state.isLanguageManuallySet
-          ? state.detectedLanguage
-          : resolveLanguage(preview.word, state.detectedLanguage);
-      preview = preview.copyWith(language: language ?? '');
-    }
+    final language = state.isLanguageManuallySet
+        ? state.detectedLanguage
+        : resolveLanguage(preview.word, state.detectedLanguage);
     // Ngôn ngữ chọn tay được giữ cho tới khi chọn "Tự động" hoặc đổi ảnh.
     emit(state.copyWith(
       blocks: _unselected(state.blocks),
@@ -261,14 +256,7 @@ class ScanVocabCubit extends Cubit<ScanVocabState> {
       clearLanguage: !state.isLanguageManuallySet,
     ));
     _detectLanguageFromWordBlocks();
-    return preview;
-  }
-
-  Future<bool> addCurrentItem() async {
-    final item = takeCurrentItem();
-    if (item == null) return false;
-    emit(state.copyWith(vocabItems: [...state.vocabItems, item]));
-    return true;
+    return preview.copyWith(language: language ?? '');
   }
 
   List<OcrBlock> _unselected(List<OcrBlock> blocks) => blocks

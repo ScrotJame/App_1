@@ -159,8 +159,7 @@ void main() {
       cubit.setActiveRole(TokenRole.meaning);
       cubit.tapAt(const Offset(70, 45), displayRect);
 
-      expect(await cubit.addCurrentItem(), isTrue);
-      expect(cubit.state.vocabItems.single.language, 'zh');
+      expect(cubit.takeCurrentItem()?.language, 'zh');
       expect(cubit.state.detectedLanguage, 'zh');
       expect(cubit.state.isLanguageManuallySet, isTrue);
     });
@@ -184,8 +183,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(cubit.state.detectedLanguage, 'ja');
 
-      expect(await cubit.addCurrentItem(), isTrue);
-      expect(cubit.state.vocabItems.single.language, 'ja');
+      expect(cubit.takeCurrentItem()?.language, 'ja');
       expect(cubit.state.detectedLanguage, isNull);
       expect(cubit.state.isLanguageManuallySet, isFalse);
     });

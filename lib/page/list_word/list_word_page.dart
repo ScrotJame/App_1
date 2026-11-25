@@ -16,7 +16,6 @@ import '../../repository/vocabulary_repository.dart';
 import '../../router/router.dart';
 import '../../service/tts_service.dart';
 import '../add_word/add_word_page.dart';
-import '../scan_vocab/scan_vocab_page.dart';
 import '../widgets/app_gradient_header.dart';
 import '../widgets/drop_down_widget.dart';
 import 'list_word_cubit.dart';
@@ -821,14 +820,11 @@ class _ListWordPageState extends State<ListWordPage> {
                     label: 'Quét từ vựng',
                     onTap: () async {
                       setState(() => _isFabExpanded = false);
-                      final added = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ScanVocabPage(
-                            unitId: widget.unit?.unit.id,
-                          ),
-                        ),
+                      final added = await context.push<bool>(
+                        Routes.scanVocab,
+                        extra: widget.unit?.unit.id,
                       );
+                      if (!mounted) return;
                       if (added == true && widget.unit != null) {
                         await _cubit.reloadUnit();
                       } else if (added == true && widget.unit == null) {

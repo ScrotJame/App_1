@@ -21,7 +21,7 @@ enum BackupStatus { initial, loading, success, failed }
 
 enum PageType { Add, Put }
 
-enum TokenRole { none, word, pronunciation, meaning, language }
+enum TokenRole { none, word, pronunciation, meaning }
 
 enum SCANSTATUS { idle, scanning, scanned, error }
 

@@ -61,8 +61,6 @@ class ScannedVocabItem extends Equatable {
     );
   }
 
-  bool get hasError => word.trim().isEmpty || meaning.trim().isEmpty;
-
   @override
   List<Object?> get props => [word, pronunciation, meaning, language];
 }
@@ -72,7 +70,6 @@ class ScanVocabState extends Equatable {
   final Size? imageSize;
   final List<OcrBlock> blocks;
   final TokenRole activeRole;
-  final List<ScannedVocabItem> vocabItems;
   final SCANSTATUS status;
   final String? errorMessage;
   final Rect? dragRect;
@@ -89,7 +86,6 @@ class ScanVocabState extends Equatable {
     this.imageSize,
     this.blocks = const [],
     this.activeRole = TokenRole.word,
-    this.vocabItems = const [],
     this.status = SCANSTATUS.idle,
     this.errorMessage,
     this.dragRect,
@@ -118,7 +114,7 @@ class ScanVocabState extends Equatable {
           split?.reading ??
           rawReading,
       meaning: edits[TokenRole.meaning] ?? textForRole(TokenRole.meaning),
-      language: textForRole(TokenRole.language),
+      language: '',
     );
   }
 
@@ -129,20 +125,11 @@ class ScanVocabState extends Equatable {
   bool get hasNoText => status == SCANSTATUS.scanned && blocks.isEmpty;
 
   String get errorText => errorMessage ?? '';
-  String get detectedLanguageLabel => LanguageHelper.getDetectedLanguageLabel(detectedLanguage);
-
-  /// Label hiển thị cho badge, ưu tiên kSupportedLanguages
-  String get languageBadgeLabel {
-    if (detectedLanguage == null) return '';
-    final found = kSupportedLanguages.where((l) => l.code == detectedLanguage).firstOrNull;
-    return found != null ? '${found.flag} ${found.label}' : detectedLanguageLabel;
-  }
 
   ScanVocabState copyWith({
     Size? imageSize,
     List<OcrBlock>? blocks,
     TokenRole? activeRole,
-    List<ScannedVocabItem>? vocabItems,
     SCANSTATUS? status,
     String? errorMessage,
     Rect? dragRect,
@@ -158,7 +145,6 @@ class ScanVocabState extends Equatable {
       imageSize: imageSize ?? this.imageSize,
       blocks: blocks ?? this.blocks,
       activeRole: activeRole ?? this.activeRole,
-      vocabItems: vocabItems ?? this.vocabItems,
       status: status ?? this.status,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       dragRect: clearDragRect ? null : (dragRect ?? this.dragRect),
@@ -171,7 +157,7 @@ class ScanVocabState extends Equatable {
 
   @override
   List<Object?> get props => [
-    imageSize, blocks, activeRole, vocabItems,
+    imageSize, blocks, activeRole,
     status, errorMessage, dragRect, dragOrigin,
     detectedLanguage, isLanguageManuallySet, edits,
   ];
