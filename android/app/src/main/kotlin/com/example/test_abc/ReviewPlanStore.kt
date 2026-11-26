@@ -42,6 +42,8 @@ class ReviewPlanStore(context: Context) {
         }
     }
 
+    fun hasPlan(): Boolean = load().isNotEmpty()
+
     fun clear() {
         prefs.edit().remove(KEY_PLAN).apply()
     }

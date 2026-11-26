@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import java.time.ZoneId
 
 class AndroidAlarmScheduler(private val context: Context) : AlarmScheduler {
@@ -23,15 +24,20 @@ class AndroidAlarmScheduler(private val context: Context) : AlarmScheduler {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        setAlarm(triggerTimeMilli, pendingIntent)
+        setAlarm(triggerTimeMilli, pendingIntent, canScheduleExact())
     }
 
     override fun scheduleReviewPlan(reminders: List<ReviewReminder>) {
-        cancelReviewAlarms()
-        reminders.take(MAX_REVIEW_REMINDERS).forEachIndexed { index, reminder ->
-            setAlarm(reminder.atMillis, reviewPendingIntent(index, reminder))
+        val plan = reminders.take(MAX_REVIEW_REMINDERS)
+        try {
+            cancelReviewAlarms()
+            val exact = canScheduleExact()
+            plan.forEachIndexed { index, reminder -> setReviewAlarm(index, reminder, exact) }
+        } finally {
+            // Saved even when an alarm failed, so a reboot re-arms this plan
+            // and not the one before it.
+            store.save(plan)
         }
-        store.save(reminders.take(MAX_REVIEW_REMINDERS))
     }
 
     override fun cancelReview() {
@@ -40,22 +46,42 @@ class AndroidAlarmScheduler(private val context: Context) : AlarmScheduler {
     }
 
     override fun rearmFromStore(nowMillis: Long) {
+        val exact = canScheduleExact()
         store.load().forEachIndexed { index, reminder ->
             if (reminder.atMillis > nowMillis) {
-                setAlarm(reminder.atMillis, reviewPendingIntent(index, reminder))
+                setReviewAlarm(index, reminder, exact)
             }
         }
     }
 
-    /**
-     * Exact when the user allows it; otherwise an inexact alarm, because
-     * setExactAndAllowWhileIdle throws on Android 12+ without the permission.
-     */
-    private fun setAlarm(atMillis: Long, pendingIntent: PendingIntent) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pendingIntent)
-        } else {
+    override fun hasReviewPlan(): Boolean = store.hasPlan()
+
+    override fun cancelLegacyReviewAlarm() {
+        existing(LEGACY_REVIEW_REQUEST_CODE, Intent(context, AlarmReceiver::class.java))?.let {
+            alarmManager.cancel(it)
+            it.cancel()
+        }
+    }
+
+    /** One failed alarm must not stop the rest of the plan. */
+    private fun setReviewAlarm(index: Int, reminder: ReviewReminder, exact: Boolean) {
+        try {
+            setAlarm(reminder.atMillis, reviewPendingIntent(index, reminder), exact)
+        } catch (e: Exception) {
+            Log.w(TAG, "Review reminder $index not set", e)
+        }
+    }
+
+    /** setExactAndAllowWhileIdle throws on Android 12+ without the permission. */
+    private fun canScheduleExact(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+
+    /** Exact when the user allows it ([exact]); otherwise an inexact alarm. */
+    private fun setAlarm(atMillis: Long, pendingIntent: PendingIntent, exact: Boolean) {
+        if (exact) {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pendingIntent)
+        } else {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pendingIntent)
         }
     }
 
@@ -71,10 +97,7 @@ class AndroidAlarmScheduler(private val context: Context) : AlarmScheduler {
                 it.cancel()
             }
         }
-        existing(LEGACY_REVIEW_REQUEST_CODE, Intent(context, AlarmReceiver::class.java))?.let {
-            alarmManager.cancel(it)
-            it.cancel()
-        }
+        cancelLegacyReviewAlarm()
     }
 
     private fun existing(requestCode: Int, intent: Intent): PendingIntent? =
@@ -104,6 +127,7 @@ class AndroidAlarmScheduler(private val context: Context) : AlarmScheduler {
         }
 
     companion object {
+        private const val TAG = "AndroidAlarmScheduler"
         const val ACTION_REVIEW = "com.example.test_abc.REVIEW_REMINDER"
         const val EXTRA_TITLE = "title"
         const val EXTRA_BODY = "body"

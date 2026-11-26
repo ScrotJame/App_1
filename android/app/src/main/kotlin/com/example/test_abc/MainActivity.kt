@@ -50,6 +50,7 @@ class MainActivity : FlutterActivity() {
                     scheduler.cancelReview()
                     result.success(true)
                 }
+                "hasReviewPlan" -> result.success(scheduler.hasReviewPlan())
                 else -> result.notImplemented()
             }
         }
