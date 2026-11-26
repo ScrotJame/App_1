@@ -56,7 +56,8 @@ class AndroidAlarmScheduler(private val context: Context) : AlarmScheduler {
 
     override fun hasReviewPlan(): Boolean = store.hasPlan()
 
-    override fun cancelLegacyReviewAlarm() {
+    /** Removes only the single review alarm older versions set. */
+    private fun cancelLegacyReviewAlarm() {
         existing(LEGACY_REVIEW_REQUEST_CODE, Intent(context, AlarmReceiver::class.java))?.let {
             alarmManager.cancel(it)
             it.cancel()

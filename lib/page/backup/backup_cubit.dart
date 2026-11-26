@@ -13,10 +13,11 @@ class BackupCubit extends Cubit<BackupState> {
   final BackupRepository _repo;
 
   /// Runs after a successful import, e.g. to rebuild the review reminder
-  /// plan from the restored words.
-  final Future<void> Function()? _onImported;
+  /// plan from the restored words. [silent] is true for the automatic sync
+  /// at sign-in, which happens on app start and must not count as studying.
+  final Future<void> Function(bool silent)? _onImported;
 
-  BackupCubit(this._repo, {Future<void> Function()? onImported})
+  BackupCubit(this._repo, {Future<void> Function(bool silent)? onImported})
       : _onImported = onImported,
         super(const BackupState());
 
@@ -169,7 +170,7 @@ class BackupCubit extends Cubit<BackupState> {
         successMessage: silent ? null : msg,
         importSummary: s,
       ));
-      await _runOnImported();
+      await _runOnImported(silent);
     } else {
       emit(state.copyWith(
         status: BackupStatus.failed,
@@ -180,11 +181,11 @@ class BackupCubit extends Cubit<BackupState> {
 
   /// The import already succeeded; a failure here must not turn it into an
   /// error for the user.
-  Future<void> _runOnImported() async {
+  Future<void> _runOnImported(bool silent) async {
     final onImported = _onImported;
     if (onImported == null) return;
     try {
-      await onImported();
+      await onImported(silent);
     } catch (e) {
       debugPrint('BackupCubit: after-import step failed: $e');
     }

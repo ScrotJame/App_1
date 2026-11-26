@@ -175,7 +175,9 @@ class _MyAppState extends State<MyApp> {
               final vocabulary = ctx.read<VocabularyRepository>();
               return BackupCubit(
                 ctx.read<BackupRepository>(),
-                onImported: () => AlarmService.syncReviewReminder(vocabulary),
+onImported: (silent) => silent
+                    ? AlarmService.ensureReviewPlan(vocabulary)
+                    : AlarmService.syncReviewReminder(vocabulary),
               );
             },
           ),

@@ -51,6 +51,10 @@ class MainActivity : FlutterActivity() {
                     result.success(true)
                 }
                 "hasReviewPlan" -> result.success(scheduler.hasReviewPlan())
+                "rearmReviewPlan" -> {
+                    scheduler.rearmFromStore(System.currentTimeMillis())
+                    result.success(true)
+                }
                 else -> result.notImplemented()
             }
         }

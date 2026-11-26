@@ -14,7 +14,4 @@ interface AlarmScheduler {
 
     /** True when a non-empty review plan is stored. */
     fun hasReviewPlan(): Boolean
-
-    /** Removes only the single review alarm older versions set. */
-    fun cancelLegacyReviewAlarm()
 }

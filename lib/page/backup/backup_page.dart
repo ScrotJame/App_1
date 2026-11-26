@@ -27,7 +27,9 @@ class _BackupPageState extends State<BackupPage> {
     final vocabulary = context.read<VocabularyRepository>();
     _cubit = BackupCubit(
       context.read<BackupRepository>(),
-      onImported: () => AlarmService.syncReviewReminder(vocabulary),
+      onImported: (silent) => silent
+          ? AlarmService.ensureReviewPlan(vocabulary)
+          : AlarmService.syncReviewReminder(vocabulary),
     );
   }
 

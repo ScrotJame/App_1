@@ -19,12 +19,17 @@ void main() {
 
   late _MockBackupRepository repo;
   late int imported;
+  late List<bool> silentFlags;
   late BackupCubit cubit;
 
   setUp(() {
     repo = _MockBackupRepository();
     imported = 0;
-    cubit = BackupCubit(repo, onImported: () async => imported++);
+    silentFlags = [];
+    cubit = BackupCubit(repo, onImported: (silent) async {
+      imported++;
+      silentFlags.add(silent);
+    });
   });
   tearDown(() => cubit.close());
 
@@ -36,6 +41,7 @@ void main() {
 
     expect(cubit.state.status, BackupStatus.success);
     expect(imported, 1);
+    expect(silentFlags, [false]);
   });
 
   test('a failed file import leaves the reminder plan alone', () async {
@@ -71,7 +77,7 @@ void main() {
   test('a failing rebuild does not turn the import into an error', () async {
     final failing = BackupCubit(
       repo,
-      onImported: () async => throw Exception('channel down'),
+      onImported: (_) async => throw Exception('channel down'),
     );
     addTearDown(failing.close);
     when(() => repo.importFromFilePicker())
@@ -81,5 +87,17 @@ void main() {
 
     expect(failing.state.status, BackupStatus.success);
     expect(failing.state.errorMessage, isNull);
+  });
+
+  test('the silent sync at sign-in is marked silent, so it only checks the plan',
+      () async {
+    when(() => repo.getBackupKey()).thenAnswer((_) async => 'key');
+    when(() => repo.autoSyncFromServer())
+        .thenAnswer((_) async => const ImportResult.ok(null));
+
+    await cubit.autoSyncFromServer();
+
+    expect(cubit.state.status, BackupStatus.success);
+    expect(silentFlags, [true]);
   });
 }

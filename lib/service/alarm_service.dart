@@ -54,9 +54,11 @@ class AlarmService {
   }
 
   /// Builds the review reminder plan only when Android holds none, e.g.
-  /// after an update from a version without plans. An existing plan is left
-  /// alone: opening the app must not reset the escalation, only studying
-  /// does. Needs [S] loaded, since a missing plan is built here.
+  /// after an update from a version without plans or a restore. An existing
+  /// plan is set again as stored, without being rebuilt: opening the app
+  /// must not reset the escalation, only studying does, but a force-stop
+  /// drops every alarm while keeping the plan. Needs [S] loaded, since a
+  /// missing plan is built here.
   static Future<void> ensureReviewPlan(IVocabularyRepository repo) async {
     if (!_isSupported) return;
     final bool? hasPlan;
@@ -66,7 +68,11 @@ class AlarmService {
       debugPrint('Review plan not checked: $e');
       return;
     }
-    if (hasPlan == false) await syncReviewReminder(repo);
+    if (hasPlan == false) {
+      await syncReviewReminder(repo);
+    } else if (hasPlan == true) {
+      await _invoke('rearmReviewPlan');
+    }
   }
 
   static ReviewReminderMessages reviewReminderMessages(S s) =>

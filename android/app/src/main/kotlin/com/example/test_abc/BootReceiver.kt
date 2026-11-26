@@ -17,13 +17,9 @@ class BootReceiver : BroadcastReceiver() {
                 // A crash here would take the whole process down at boot.
                 try {
                     val scheduler = AndroidAlarmScheduler(contextNonNull)
-                    if (action == Intent.ACTION_MY_PACKAGE_REPLACED) {
-                        // Alarms survive an update, so the old single alarm
-                        // would keep firing next to the new plan.
-                        runLogged("cancel legacy review alarm") {
-                            scheduler.cancelLegacyReviewAlarm()
-                        }
-                    }
+                    // The old single alarm is left to fire after an update:
+                    // for a user who does not open the app it is the only
+                    // reminder. Writing a plan cancels it.
                     runLogged("re-arm review plan") {
                         scheduler.rearmFromStore(System.currentTimeMillis())
                     }

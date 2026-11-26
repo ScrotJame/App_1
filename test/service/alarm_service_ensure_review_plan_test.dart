@@ -71,12 +71,12 @@ void main() {
     expect(methods(), ['hasReviewPlan', 'cancelReviewAlarm']);
   });
 
-  test('a stored plan is left alone', () async {
+  test('a stored plan is set again as stored, not rebuilt', () async {
     hasReviewPlanAnswers(true);
 
     await AlarmService.ensureReviewPlan(vocabulary);
 
-    expect(methods(), ['hasReviewPlan']);
+    expect(methods(), ['hasReviewPlan', 'rearmReviewPlan']);
     verifyNever(() => vocabulary.reviewReminderTimes());
   });
 
