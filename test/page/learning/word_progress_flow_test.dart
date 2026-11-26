@@ -200,21 +200,26 @@ void main() {
       expect(await vocabulary.isWordAlreadyMastered(target, userKey), isTrue);
     });
 
-    test('one test sets one reminder, not one alarm per word', () async {
+    test('one test sends one reminder plan, not one alarm per word', () async {
       final before = DateTime.now();
 
       await takeTest(isCorrect: (id) => id != wordIds[3]);
 
       expect(callsOf('scheduleAlarm'), isEmpty);
-      final reminders = callsOf('scheduleReviewAlarm');
-      expect(reminders, hasLength(1));
-      final args = reminders.single.arguments as Map;
-      expect(args['message'], S.current.review_reminder_message);
-      // The missed word is at level 0 and is due first, 5 minutes on.
-      final at =
-          DateTime.fromMillisecondsSinceEpoch(args['triggerAtMillis'] as int);
+      final plans = callsOf('scheduleReviewPlan');
+      expect(plans, hasLength(1));
+      final reminders =
+          (plans.single.arguments as Map)['reminders'] as List<Object?>;
+      expect(reminders, isNotEmpty);
+      final first = reminders.first as Map;
+      expect(first['title'], S.current.review_reminder_title);
+      expect(first['body'], isA<String>());
+      final at = DateTime.fromMillisecondsSinceEpoch(first['at'] as int);
       expect(at.isAfter(before), isTrue);
-      expect(await vocabulary.nextReviewReminderTime(now: before), at);
+      // The plan never starts before the earliest word is due.
+      final times = await vocabulary.reviewReminderTimes();
+      final earliest = times.reduce((a, b) => a.isBefore(b) ? a : b);
+      expect(at.isBefore(earliest), isFalse);
     });
   });
 
@@ -283,7 +288,7 @@ void main() {
     test('deleting the only reviewed word cancels the reminder', () async {
       await vocabulary.restartReviewWait(wordIds[0], userKey);
       await AlarmService.syncReviewReminder(vocabulary);
-      expect(callsOf('scheduleReviewAlarm'), hasLength(1));
+      expect(callsOf('scheduleReviewPlan'), hasLength(1));
 
       final listCubit = ListWordCubit(vocabulary, TtsService());
       addTearDown(listCubit.close);
@@ -291,7 +296,7 @@ void main() {
       await pumpEventQueue();
 
       expect(callsOf('cancelReviewAlarm'), hasLength(1));
-      expect(callsOf('scheduleReviewAlarm'), hasLength(1));
+      expect(callsOf('scheduleReviewPlan'), hasLength(1));
     });
 
     test('deleting one of two reviewed words keeps a reminder for the other',
@@ -305,12 +310,15 @@ void main() {
       await pumpEventQueue();
 
       expect(callsOf('cancelReviewAlarm'), isEmpty);
-      final args = callsOf('scheduleReviewAlarm').single.arguments as Map;
+      final reminders = (callsOf('scheduleReviewPlan').single.arguments
+          as Map)['reminders'] as List<Object?>;
+      final first = reminders.first as Map;
+      final times = await vocabulary.reviewReminderTimes();
+      expect(times, hasLength(1));
       expect(
-        DateTime.fromMillisecondsSinceEpoch(args['triggerAtMillis'] as int),
-        await vocabulary.nextReviewReminderTime(
-          now: DateTime.now().subtract(const Duration(seconds: 5)),
-        ),
+        DateTime.fromMillisecondsSinceEpoch(first['at'] as int)
+            .isBefore(times.single),
+        isFalse,
       );
     });
 

@@ -7,6 +7,8 @@ import '../../components/login_bottom_sheet.dart';
 import '../../cubit/auth_cubit.dart';
 import '../../generated/l10n.dart';
 import '../../repository/backup_data_repository.dart';
+import '../../repository/vocabulary_repository.dart';
+import '../../service/alarm_service.dart';
 import 'backup_cubit.dart';
 
 class BackupPage extends StatefulWidget {
@@ -22,7 +24,13 @@ class _BackupPageState extends State<BackupPage> {
   @override
   void initState() {
     super.initState();
-    _cubit = BackupCubit(context.read<BackupRepository>());
+    final vocabulary = context.read<VocabularyRepository>();
+    _cubit = BackupCubit(
+      context.read<BackupRepository>(),
+      onImported: (silent) => silent
+          ? AlarmService.ensureReviewPlan(vocabulary)
+          : AlarmService.syncReviewReminder(vocabulary),
+    );
   }
 
   @override

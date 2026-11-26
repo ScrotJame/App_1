@@ -159,8 +159,7 @@ void main() {
       cubit.setActiveRole(TokenRole.meaning);
       cubit.tapAt(const Offset(70, 45), displayRect);
 
-      expect(await cubit.addCurrentItem(), isTrue);
-      expect(cubit.state.vocabItems.single.language, 'zh');
+      expect(cubit.takeCurrentItem()?.language, 'zh');
       expect(cubit.state.detectedLanguage, 'zh');
       expect(cubit.state.isLanguageManuallySet, isTrue);
     });
@@ -184,8 +183,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(cubit.state.detectedLanguage, 'ja');
 
-      expect(await cubit.addCurrentItem(), isTrue);
-      expect(cubit.state.vocabItems.single.language, 'ja');
+      expect(cubit.takeCurrentItem()?.language, 'ja');
       expect(cubit.state.detectedLanguage, isNull);
       expect(cubit.state.isLanguageManuallySet, isFalse);
     });
@@ -209,6 +207,117 @@ void main() {
       await scan([block('x', 0, 0, 20, 20)]);
       expect(cubit.state.isLanguageManuallySet, isFalse);
       expect(cubit.state.detectedLanguage, isNull);
+    });
+  });
+
+  group('tự chia kanji / hiragana', () {
+    final furigana = [
+      block('たべる', 0, 0, 30, 10), // widget (10,20)-(25,25)
+      block('食べる', 0, 12, 60, 32), // widget (10,26)-(40,36)
+    ];
+
+    test('kéo cả furigana và chữ kanji', () async {
+      await scan(furigana);
+      cubit.startDrag(const Offset(9, 19));
+      cubit.updateDrag(const Offset(45, 40));
+      cubit.endDrag(widgetSize, displayRect);
+
+      expect(cubit.state.currentPreview.word, '食べる');
+      expect(cubit.state.currentPreview.pronunciation, 'たべる');
+    });
+
+    test('chạm từng mảnh cũng chia; đổi tay thì giữ nguyên', () async {
+      await scan([...furigana, block('x', 150, 70, 170, 90)]);
+      cubit.tapAt(const Offset(15, 22), displayRect);
+      expect(cubit.state.blocks[0].role, TokenRole.word);
+      cubit.tapAt(const Offset(25, 31), displayRect);
+      expect(cubit.state.blocks[0].role, TokenRole.pronunciation);
+
+      cubit.tapAt(const Offset(15, 22), displayRect); // đổi tay thành Từ
+      expect(cubit.state.blocks[0].role, TokenRole.word);
+      cubit.tapAt(const Offset(90, 60), displayRect); // chọn thêm 'x'
+      expect(cubit.state.blocks[0].role, TokenRole.word);
+    });
+
+    test('tách chữ trong ngoặc', () async {
+      await scan([block('食べる（たべる）', 0, 0, 80, 20)]);
+      cubit.tapBlock(0);
+      expect(cubit.state.currentPreview.word, '食べる');
+      expect(cubit.state.currentPreview.pronunciation, 'たべる');
+    });
+
+    test('không tách ngoặc khi không phải kana', () async {
+      await scan([block('go (went)', 0, 0, 80, 20)]);
+      cubit.tapBlock(0);
+      expect(cubit.state.currentPreview.word, 'go (went)');
+      expect(cubit.state.currentPreview.pronunciation, '');
+    });
+  });
+
+  group('sửa tại chỗ', () {
+    test('chữ đã sửa giữ tới khi lựa chọn của vai trò đó đổi', () async {
+      await scan([
+        block('A', 0, 0, 20, 20),
+        block('B', 100, 40, 140, 60),
+        block('C', 150, 70, 170, 90),
+      ]);
+      cubit.tapBlock(0);
+      cubit.editField(TokenRole.word, ' sửa ');
+      expect(cubit.state.currentPreview.word, 'sửa');
+
+      cubit.setActiveRole(TokenRole.meaning);
+      cubit.tapBlock(1);
+      expect(cubit.state.currentPreview.word, 'sửa');
+
+      cubit.setActiveRole(TokenRole.word);
+      cubit.tapBlock(2);
+      expect(cubit.state.currentPreview.word, 'A C');
+    });
+
+    test('bỏ vai trò xoá luôn chữ đã sửa', () async {
+      await scan([block('A', 0, 0, 20, 20)]);
+      cubit.editField(TokenRole.meaning, 'nghĩa');
+      expect(cubit.state.hasAnySelection, isTrue);
+      cubit.clearRole(TokenRole.meaning);
+      expect(cubit.state.currentPreview.meaning, '');
+      expect(cubit.state.hasAnySelection, isFalse);
+    });
+
+    test('takeCurrentItem lấy chữ gõ tay rồi làm trống', () async {
+      await scan([block('A', 0, 0, 20, 20)]);
+      cubit.editField(TokenRole.word, '猫');
+      cubit.editField(TokenRole.meaning, 'mèo');
+
+      final item = cubit.takeCurrentItem();
+
+      expect(item?.word, '猫');
+      expect(item?.meaning, 'mèo');
+      expect(item?.language, 'ja');
+      expect(cubit.state.currentPreview.word, '');
+      expect(cubit.state.edits, isEmpty);
+    });
+
+    test('takeCurrentItem trả null khi thiếu cả từ lẫn nghĩa', () async {
+      await scan([block('A', 0, 0, 20, 20)]);
+      cubit.editField(TokenRole.pronunciation, 'a');
+      expect(cubit.takeCurrentItem(), isNull);
+    });
+  });
+
+  group('quy tắc tiếng Nhật', () {
+    test('chỉ kanji mà nhận là zh thì thành ja', () async {
+      detector.answer = (_) => 'zh';
+      await scan([block('学生', 0, 0, 20, 20)]);
+      cubit.tapBlock(0);
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.detectedLanguage, 'ja');
+    });
+
+    test('một chữ kanji vẫn nhận là ja', () async {
+      await scan([block('猫', 0, 0, 20, 20)]);
+      cubit.tapBlock(0);
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.detectedLanguage, 'ja');
     });
   });
 }

@@ -29,18 +29,30 @@ class MainActivity : FlutterActivity() {
                     scheduler.schedule(AlarmItem(alarmTime, message))
                     result.success(true)
                 }
-                "scheduleReviewAlarm" -> {
-                    val message = call.argument<String>("message") ?: ""
-                    val triggerAtMillis = call.argument<Number>("triggerAtMillis")?.toLong()
-                    if (triggerAtMillis == null) {
-                        result.error("bad_args", "triggerAtMillis is required", null)
+                "scheduleReviewPlan" -> {
+                    val raw = call.argument<List<Map<String, Any?>>>("reminders")
+                    if (raw == null) {
+                        result.error("bad_args", "reminders is required", null)
                     } else {
-                        scheduler.scheduleReview(triggerAtMillis, message)
+                        val reminders = raw.mapNotNull { item ->
+                            val at = (item["at"] as? Number)?.toLong() ?: return@mapNotNull null
+                            ReviewReminder(
+                                at,
+                                item["title"] as? String ?: "",
+                                item["body"] as? String ?: ""
+                            )
+                        }
+                        scheduler.scheduleReviewPlan(reminders)
                         result.success(true)
                     }
                 }
                 "cancelReviewAlarm" -> {
                     scheduler.cancelReview()
+                    result.success(true)
+                }
+                "hasReviewPlan" -> result.success(scheduler.hasReviewPlan())
+                "rearmReviewPlan" -> {
+                    scheduler.rearmFromStore(System.currentTimeMillis())
                     result.success(true)
                 }
                 else -> result.notImplemented()

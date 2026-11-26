@@ -118,6 +118,16 @@ class _AddWordPageState extends State<AddWordPage>
     }
   }
 
+  /// Màn quét lưu vào cùng Unit đang thêm; xong thì đóng để danh sách nạp lại.
+  Future<void> _openScan() async {
+    final saved = await context.push<bool>(
+      Routes.scanVocab,
+      extra: widget.unitId,
+    );
+    if (!mounted || saved != true || widget.unitId == null) return;
+    await Navigator.maybePop(context, true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -201,9 +211,7 @@ class _AddWordPageState extends State<AddWordPage>
           },
         ),
         InkWell(
-          onTap: (){
-            context.push(Routes.scanVocab);
-          },
+          onTap: _openScan,
           child: SvgPicture.asset(AppImages.icScanFile,
             color: Color(0xFF6B7FD4),
           ),

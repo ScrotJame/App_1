@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'config/app_config.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,6 +19,7 @@ import 'package:test_abc/repository/tag_repository.dart';
 import 'package:test_abc/repository/unit_repository.dart';
 import 'package:test_abc/repository/user_repository.dart';
 import 'package:test_abc/repository/vocabulary_repository.dart';
+import 'package:test_abc/service/alarm_service.dart';
 import 'package:test_abc/service/auth_service.dart';
 import 'package:test_abc/service/mission_service.dart';
 import 'package:test_abc/service/tts_service.dart';
@@ -168,7 +171,15 @@ class _MyAppState extends State<MyApp> {
             },
           ),
           BlocProvider<BackupCubit>(
-            create: (ctx) => BackupCubit(ctx.read<BackupRepository>()),
+            create: (ctx) {
+              final vocabulary = ctx.read<VocabularyRepository>();
+              return BackupCubit(
+                ctx.read<BackupRepository>(),
+onImported: (silent) => silent
+                    ? AlarmService.ensureReviewPlan(vocabulary)
+                    : AlarmService.syncReviewReminder(vocabulary),
+              );
+            },
           ),
           BlocProvider<DailyQuestCubit>(
             create: (ctx) => _dailyQuestCubit = DailyQuestCubit(
@@ -254,7 +265,7 @@ class _MyAppState extends State<MyApp> {
                   child: MediaQuery(
                     data: MediaQuery.of(context)
                         .copyWith(textScaler: TextScaler.linear(1.0)),
-                    child: child!,
+                    child: _ReviewPlanCheck(child: child!),
                   ),
                 );
               },
@@ -264,4 +275,29 @@ class _MyAppState extends State<MyApp> {
       },
     );
   }
+}
+/// Builds the review reminder plan once at start when Android holds none,
+/// e.g. after updating from a version that set a single alarm. It sits under
+/// MaterialApp's Localizations, which builds its child only once [S] is
+/// loaded, and the plan's texts need [S].
+class _ReviewPlanCheck extends StatefulWidget {
+  const _ReviewPlanCheck({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_ReviewPlanCheck> createState() => _ReviewPlanCheckState();
+}
+
+class _ReviewPlanCheckState extends State<_ReviewPlanCheck> {
+  @override
+  void initState() {
+    super.initState();
+    unawaited(
+      AlarmService.ensureReviewPlan(context.read<VocabularyRepository>()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

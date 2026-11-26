@@ -15,6 +15,8 @@ import '../page/home_page.dart';
 import '../page/learning_history/learning_history_page.dart';
 import '../page/list_unit/list_unit_page.dart';
 import '../page/list_word/list_word_page.dart';
+import '../page/scan_review/scan_draft_cubit.dart';
+import '../page/scan_review/scan_review_page.dart';
 import '../page/scan_vocab/scan_vocab_page.dart';
 import '../page/shop/shop_page.dart';
 import '../page/splash/splash_cubit.dart';
@@ -107,7 +109,26 @@ GoRouter createGoRouter() {
       // ── Scan Vocab ─────────────────────────────────────────
       GoRoute(
         path: Routes.scanVocab,
-        builder: (context, state) => const ScanVocabPage(),
+        builder: (context, state) {
+          final unitId = state.extra;
+          return ScanVocabPage(unitId: unitId is int ? unitId : null);
+        },
+      ),
+
+      // ── Scan Review ────────────────────────────────────────
+      // Nhận ScanDraftCubit của màn quét qua `extra`.
+      GoRoute(
+        path: Routes.scanReview,
+        redirect: (context, state) =>
+            state.extra is ScanDraftCubit ? null : Routes.scanVocab,
+        builder: (context, state) {
+          final draft = state.extra;
+          if (draft is! ScanDraftCubit) return const ScanVocabPage();
+          return BlocProvider.value(
+            value: draft,
+            child: const ScanReviewPage(),
+          );
+        },
       ),
 
       // ── Streak ─────────────────────────────────────────────
