@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:equatable/equatable.dart';
 
 import '../../commons/enums.dart';
@@ -11,7 +12,13 @@ part 'backup_state.dart';
 class BackupCubit extends Cubit<BackupState> {
   final BackupRepository _repo;
 
-  BackupCubit(this._repo) : super(const BackupState());
+  /// Runs after a successful import, e.g. to rebuild the review reminder
+  /// plan from the restored words.
+  final Future<void> Function()? _onImported;
+
+  BackupCubit(this._repo, {Future<void> Function()? onImported})
+      : _onImported = onImported,
+        super(const BackupState());
 
   // ─── Mode toggle ──────────────────────────────────────────────────────────
 
@@ -54,7 +61,7 @@ class BackupCubit extends Cubit<BackupState> {
       return;
     }
 
-    _handleImportResult(result, silent: true);
+    await _handleImportResult(result, silent: true);
   }
 
   Future<void> exportAndShare() async {
@@ -120,7 +127,7 @@ class BackupCubit extends Cubit<BackupState> {
   Future<void> importFromFile() async {
     emit(state.copyWith(status: BackupStatus.loading));
     final result = await _repo.importFromFilePicker();
-    _handleImportResult(result);
+    await _handleImportResult(result);
   }
 
   Future<void> importFromServer() async {
@@ -134,10 +141,11 @@ class BackupCubit extends Cubit<BackupState> {
     }
     emit(state.copyWith(status: BackupStatus.loading));
     final result = await _repo.importFromServer(secretKey: key.trim());
-    _handleImportResult(result);
+    await _handleImportResult(result);
   }
 
-  void _handleImportResult(ImportResult result, {bool silent = false}) {
+  Future<void> _handleImportResult(ImportResult result,
+      {bool silent = false}) async {
     if (result.success) {
       final s = result.summary;
       final l10n = S.current;
@@ -161,11 +169,24 @@ class BackupCubit extends Cubit<BackupState> {
         successMessage: silent ? null : msg,
         importSummary: s,
       ));
+      await _runOnImported();
     } else {
       emit(state.copyWith(
         status: BackupStatus.failed,
         errorMessage: silent ? null : (result.error ?? S.current.unknown_error),
       ));
+    }
+  }
+
+  /// The import already succeeded; a failure here must not turn it into an
+  /// error for the user.
+  Future<void> _runOnImported() async {
+    final onImported = _onImported;
+    if (onImported == null) return;
+    try {
+      await onImported();
+    } catch (e) {
+      debugPrint('BackupCubit: after-import step failed: $e');
     }
   }
 }

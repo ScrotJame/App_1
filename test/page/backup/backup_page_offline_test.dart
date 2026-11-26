@@ -9,6 +9,7 @@ import 'package:test_abc/generated/l10n.dart';
 import 'package:test_abc/page/backup/backup_page.dart';
 import 'package:test_abc/repository/backup_data_repository.dart';
 import 'package:test_abc/repository/user_repository.dart';
+import 'package:test_abc/repository/vocabulary_repository.dart';
 import 'package:test_abc/service/auth_service.dart';
 
 void main() {
@@ -19,8 +20,15 @@ void main() {
     addTearDown(authCubit.close);
 
     await tester.pumpWidget(
-      RepositoryProvider<BackupRepository>(
-        create: (_) => BackupRepository(db),
+      MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<BackupRepository>(
+            create: (_) => BackupRepository(db),
+          ),
+          RepositoryProvider<VocabularyRepository>(
+            create: (_) => VocabularyRepository(db),
+          ),
+        ],
         child: BlocProvider<AuthCubit>.value(
           value: authCubit,
           child: const MaterialApp(
